@@ -1,5 +1,7 @@
 use rusqlite::{Connection, Result as SqliteResult};
 use std::sync::Arc;
+use std::fs;
+use std::path::Path;
 use tokio::sync::Mutex;
 use serde_json;
 use chrono::{DateTime, Utc};
@@ -22,148 +24,213 @@ pub struct Database {
 
 impl Database {
     pub fn new() -> SqliteResult<Self> {
-        let conn = Connection::open_in_memory()?;
+        println!("Initializing database...");
+        
+        // 确保 db 目录存在
+        let db_dir = "./db";
+        if !Path::new(db_dir).exists() {
+            println!("Creating database directory: {}", db_dir);
+            fs::create_dir_all(db_dir).map_err(|e| {
+                eprintln!("Failed to create database directory: {}", e);
+                rusqlite::Error::SqliteFailure(
+                    rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_CANTOPEN),
+                    Some(format!("Failed to create database directory: {}", e))
+                )
+            })?
+        }
+        
+        // 连接到文件数据库
+        let db_path = "./db/monihub.db";
+        println!("Connecting to database: {}", db_path);
+        let conn = Connection::open(db_path)?;
+        println!("Database connection established");
         
         // Initialize tables
+        println!("Creating database tables and indexes...");
         conn.execute_batch(
             "CREATE TABLE IF NOT EXISTS users (
-                id TEXT PRIMARY KEY,
-                username TEXT NOT NULL,
-                email TEXT NOT NULL,
-                password_hash TEXT NOT NULL,
-                status TEXT NOT NULL,
-                created_by TEXT NOT NULL,
-                updated_by TEXT NOT NULL,
-                deleted_at TEXT,
+                id VARCHAR PRIMARY KEY,
+                username VARCHAR NOT NULL,
+                email VARCHAR NOT NULL,
+                password_hash VARCHAR NOT NULL,
+                status VARCHAR NOT NULL,
+                created_by VARCHAR NOT NULL,
+                updated_by VARCHAR NOT NULL,
+                deleted_at TIMESTAMP,
                 revision INTEGER NOT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+                created_at TIMESTAMP NOT NULL,
+                updated_at TIMESTAMP NOT NULL
             );
             
             CREATE TABLE IF NOT EXISTS projects (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                code TEXT NOT NULL,
-                status TEXT NOT NULL,
-                description TEXT NOT NULL,
-                created_by TEXT NOT NULL,
-                updated_by TEXT NOT NULL,
-                deleted_at TEXT,
+                id VARCHAR PRIMARY KEY,
+                name VARCHAR NOT NULL,
+                code VARCHAR NOT NULL,
+                status VARCHAR NOT NULL,
+                description VARCHAR NOT NULL,
+                created_by VARCHAR NOT NULL,
+                updated_by VARCHAR NOT NULL,
+                deleted_at TIMESTAMP,
                 revision INTEGER NOT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+                created_at TIMESTAMP NOT NULL,
+                updated_at TIMESTAMP NOT NULL
             );
             
             CREATE TABLE IF NOT EXISTS applications (
-                id TEXT PRIMARY KEY,
-                project_id TEXT NOT NULL,
-                name TEXT NOT NULL,
-                code TEXT NOT NULL,
-                status TEXT NOT NULL,
-                description TEXT NOT NULL,
-                authorization TEXT NOT NULL,
-                created_by TEXT NOT NULL,
-                updated_by TEXT NOT NULL,
-                deleted_at TEXT,
+                id VARCHAR PRIMARY KEY,
+                project_id VARCHAR NOT NULL,
+                name VARCHAR NOT NULL,
+                code VARCHAR NOT NULL,
+                status VARCHAR NOT NULL,
+                description VARCHAR NOT NULL,
+                authorization JSON NOT NULL,
+                created_by VARCHAR NOT NULL,
+                updated_by VARCHAR NOT NULL,
+                deleted_at TIMESTAMP,
                 revision INTEGER NOT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+                created_at TIMESTAMP NOT NULL,
+                updated_at TIMESTAMP NOT NULL
             );
             
             CREATE TABLE IF NOT EXISTS deployments (
-                id TEXT PRIMARY KEY,
-                application_id TEXT NOT NULL,
-                private_ip TEXT NOT NULL,
-                public_ip TEXT NOT NULL,
-                network_interface TEXT NOT NULL,
-                hostname TEXT NOT NULL,
-                environment_vars TEXT NOT NULL,
+                id VARCHAR PRIMARY KEY,
+                application_id VARCHAR NOT NULL,
+                private_ip VARCHAR NOT NULL,
+                public_ip VARCHAR NOT NULL,
+                network_interface VARCHAR NOT NULL,
+                hostname VARCHAR NOT NULL,
+                environment_vars JSON NOT NULL,
                 service_port INTEGER NOT NULL,
-                process_name TEXT NOT NULL,
-                status TEXT NOT NULL,
-                created_by TEXT NOT NULL,
-                updated_by TEXT NOT NULL,
-                deleted_at TEXT,
+                process_name VARCHAR NOT NULL,
+                status VARCHAR NOT NULL,
+                created_by VARCHAR NOT NULL,
+                updated_by VARCHAR NOT NULL,
+                deleted_at TIMESTAMP,
                 revision INTEGER NOT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+                created_at TIMESTAMP NOT NULL,
+                updated_at TIMESTAMP NOT NULL
             );
             
             CREATE TABLE IF NOT EXISTS roles (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                description TEXT NOT NULL,
-                permissions TEXT NOT NULL,
-                created_by TEXT NOT NULL,
-                updated_by TEXT NOT NULL,
-                deleted_at TEXT,
+                id VARCHAR PRIMARY KEY,
+                name VARCHAR NOT NULL,
+                description VARCHAR NOT NULL,
+                permissions JSON NOT NULL,
+                created_by VARCHAR NOT NULL,
+                updated_by VARCHAR NOT NULL,
+                deleted_at TIMESTAMP,
                 revision INTEGER NOT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+                created_at TIMESTAMP NOT NULL,
+                updated_at TIMESTAMP NOT NULL
             );
             
             CREATE TABLE IF NOT EXISTS permissions (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                description TEXT NOT NULL,
-                resource TEXT NOT NULL,
-                action TEXT NOT NULL,
-                created_by TEXT NOT NULL,
-                updated_by TEXT NOT NULL,
-                deleted_at TEXT,
+                id VARCHAR PRIMARY KEY,
+                name VARCHAR NOT NULL,
+                description VARCHAR NOT NULL,
+                resource VARCHAR NOT NULL,
+                action VARCHAR NOT NULL,
+                created_by VARCHAR NOT NULL,
+                updated_by VARCHAR NOT NULL,
+                deleted_at TIMESTAMP,
                 revision INTEGER NOT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+                created_at TIMESTAMP NOT NULL,
+                updated_at TIMESTAMP NOT NULL
             );
             
             CREATE TABLE IF NOT EXISTS logs (
-                id TEXT PRIMARY KEY,
-                type TEXT NOT NULL,
-                user_id TEXT NOT NULL,
-                action TEXT NOT NULL,
-                ip_address TEXT NOT NULL,
-                user_agent TEXT NOT NULL,
-                created_by TEXT NOT NULL,
-                updated_by TEXT NOT NULL,
-                deleted_at TEXT,
+                id VARCHAR PRIMARY KEY,
+                type VARCHAR NOT NULL,
+                user_id VARCHAR NOT NULL,
+                action VARCHAR NOT NULL,
+                ip_address VARCHAR NOT NULL,
+                user_agent VARCHAR NOT NULL,
+                created_by VARCHAR NOT NULL,
+                updated_by VARCHAR NOT NULL,
+                deleted_at TIMESTAMP,
                 revision INTEGER NOT NULL,
-                timestamp TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+                timestamp TIMESTAMP NOT NULL,
+                created_at TIMESTAMP NOT NULL,
+                updated_at TIMESTAMP NOT NULL
             );
             
             CREATE TABLE IF NOT EXISTS machines (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                type TEXT NOT NULL,
-                status TEXT NOT NULL,
-                deployment_id TEXT NOT NULL,
-                application_id TEXT NOT NULL,
-                created_by TEXT NOT NULL,
-                updated_by TEXT NOT NULL,
-                deleted_at TEXT,
+                id VARCHAR PRIMARY KEY,
+                name VARCHAR NOT NULL,
+                type VARCHAR NOT NULL,
+                status VARCHAR NOT NULL,
+                deployment_id VARCHAR NOT NULL,
+                application_id VARCHAR NOT NULL,
+                created_by VARCHAR NOT NULL,
+                updated_by VARCHAR NOT NULL,
+                deleted_at TIMESTAMP,
                 revision INTEGER NOT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+                created_at TIMESTAMP NOT NULL,
+                updated_at TIMESTAMP NOT NULL
             );
             
             CREATE TABLE IF NOT EXISTS configs (
-                id TEXT PRIMARY KEY,
-                code TEXT NOT NULL,
-                environment TEXT NOT NULL,
-                name TEXT NOT NULL,
-                type TEXT NOT NULL,
-                content TEXT NOT NULL,
-                description TEXT NOT NULL,
+                id VARCHAR PRIMARY KEY,
+                code VARCHAR NOT NULL,
+                environment VARCHAR NOT NULL,
+                name VARCHAR NOT NULL,
+                type VARCHAR NOT NULL,
+                content VARCHAR NOT NULL,
+                description VARCHAR NOT NULL,
                 version INTEGER NOT NULL,
-                created_by TEXT NOT NULL,
-                updated_by TEXT NOT NULL,
-                deleted_at TEXT,
+                created_by VARCHAR NOT NULL,
+                updated_by VARCHAR NOT NULL,
+                deleted_at TIMESTAMP,
                 revision INTEGER NOT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
-            );"
+                created_at TIMESTAMP NOT NULL,
+                updated_at TIMESTAMP NOT NULL
+            );
+            
+            -- Create indexes for users table
+            CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+            CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+            CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
+            
+            -- Create indexes for projects table
+            CREATE INDEX IF NOT EXISTS idx_projects_code ON projects(code);
+            CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
+            CREATE INDEX IF NOT EXISTS idx_projects_created_by ON projects(created_by);
+            
+            -- Create indexes for applications table
+            CREATE INDEX IF NOT EXISTS idx_applications_project_id ON applications(project_id);
+            CREATE INDEX IF NOT EXISTS idx_applications_code ON applications(code);
+            CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
+            
+            -- Create indexes for deployments table
+            CREATE INDEX IF NOT EXISTS idx_deployments_application_id ON deployments(application_id);
+            CREATE INDEX IF NOT EXISTS idx_deployments_status ON deployments(status);
+            CREATE INDEX IF NOT EXISTS idx_deployments_hostname ON deployments(hostname);
+            
+            -- Create indexes for roles table
+            CREATE INDEX IF NOT EXISTS idx_roles_name ON roles(name);
+            
+            -- Create indexes for permissions table
+            CREATE INDEX IF NOT EXISTS idx_permissions_resource ON permissions(resource);
+            CREATE INDEX IF NOT EXISTS idx_permissions_action ON permissions(action);
+            
+            -- Create indexes for logs table
+            CREATE INDEX IF NOT EXISTS idx_logs_user_id ON logs(user_id);
+            CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON logs(timestamp);
+            CREATE INDEX IF NOT EXISTS idx_logs_type ON logs(type);
+            
+            -- Create indexes for machines table
+            CREATE INDEX IF NOT EXISTS idx_machines_deployment_id ON machines(deployment_id);
+            CREATE INDEX IF NOT EXISTS idx_machines_application_id ON machines(application_id);
+            CREATE INDEX IF NOT EXISTS idx_machines_status ON machines(status);
+            
+            -- Create indexes for configs table
+            CREATE INDEX IF NOT EXISTS idx_configs_code ON configs(code);
+            CREATE INDEX IF NOT EXISTS idx_configs_environment ON configs(environment);
+            CREATE INDEX IF NOT EXISTS idx_configs_version ON configs(version);
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_configs_code_env_version ON configs(code, environment, version);"
         )?;
+        
+        println!("Database initialization completed successfully");
         
         Ok(Database {
             conn: Arc::new(Mutex::new(conn)),
@@ -250,7 +317,6 @@ impl Database {
     // Application operations
     pub async fn create_application(&self, application: &Application) -> SqliteResult<()> {
         let conn = self.conn.lock().await;
-        let authorization_json = serde_json::to_string(&application.authorization).unwrap();
         conn.execute(
             "INSERT INTO applications (id, project_id, name, code, status, description, authorization, created_by, updated_by, revision, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
             [
@@ -260,7 +326,7 @@ impl Database {
                 &application.code,
                 &application.status,
                 &application.description,
-                &authorization_json,
+                &serde_json::to_string(&application.authorization).unwrap(),
                 &application.created_by,
                 &application.updated_by,
                 &application.revision.to_string(),
@@ -274,7 +340,6 @@ impl Database {
     // Deployment operations
     pub async fn create_deployment(&self, deployment: &Deployment) -> SqliteResult<()> {
         let conn = self.conn.lock().await;
-        let env_vars_json = serde_json::to_string(&deployment.environment_vars).unwrap();
         conn.execute(
             "INSERT INTO deployments (id, application_id, private_ip, public_ip, network_interface, hostname, environment_vars, service_port, process_name, status, created_by, updated_by, revision, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
             [
@@ -284,7 +349,7 @@ impl Database {
                 &deployment.public_ip,
                 &deployment.network_interface,
                 &deployment.hostname,
-                &env_vars_json,
+                &serde_json::to_string(&deployment.environment_vars).unwrap(),
                 &deployment.service_port.to_string(),
                 &deployment.process_name,
                 &deployment.status,
@@ -301,14 +366,13 @@ impl Database {
     // Role operations
     pub async fn create_role(&self, role: &Role) -> SqliteResult<()> {
         let conn = self.conn.lock().await;
-        let permissions_json = serde_json::to_string(&role.permissions).unwrap();
         conn.execute(
             "INSERT INTO roles (id, name, description, permissions, created_by, updated_by, revision, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
             [
                 &role.id,
                 &role.name,
                 &role.description,
-                &permissions_json,
+                &serde_json::to_string(&role.permissions).unwrap(),
                 &role.created_by,
                 &role.updated_by,
                 &role.revision.to_string(),
