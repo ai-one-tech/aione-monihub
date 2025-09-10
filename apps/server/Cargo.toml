@@ -1,0 +1,23 @@
+[package]
+name = "aione-monihub-server"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "aione-monihub-server"
+path = "api/src/main.rs"
+
+[dependencies]
+actix-web = "4.0"
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+jsonwebtoken = "8.0"
+rusqlite = { version = "0.28", features = ["bundled"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+chrono = { version = "0.4.38", features = ["serde"] }
+derive_more = "0.99"
+log = "0.4"
+env_logger = "0.10"
+actix-web-actors = "4.0"
+actix = "0.13"

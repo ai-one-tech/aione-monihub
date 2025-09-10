@@ -1,0 +1,16 @@
+{
+  "name": "aione-monihub-agent-js",
+  "version": "0.1.0",
+  "description": "JavaScript agent for AiOne MoniHub",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {
+    "ws": "^8.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.0"
+  }
+}

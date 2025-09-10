@@ -1,0 +1,17 @@
+{
+  "name": "aione-monihub",
+  "version": "1.0.0",
+  "description": "AiOne MoniHub is an integrated monitoring and management platform",
+  "workspaces": [
+    "apps/frontend",
+    "apps/agent/js"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "test": "turbo test"
+  },
+  "devDependencies": {
+    "turbo": "^1.10.0"
+  }
+}
