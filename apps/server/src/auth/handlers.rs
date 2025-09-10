@@ -1,54 +1,8 @@
 use actix_web::{web, HttpResponse, Result, HttpRequest};
-use serde::{Deserialize, Serialize};
 use jsonwebtoken::{encode, decode, Header, Validation, EncodingKey, DecodingKey, Algorithm};
 use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
-// 移除了未使用的 Database 导入
-
-// User response struct
-#[derive(Debug, Serialize, Deserialize)]
-pub struct UserResponse {
-    pub id: String,
-    pub username: String,
-    pub email: String,
-    pub roles: Vec<String>,
-}
-
-// Login request struct
-#[derive(Debug, Serialize, Deserialize)]
-pub struct LoginRequest {
-    pub username: String,
-    pub password: String,
-}
-
-// Login response struct
-#[derive(Debug, Serialize, Deserialize)]
-pub struct LoginResponse {
-    pub token: String,
-    pub user: UserResponse,
-    pub timestamp: u64,
-    pub trace_id: String,
-}
-
-// Forgot password request struct
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ForgotPasswordRequest {
-    pub email: String,
-}
-
-// Reset password request struct
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ResetPasswordRequest {
-    pub token: String,
-    pub new_password: String,
-}
-
-// JWT claims struct
-#[derive(Debug, Serialize, Deserialize)]
-struct Claims {
-    sub: String, // Subject (user ID)
-    exp: usize,  // Expiration time (as UTC timestamp)
-}
+use crate::auth::models::{LoginRequest, LoginResponse, UserResponse, ForgotPasswordRequest, ResetPasswordRequest, Claims};
 
 // JWT secret key (in production, this should be loaded from environment variables)
 const JWT_SECRET: &str = "aione_monihub_secret_key";

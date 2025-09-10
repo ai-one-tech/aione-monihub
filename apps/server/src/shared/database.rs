@@ -1,9 +1,19 @@
 use rusqlite::{Connection, Result as SqliteResult};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use crate::models::{User, Project, Application, Deployment, Role, Permission, Log, Machine, Config};
 use serde_json;
 use chrono::{DateTime, Utc};
+
+// Import models from individual modules
+use crate::users::models::User;
+use crate::projects::models::Project;
+use crate::applications::models::Application;
+use crate::deployments::models::Deployment;
+use crate::roles::models::Role;
+use crate::permissions::models::Permission;
+use crate::logs::models::Log;
+use crate::machines::models::Machine;
+use crate::configs::models::Config;
 
 #[derive(Clone)]
 pub struct Database {

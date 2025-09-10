@@ -1,37 +1,8 @@
-use actix_web::{web, HttpRequest, HttpResponse, Error};
-use actix_web_actors::ws;
 use actix::prelude::*;
+use actix_web_actors::ws;
 use uuid::Uuid;
 use std::time::{Duration, Instant};
-use actix::prelude::Message;
-use actix::prelude::Recipient;
-
-// WebSocket message types
-#[derive(Message)]
-#[rtype(result = "()")]
-pub struct WsMessage(pub String);
-
-#[derive(Message)]
-#[rtype(result = "()")]
-pub struct Connect {
-    pub addr: Recipient<WsMessage>,
-    pub deployment_id: String,
-}
-
-#[derive(Message)]
-#[rtype(result = "()")]
-pub struct Disconnect {
-    pub id: String,
-    pub deployment_id: String,
-}
-
-#[derive(Message)]
-#[rtype(result = "()")]
-pub struct ClientMessage {
-    pub id: String,
-    pub deployment_id: String,
-    pub msg: String,
-}
+use crate::websocket::models::{WsMessage, Connect, Disconnect, ClientMessage};
 
 // WebSocket session
 pub struct WsSession {
@@ -183,21 +154,4 @@ impl Handler<ClientMessage> for WsServer {
             }
         }
     }
-}
-
-// WebSocket endpoint handler
-pub async fn terminal_websocket(
-    req: HttpRequest,
-    stream: web::Payload,
-    srv: web::Data<Addr<WsServer>>,
-    path: web::Path<String>,
-) -> Result<HttpResponse, Error> {
-    let deployment_id = path.into_inner();
-    
-    // Start WebSocket session
-    ws::start(
-        WsSession::new(deployment_id, srv.get_ref().clone()),
-        &req,
-        stream,
-    )
 }

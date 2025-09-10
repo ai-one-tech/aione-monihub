@@ -1,6 +1,5 @@
 use actix_web::{HttpResponse, ResponseError};
 use derive_more::Display;
-use std::fmt;
 
 // Custom error type for our application
 #[derive(Debug, Display)]

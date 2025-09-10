@@ -1,0 +1,66 @@
+use serde::{Deserialize, Serialize};
+use chrono::{DateTime, Utc};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct User {
+    pub id: String,
+    pub username: String,
+    pub email: String,
+    pub password_hash: String,
+    pub status: String,
+    pub created_by: String,
+    pub updated_by: String,
+    pub deleted_at: Option<DateTime<Utc>>,
+    pub revision: i32,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserResponse {
+    pub id: String,
+    pub username: String,
+    pub email: String,
+    pub status: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserCreateRequest {
+    pub username: String,
+    pub email: String,
+    pub password: String,
+    pub status: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserUpdateRequest {
+    pub username: String,
+    pub email: String,
+    pub status: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserListResponse {
+    pub data: Vec<UserResponse>,
+    pub pagination: Pagination,
+    pub timestamp: u64,
+    pub trace_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Pagination {
+    pub page: u32,
+    pub limit: u32,
+    pub total: u32,
+}
+
+// Query parameters for user list
+#[derive(Debug, Deserialize)]
+pub struct UserListQuery {
+    pub page: Option<u32>,
+    pub limit: Option<u32>,
+    pub search: Option<String>,
+    pub status: Option<String>,
+}
