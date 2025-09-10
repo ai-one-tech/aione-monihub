@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use utoipa::{ToSchema, IntoParams};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Config {
     pub id: String,
     pub code: String,
@@ -19,7 +20,7 @@ pub struct Config {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ConfigResponse {
     pub id: String,
     pub code: String,
@@ -33,7 +34,7 @@ pub struct ConfigResponse {
     pub updated_at: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ConfigCreateRequest {
     pub code: String,
     pub environment: String,
@@ -43,7 +44,7 @@ pub struct ConfigCreateRequest {
     pub description: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ConfigUpdateRequest {
     pub code: String,
     pub environment: String,
@@ -53,7 +54,7 @@ pub struct ConfigUpdateRequest {
     pub description: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ConfigListResponse {
     pub data: Vec<ConfigResponse>,
     pub pagination: Pagination,
@@ -61,7 +62,7 @@ pub struct ConfigListResponse {
     pub trace_id: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Pagination {
     pub page: u32,
     pub limit: u32,
@@ -69,7 +70,7 @@ pub struct Pagination {
 }
 
 // Query parameters for config list
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, IntoParams)]
 pub struct ConfigListQuery {
     pub page: Option<u32>,
     pub limit: Option<u32>,

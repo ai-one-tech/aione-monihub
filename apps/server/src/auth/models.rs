@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 // User response struct
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct UserResponse {
     pub id: String,
     pub username: String,
@@ -10,14 +11,14 @@ pub struct UserResponse {
 }
 
 // Login request struct
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct LoginRequest {
     pub username: String,
     pub password: String,
 }
 
 // Login response struct
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct LoginResponse {
     pub token: String,
     pub user: UserResponse,
@@ -26,20 +27,20 @@ pub struct LoginResponse {
 }
 
 // Forgot password request struct
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ForgotPasswordRequest {
     pub email: String,
 }
 
 // Reset password request struct
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ResetPasswordRequest {
     pub token: String,
     pub new_password: String,
 }
 
 // JWT claims struct
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Claims {
     pub sub: String, // Subject (user ID)
     pub exp: usize,  // Expiration time (as UTC timestamp)

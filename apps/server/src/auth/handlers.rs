@@ -7,6 +7,18 @@ use crate::auth::models::{LoginRequest, LoginResponse, UserResponse, ForgotPassw
 // JWT secret key (in production, this should be loaded from environment variables)
 const JWT_SECRET: &str = "aione_monihub_secret_key";
 
+#[utoipa::path(
+    post,
+    path = "/api/auth/login",
+    request_body = LoginRequest,
+    responses(
+        (status = 200, description = "Login successful", body = LoginResponse),
+        (status = 400, description = "Bad request"),
+        (status = 401, description = "Invalid credentials"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Authentication"
+)]
 pub async fn login(login_req: web::Json<LoginRequest>) -> Result<HttpResponse> {
     // TODO: Implement actual user authentication logic
     // This is a placeholder implementation
@@ -55,6 +67,17 @@ pub async fn login(login_req: web::Json<LoginRequest>) -> Result<HttpResponse> {
     Ok(HttpResponse::Ok().json(response))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/auth/forgot-password",
+    request_body = ForgotPasswordRequest,
+    responses(
+        (status = 200, description = "Password reset email sent"),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Authentication"
+)]
 pub async fn forgot_password(_forgot_req: web::Json<ForgotPasswordRequest>) -> Result<HttpResponse> {
     // TODO: Implement forgot password logic
     // This would normally send an email with a reset link
@@ -62,6 +85,18 @@ pub async fn forgot_password(_forgot_req: web::Json<ForgotPasswordRequest>) -> R
     Ok(HttpResponse::Ok().json("Password reset email sent"))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/auth/reset-password",
+    request_body = ResetPasswordRequest,
+    responses(
+        (status = 200, description = "Password reset successful"),
+        (status = 400, description = "Bad request"),
+        (status = 401, description = "Invalid token"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Authentication"
+)]
 pub async fn reset_password(_reset_req: web::Json<ResetPasswordRequest>) -> Result<HttpResponse> {
     // TODO: Implement password reset logic
     // This would validate the token and update the user's password
@@ -70,6 +105,19 @@ pub async fn reset_password(_reset_req: web::Json<ResetPasswordRequest>) -> Resu
 }
 
 // Middleware function to validate JWT tokens
+#[utoipa::path(
+    get,
+    path = "/api/auth/validate",
+    responses(
+        (status = 200, description = "Token is valid"),
+        (status = 401, description = "Invalid or missing token"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("bearer_auth" = [])
+    ),
+    tag = "Authentication"
+)]
 pub async fn validate_token(req: HttpRequest) -> Result<HttpResponse> {
     // Get the Authorization header
     let auth_header = req.headers().get("Authorization");

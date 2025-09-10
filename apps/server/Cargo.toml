@@ -24,3 +24,5 @@ log = "0.4"
 env_logger = "0.10"
 actix-web-actors = "4.0"
 actix = "0.13"
+utoipa = { version = "4.0", features = ["actix_extras"] }
+utoipa-swagger-ui = { version = "6.0", features = ["actix-web"] }

@@ -4,6 +4,17 @@ use chrono::Utc;
 use crate::shared::error::ApiError;
 use crate::applications::models::{ApplicationListResponse, ApplicationResponse, ApplicationCreateRequest, ApplicationListQuery, Pagination, AuthorizationResponse};
 
+#[utoipa::path(
+    get,
+    path = "/api/applications",
+    params(ApplicationListQuery),
+    responses(
+        (status = 200, description = "List applications successfully", body = ApplicationListResponse),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Applications"
+)]
 pub async fn get_applications(query: web::Query<ApplicationListQuery>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual application listing logic
     // This is a placeholder implementation
@@ -45,6 +56,17 @@ pub async fn get_applications(query: web::Query<ApplicationListQuery>) -> Result
     Ok(HttpResponse::Ok().json(response))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/applications",
+    request_body = ApplicationCreateRequest,
+    responses(
+        (status = 200, description = "Application created successfully", body = ApplicationResponse),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Applications"
+)]
 pub async fn create_application(app: web::Json<ApplicationCreateRequest>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual application creation logic
     // This is a placeholder implementation
@@ -67,6 +89,19 @@ pub async fn create_application(app: web::Json<ApplicationCreateRequest>) -> Res
     Ok(HttpResponse::Ok().json(response))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/applications/{id}",
+    params(
+        ("id" = String, Path, description = "Application ID")
+    ),
+    responses(
+        (status = 200, description = "Application found successfully", body = ApplicationResponse),
+        (status = 404, description = "Application not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Applications"
+)]
 pub async fn get_application(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual application retrieval logic
     // This is a placeholder implementation
@@ -91,6 +126,21 @@ pub async fn get_application(path: web::Path<String>) -> Result<HttpResponse, Ap
     Ok(HttpResponse::Ok().json(response))
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/applications/{id}",
+    params(
+        ("id" = String, Path, description = "Application ID")
+    ),
+    request_body = ApplicationCreateRequest,
+    responses(
+        (status = 200, description = "Application updated successfully", body = ApplicationResponse),
+        (status = 404, description = "Application not found"),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Applications"
+)]
 pub async fn update_application(
     path: web::Path<String>,
     app: web::Json<ApplicationCreateRequest>
@@ -118,6 +168,19 @@ pub async fn update_application(
     Ok(HttpResponse::Ok().json(response))
 }
 
+#[utoipa::path(
+    delete,
+    path = "/api/applications/{id}",
+    params(
+        ("id" = String, Path, description = "Application ID")
+    ),
+    responses(
+        (status = 200, description = "Application deleted successfully"),
+        (status = 404, description = "Application not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Applications"
+)]
 pub async fn delete_application(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual application deletion logic
     // This is a placeholder implementation

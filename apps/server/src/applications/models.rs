@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use utoipa::{ToSchema, IntoParams};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Application {
     pub id: String,
     pub project_id: String,
@@ -18,13 +19,13 @@ pub struct Application {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Authorization {
     pub users: Vec<String>,
     pub expiry_date: Option<DateTime<Utc>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ApplicationResponse {
     pub id: String,
     pub project_id: String,
@@ -37,13 +38,13 @@ pub struct ApplicationResponse {
     pub updated_at: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct AuthorizationResponse {
     pub users: Vec<String>,
     pub expiry_date: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ApplicationCreateRequest {
     pub project_id: String,
     pub name: String,
@@ -53,7 +54,7 @@ pub struct ApplicationCreateRequest {
     pub authorization: AuthorizationCreateRequest,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ApplicationUpdateRequest {
     pub project_id: String,
     pub name: String,
@@ -63,13 +64,13 @@ pub struct ApplicationUpdateRequest {
     pub authorization: AuthorizationCreateRequest,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct AuthorizationCreateRequest {
     pub users: Vec<String>,
     pub expiry_date: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ApplicationListResponse {
     pub data: Vec<ApplicationResponse>,
     pub pagination: Pagination,
@@ -77,7 +78,7 @@ pub struct ApplicationListResponse {
     pub trace_id: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Pagination {
     pub page: u32,
     pub limit: u32,
@@ -85,7 +86,7 @@ pub struct Pagination {
 }
 
 // Query parameters for application list
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, IntoParams)]
 pub struct ApplicationListQuery {
     pub page: Option<u32>,
     pub limit: Option<u32>,

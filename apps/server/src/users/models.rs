@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use utoipa::{ToSchema, IntoParams};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct User {
     pub id: String,
     pub username: String,
@@ -16,7 +17,7 @@ pub struct User {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct UserResponse {
     pub id: String,
     pub username: String,
@@ -26,7 +27,7 @@ pub struct UserResponse {
     pub updated_at: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct UserCreateRequest {
     pub username: String,
     pub email: String,
@@ -34,14 +35,14 @@ pub struct UserCreateRequest {
     pub status: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct UserUpdateRequest {
     pub username: String,
     pub email: String,
     pub status: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct UserListResponse {
     pub data: Vec<UserResponse>,
     pub pagination: Pagination,
@@ -49,7 +50,7 @@ pub struct UserListResponse {
     pub trace_id: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Pagination {
     pub page: u32,
     pub limit: u32,
@@ -57,7 +58,7 @@ pub struct Pagination {
 }
 
 // Query parameters for user list
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, IntoParams)]
 pub struct UserListQuery {
     pub page: Option<u32>,
     pub limit: Option<u32>,

@@ -4,6 +4,19 @@ use chrono::Utc;
 use crate::shared::error::ApiError;
 use crate::projects::models::{ProjectListResponse, ProjectResponse, ProjectCreateRequest, ProjectListQuery, Pagination};
 
+#[utoipa::path(
+    get,
+    path = "/api/projects",
+    params(
+        ProjectListQuery
+    ),
+    responses(
+        (status = 200, description = "List projects successfully", body = ProjectListResponse),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Projects"
+)]
 pub async fn get_projects(query: web::Query<ProjectListQuery>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual project listing logic with database query
     // This is a placeholder implementation
@@ -41,6 +54,17 @@ pub async fn get_projects(query: web::Query<ProjectListQuery>) -> Result<HttpRes
     Ok(HttpResponse::Ok().json(response))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/projects",
+    request_body = ProjectCreateRequest,
+    responses(
+        (status = 200, description = "Project created successfully", body = ProjectResponse),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Projects"
+)]
 pub async fn create_project(project: web::Json<ProjectCreateRequest>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual project creation logic
     // This is a placeholder implementation
@@ -58,6 +82,19 @@ pub async fn create_project(project: web::Json<ProjectCreateRequest>) -> Result<
     Ok(HttpResponse::Ok().json(response))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/projects/{project_id}",
+    params(
+        ("project_id" = String, Path, description = "Project ID")
+    ),
+    responses(
+        (status = 200, description = "Project found successfully", body = ProjectResponse),
+        (status = 404, description = "Project not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Projects"
+)]
 pub async fn get_project(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual project retrieval logic
     // This is a placeholder implementation
@@ -77,6 +114,21 @@ pub async fn get_project(path: web::Path<String>) -> Result<HttpResponse, ApiErr
     Ok(HttpResponse::Ok().json(response))
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/projects/{project_id}",
+    params(
+        ("project_id" = String, Path, description = "Project ID")
+    ),
+    request_body = ProjectCreateRequest,
+    responses(
+        (status = 200, description = "Project updated successfully", body = ProjectResponse),
+        (status = 404, description = "Project not found"),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Projects"
+)]
 pub async fn update_project(
     path: web::Path<String>,
     project: web::Json<ProjectCreateRequest>
@@ -99,6 +151,19 @@ pub async fn update_project(
     Ok(HttpResponse::Ok().json(response))
 }
 
+#[utoipa::path(
+    delete,
+    path = "/api/projects/{project_id}",
+    params(
+        ("project_id" = String, Path, description = "Project ID")
+    ),
+    responses(
+        (status = 200, description = "Project deleted successfully"),
+        (status = 404, description = "Project not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Projects"
+)]
 pub async fn delete_project(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual project deletion logic
     // This is a placeholder implementation

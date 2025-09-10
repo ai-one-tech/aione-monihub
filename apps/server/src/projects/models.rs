@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use utoipa::{ToSchema, IntoParams};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Project {
     pub id: String,
     pub name: String,
@@ -16,7 +17,7 @@ pub struct Project {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ProjectResponse {
     pub id: String,
     pub name: String,
@@ -27,7 +28,7 @@ pub struct ProjectResponse {
     pub updated_at: String, // DateTime in ISO 8601 format
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ProjectCreateRequest {
     pub name: String,
     pub code: String,
@@ -35,7 +36,7 @@ pub struct ProjectCreateRequest {
     pub description: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ProjectUpdateRequest {
     pub name: String,
     pub code: String,
@@ -43,7 +44,7 @@ pub struct ProjectUpdateRequest {
     pub description: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ProjectListResponse {
     pub data: Vec<ProjectResponse>,
     pub pagination: Pagination,
@@ -51,7 +52,7 @@ pub struct ProjectListResponse {
     pub trace_id: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Pagination {
     pub page: u32,
     pub limit: u32,
@@ -59,7 +60,7 @@ pub struct Pagination {
 }
 
 // Query parameters for project list
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, IntoParams)]
 pub struct ProjectListQuery {
     pub page: Option<u32>,
     pub limit: Option<u32>,

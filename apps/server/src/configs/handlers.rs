@@ -4,6 +4,17 @@ use chrono::Utc;
 use crate::shared::error::ApiError;
 use crate::configs::models::{ConfigListResponse, ConfigResponse, ConfigCreateRequest, ConfigListQuery, Pagination};
 
+#[utoipa::path(
+    get,
+    path = "/api/configs",
+    params(ConfigListQuery),
+    responses(
+        (status = 200, description = "List configs successfully", body = ConfigListResponse),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Configs"
+)]
 pub async fn get_configs(query: web::Query<ConfigListQuery>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual config listing logic
     // This is a placeholder implementation
@@ -43,6 +54,17 @@ pub async fn get_configs(query: web::Query<ConfigListQuery>) -> Result<HttpRespo
     Ok(HttpResponse::Ok().json(response))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/configs",
+    request_body = ConfigCreateRequest,
+    responses(
+        (status = 200, description = "Config created successfully", body = ConfigResponse),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Configs"
+)]
 pub async fn create_config(config: web::Json<ConfigCreateRequest>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual config creation logic
     // This is a placeholder implementation
@@ -63,6 +85,19 @@ pub async fn create_config(config: web::Json<ConfigCreateRequest>) -> Result<Htt
     Ok(HttpResponse::Ok().json(response))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/configs/{code}",
+    params(
+        ("code" = String, Path, description = "Config code")
+    ),
+    responses(
+        (status = 200, description = "Configs found successfully", body = ConfigListResponse),
+        (status = 404, description = "Config not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Configs"
+)]
 pub async fn get_config_by_code(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual config retrieval by code logic
     // This is a placeholder implementation
@@ -101,6 +136,20 @@ pub async fn get_config_by_code(path: web::Path<String>) -> Result<HttpResponse,
     Ok(HttpResponse::Ok().json(response))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/configs/{code}/{environment}",
+    params(
+        ("code" = String, Path, description = "Config code"),
+        ("environment" = String, Path, description = "Environment name")
+    ),
+    responses(
+        (status = 200, description = "Config found successfully", body = ConfigResponse),
+        (status = 404, description = "Config not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Configs"
+)]
 pub async fn get_config_by_code_and_environment(path: web::Path<(String, String)>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual config retrieval by code and environment logic
     // This is a placeholder implementation
@@ -123,6 +172,21 @@ pub async fn get_config_by_code_and_environment(path: web::Path<(String, String)
     Ok(HttpResponse::Ok().json(response))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/configs/{code}/{environment}/{version}",
+    params(
+        ("code" = String, Path, description = "Config code"),
+        ("environment" = String, Path, description = "Environment name"),
+        ("version" = u32, Path, description = "Config version")
+    ),
+    responses(
+        (status = 200, description = "Config found successfully", body = ConfigResponse),
+        (status = 404, description = "Config not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Configs"
+)]
 pub async fn get_config_by_code_env_and_version(path: web::Path<(String, String, u32)>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual config retrieval by code, environment and version logic
     // This is a placeholder implementation
@@ -145,6 +209,19 @@ pub async fn get_config_by_code_env_and_version(path: web::Path<(String, String,
     Ok(HttpResponse::Ok().json(response))
 }
 
+#[utoipa::path(
+    delete,
+    path = "/api/configs/{id}",
+    params(
+        ("id" = String, Path, description = "Config ID")
+    ),
+    responses(
+        (status = 200, description = "Config deleted successfully"),
+        (status = 404, description = "Config not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Configs"
+)]
 pub async fn delete_config(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual config deletion logic
     // This is a placeholder implementation

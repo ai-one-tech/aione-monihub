@@ -4,6 +4,19 @@ use chrono::Utc;
 use crate::shared::error::ApiError;
 use crate::users::models::{UserListResponse, UserResponse, UserCreateRequest, UserListQuery, Pagination};
 
+#[utoipa::path(
+    get,
+    path = "/api/users",
+    params(
+        UserListQuery
+    ),
+    responses(
+        (status = 200, description = "List users successfully", body = UserListResponse),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Users"
+)]
 pub async fn get_users(query: web::Query<UserListQuery>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual user listing logic
     // This is a placeholder implementation
@@ -39,6 +52,17 @@ pub async fn get_users(query: web::Query<UserListQuery>) -> Result<HttpResponse,
     Ok(HttpResponse::Ok().json(response))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/users",
+    request_body = UserCreateRequest,
+    responses(
+        (status = 200, description = "User created successfully", body = UserResponse),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Users"
+)]
 pub async fn create_user(user: web::Json<UserCreateRequest>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual user creation logic
     // This is a placeholder implementation
@@ -55,6 +79,19 @@ pub async fn create_user(user: web::Json<UserCreateRequest>) -> Result<HttpRespo
     Ok(HttpResponse::Ok().json(response))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/users/{user_id}",
+    params(
+        ("user_id" = String, Path, description = "User ID")
+    ),
+    responses(
+        (status = 200, description = "User found successfully", body = UserResponse),
+        (status = 404, description = "User not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Users"
+)]
 pub async fn get_user(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual user retrieval logic
     // This is a placeholder implementation
@@ -73,6 +110,21 @@ pub async fn get_user(path: web::Path<String>) -> Result<HttpResponse, ApiError>
     Ok(HttpResponse::Ok().json(response))
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/users/{user_id}",
+    params(
+        ("user_id" = String, Path, description = "User ID")
+    ),
+    request_body = UserCreateRequest,
+    responses(
+        (status = 200, description = "User updated successfully", body = UserResponse),
+        (status = 404, description = "User not found"),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Users"
+)]
 pub async fn update_user(
     path: web::Path<String>,
     user: web::Json<UserCreateRequest>
@@ -94,6 +146,19 @@ pub async fn update_user(
     Ok(HttpResponse::Ok().json(response))
 }
 
+#[utoipa::path(
+    delete,
+    path = "/api/users/{user_id}",
+    params(
+        ("user_id" = String, Path, description = "User ID")
+    ),
+    responses(
+        (status = 200, description = "User deleted successfully"),
+        (status = 404, description = "User not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Users"
+)]
 pub async fn delete_user(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual user deletion logic
     // This is a placeholder implementation
@@ -103,6 +168,19 @@ pub async fn delete_user(path: web::Path<String>) -> Result<HttpResponse, ApiErr
     Ok(HttpResponse::Ok().json("User deleted successfully"))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/users/{user_id}/disable",
+    params(
+        ("user_id" = String, Path, description = "User ID")
+    ),
+    responses(
+        (status = 200, description = "User disabled successfully"),
+        (status = 404, description = "User not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Users"
+)]
 pub async fn disable_user(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual user disable logic
     // This is a placeholder implementation
@@ -112,6 +190,19 @@ pub async fn disable_user(path: web::Path<String>) -> Result<HttpResponse, ApiEr
     Ok(HttpResponse::Ok().json("User disabled successfully"))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/users/{user_id}/enable",
+    params(
+        ("user_id" = String, Path, description = "User ID")
+    ),
+    responses(
+        (status = 200, description = "User enabled successfully"),
+        (status = 404, description = "User not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Users"
+)]
 pub async fn enable_user(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual user enable logic
     // This is a placeholder implementation
