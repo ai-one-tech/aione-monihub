@@ -120,8 +120,8 @@ use aione_monihub_server::auth::handlers::{login, forgot_password, reset_passwor
 // applications/routes.rs
 pub fn application_routes(cfg: &mut web::ServiceConfig) {
     cfg
-        .route("/api/v1/applications", web::get().to(handlers::get_applications))
-        .route("/api/v1/applications", web::post().to(handlers::create_application))
+        .route("/api/applications", web::get().to(handlers::get_applications))
+        .route("/api/applications", web::post().to(handlers::create_application))
         // ... 其他路由
 }
 ```
@@ -140,7 +140,7 @@ async fn main() -> io::Result<()> {
             // Health endpoint
             .route("/health", web::get().to(health))
             // Auth endpoints
-            .route("/api/v1/auth/login", web::post().to(login))
+            .route("/api/auth/login", web::post().to(login))
             // TODO: Add routes for other modules
     })
     .bind("127.0.0.1:8080")?

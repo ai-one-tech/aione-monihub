@@ -349,76 +349,76 @@ erDiagram
 ## 8. API 端点设计
 
 ### 8.1 认证相关
-- `POST /api/v1/auth/login` - 用户登录
-- `POST /api/v1/auth/logout` - 用户登出
-- `POST /api/v1/auth/refresh` - 刷新 Token
-- `POST /api/v1/auth/forgot-password` - 忘记密码
-- `POST /api/v1/auth/reset-password` - 重置密码
+- `POST /api/auth/login` - 用户登录
+- `POST /api/auth/logout` - 用户登出
+- `POST /api/auth/refresh` - 刷新 Token
+- `POST /api/auth/forgot-password` - 忘记密码
+- `POST /api/auth/reset-password` - 重置密码
 
 ### 8.2 项目管理
-- `GET /api/v1/projects` - 获取项目列表
-- `POST /api/v1/projects` - 创建项目
-- `GET /api/v1/projects/{id}` - 获取项目详情
-- `PUT /api/v1/projects/{id}` - 更新项目
-- `DELETE /api/v1/projects/{id}` - 删除项目
+- `GET /api/projects` - 获取项目列表
+- `POST /api/projects` - 创建项目
+- `GET /api/projects/{id}` - 获取项目详情
+- `PUT /api/projects/{id}` - 更新项目
+- `DELETE /api/projects/{id}` - 删除项目
 
 ### 8.3 应用管理
-- `GET /api/v1/applications` - 获取应用列表
-- `POST /api/v1/applications` - 创建应用
-- `GET /api/v1/applications/{id}` - 获取应用详情
-- `PUT /api/v1/applications/{id}` - 更新应用
-- `DELETE /api/v1/applications/{id}` - 删除应用
+- `GET /api/applications` - 获取应用列表
+- `POST /api/applications` - 创建应用
+- `GET /api/applications/{id}` - 获取应用详情
+- `PUT /api/applications/{id}` - 更新应用
+- `DELETE /api/applications/{id}` - 删除应用
 
 ### 8.4 部署管理
-- `GET /api/v1/deployments` - 获取部署列表
-- `POST /api/v1/deployments` - 创建部署
-- `GET /api/v1/deployments/{id}` - 获取部署详情
-- `PUT /api/v1/deployments/{id}` - 更新部署
-- `DELETE /api/v1/deployments/{id}` - 删除部署
+- `GET /api/deployments` - 获取部署列表
+- `POST /api/deployments` - 创建部署
+- `GET /api/deployments/{id}` - 获取部署详情
+- `PUT /api/deployments/{id}` - 更新部署
+- `DELETE /api/deployments/{id}` - 删除部署
 
 #### 8.4.1 远程终端相关
-- `POST /api/v1/deployments/{id}/terminal` - 初始化终端会话
-- `DELETE /api/v1/deployments/{id}/terminal` - 关闭终端会话
-- `POST /api/v1/deployments/{id}/terminal/input` - 发送终端输入
+- `POST /api/deployments/{id}/terminal` - 初始化终端会话
+- `DELETE /api/deployments/{id}/terminal` - 关闭终端会话
+- `POST /api/deployments/{id}/terminal/input` - 发送终端输入
 
 #### 8.4.2 文件管理相关
-- `GET /api/v1/deployments/{id}/files` - 获取文件列表
-- `GET /api/v1/deployments/{id}/files/{path}` - 获取文件内容
-- `POST /api/v1/deployments/{id}/files` - 上传文件
-- `PUT /api/v1/deployments/{id}/files/{path}` - 更新文件
-- `DELETE /api/v1/deployments/{id}/files/{path}` - 删除文件
+- `GET /api/deployments/{id}/files` - 获取文件列表
+- `GET /api/deployments/{id}/files/{path}` - 获取文件内容
+- `POST /api/deployments/{id}/files` - 上传文件
+- `PUT /api/deployments/{id}/files/{path}` - 更新文件
+- `DELETE /api/deployments/{id}/files/{path}` - 删除文件
 
 ### 8.5 用户管理
-- `GET /api/v1/users` - 获取用户列表
-- `POST /api/v1/users` - 创建用户
-- `GET /api/v1/users/{id}` - 获取用户详情
-- `PUT /api/v1/users/{id}` - 更新用户
-- `DELETE /api/v1/users/{id}` - 删除用户
+- `GET /api/users` - 获取用户列表
+- `POST /api/users` - 创建用户
+- `GET /api/users/{id}` - 获取用户详情
+- `PUT /api/users/{id}` - 更新用户
+- `DELETE /api/users/{id}` - 删除用户
 
 ### 8.6 角色管理
-- `GET /api/v1/roles` - 获取角色列表
-- `POST /api/v1/roles` - 创建角色
-- `GET /api/v1/roles/{id}` - 获取角色详情
-- `PUT /api/v1/roles/{id}` - 更新角色
-- `DELETE /api/v1/roles/{id}` - 删除角色
+- `GET /api/roles` - 获取角色列表
+- `POST /api/roles` - 创建角色
+- `GET /api/roles/{id}` - 获取角色详情
+- `PUT /api/roles/{id}` - 更新角色
+- `DELETE /api/roles/{id}` - 删除角色
 
 ### 8.7 权限管理
-- `GET /api/v1/permissions` - 获取权限列表
-- `POST /api/v1/permissions` - 创建权限
-- `GET /api/v1/permissions/{id}` - 获取权限详情
-- `PUT /api/v1/permissions/{id}` - 更新权限
-- `DELETE /api/v1/permissions/{id}` - 删除权限
+- `GET /api/permissions` - 获取权限列表
+- `POST /api/permissions` - 创建权限
+- `GET /api/permissions/{id}` - 获取权限详情
+- `PUT /api/permissions/{id}` - 更新权限
+- `DELETE /api/permissions/{id}` - 删除权限
 
 ### 8.8 日志管理
-- `GET /api/v1/logs` - 获取日志列表
-- `POST /api/v1/logs/export` - 导出日志
+- `GET /api/logs` - 获取日志列表
+- `POST /api/logs/export` - 导出日志
 
 ### 8.9 机器管理
-- `GET /api/v1/machines` - 获取机器列表
-- `POST /api/v1/machines` - 创建机器
-- `GET /api/v1/machines/{id}` - 获取机器详情
-- `PUT /api/v1/machines/{id}` - 更新机器
-- `DELETE /api/v1/machines/{id}` - 删除机器
+- `GET /api/machines` - 获取机器列表
+- `POST /api/machines` - 创建机器
+- `GET /api/machines/{id}` - 获取机器详情
+- `PUT /api/machines/{id}` - 更新机器
+- `DELETE /api/machines/{id}` - 删除机器
 
 ## 9. WebSocket 消息格式
 

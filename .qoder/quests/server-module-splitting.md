@@ -159,9 +159,9 @@ apps/server/
 
 **auth/routes.rs**
 - 定义认证相关路由：
-  - `/api/v1/auth/login`
-  - `/api/v1/auth/forgot-password`
-  - `/api/v1/auth/reset-password`
+  - `/api/auth/login`
+  - `/api/auth/forgot-password`
+  - `/api/auth/reset-password`
 
 ### 3.3 项目管理模块 (projects)
 
@@ -186,8 +186,8 @@ apps/server/
 
 **projects/routes.rs**
 - 定义项目管理相关路由：
-  - `/api/v1/projects` (GET, POST)
-  - `/api/v1/projects/{id}` (GET, PUT, DELETE)
+  - `/api/projects` (GET, POST)
+  - `/api/projects/{id}` (GET, PUT, DELETE)
 
 ### 3.4 应用管理模块 (applications)
 
@@ -213,8 +213,8 @@ apps/server/
 
 **applications/routes.rs**
 - 定义应用管理相关路由：
-  - `/api/v1/applications` (GET, POST)
-  - `/api/v1/applications/{id}` (GET, PUT, DELETE)
+  - `/api/applications` (GET, POST)
+  - `/api/applications/{id}` (GET, PUT, DELETE)
 
 ### 3.5 部署管理模块 (deployments)
 
@@ -242,9 +242,9 @@ apps/server/
 
 **deployments/routes.rs**
 - 定义部署管理相关路由：
-  - `/api/v1/deployments` (GET, POST)
-  - `/api/v1/deployments/{id}` (GET, PUT, DELETE)
-  - `/api/v1/deployments/{id}/monitoring` (GET)
+  - `/api/deployments` (GET, POST)
+  - `/api/deployments/{id}` (GET, PUT, DELETE)
+  - `/api/deployments/{id}/monitoring` (GET)
   - 文件管理相关路由
 
 ### 3.6 用户管理模块 (users)
@@ -274,10 +274,10 @@ apps/server/
 
 **users/routes.rs**
 - 定义用户管理相关路由：
-  - `/api/v1/users` (GET, POST)
-  - `/api/v1/users/{id}` (GET, PUT, DELETE)
-  - `/api/v1/users/{id}/disable` (POST)
-  - `/api/v1/users/{id}/enable` (POST)
+  - `/api/users` (GET, POST)
+  - `/api/users/{id}` (GET, PUT, DELETE)
+  - `/api/users/{id}/disable` (POST)
+  - `/api/users/{id}/enable` (POST)
 
 ### 3.7 角色权限模块 (roles & permissions)
 
@@ -302,8 +302,8 @@ apps/server/
 
 **roles/routes.rs**
 - 定义角色管理相关路由：
-  - `/api/v1/roles` (GET, POST)
-  - `/api/v1/roles/{id}` (GET, PUT, DELETE)
+  - `/api/roles` (GET, POST)
+  - `/api/roles/{id}` (GET, PUT, DELETE)
 
 **permissions/models.rs**
 - Permission结构体（数据库模型）
@@ -325,9 +325,9 @@ apps/server/
 
 **permissions/routes.rs**
 - 定义权限管理相关路由：
-  - `/api/v1/permissions` (GET, POST)
-  - `/api/v1/permissions/assign` (POST)
-  - `/api/v1/permissions/revoke` (POST)
+  - `/api/permissions` (GET, POST)
+  - `/api/permissions/assign` (POST)
+  - `/api/permissions/revoke` (POST)
 
 ### 3.8 日志管理模块 (logs)
 
@@ -348,8 +348,8 @@ apps/server/
 
 **logs/routes.rs**
 - 定义日志管理相关路由：
-  - `/api/v1/logs` (GET)
-  - `/api/v1/logs/export` (GET)
+  - `/api/logs` (GET)
+  - `/api/logs/export` (GET)
 
 ### 3.9 机器管理模块 (machines)
 
@@ -376,9 +376,9 @@ apps/server/
 
 **machines/routes.rs**
 - 定义机器管理相关路由：
-  - `/api/v1/machines` (GET, POST)
-  - `/api/v1/machines/{id}` (GET, PUT, DELETE)
-  - `/api/v1/machines/{id}/monitoring-data` (GET)
+  - `/api/machines` (GET, POST)
+  - `/api/machines/{id}` (GET, PUT, DELETE)
+  - `/api/machines/{id}/monitoring-data` (GET)
 
 ### 3.10 配置管理模块 (configs)
 
@@ -406,11 +406,11 @@ apps/server/
 
 **configs/routes.rs**
 - 定义配置管理相关路由：
-  - `/api/v1/configs` (GET, POST)
-  - `/api/v1/configs/code/{code}` (GET)
-  - `/api/v1/configs/code/{code}/environment/{environment}` (GET)
-  - `/api/v1/configs/code/{code}/environment/{environment}/version/{version}` (GET)
-  - `/api/v1/configs/{id}` (DELETE)
+  - `/api/configs` (GET, POST)
+  - `/api/configs/code/{code}` (GET)
+  - `/api/configs/code/{code}/environment/{environment}` (GET)
+  - `/api/configs/code/{code}/environment/{environment}/version/{version}` (GET)
+  - `/api/configs/{id}` (DELETE)
 
 ### 3.11 WebSocket模块 (websocket)
 

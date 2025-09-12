@@ -46,7 +46,7 @@ AiOne MoniHub 是一个集成化监控和管理平台，旨在通过 PC 和移�
 ### 3.1 认证相关接口
 
 #### 登录接口
-- **URL**: `POST /api/v1/auth/login`
+- **URL**: `POST /api/auth/login`
 - **描述**: 用户身份验证
 - **请求参数**:
   ```json
@@ -71,7 +71,7 @@ AiOne MoniHub 是一个集成化监控和管理平台，旨在通过 PC 和移�
   ```
 
 #### 忘记密码
-- **URL**: `POST /api/v1/auth/forgot-password`
+- **URL**: `POST /api/auth/forgot-password`
 - **描述**: 发送密码重置邮件
 - **请求参数**:
   ```json
@@ -81,7 +81,7 @@ AiOne MoniHub 是一个集成化监控和管理平台，旨在通过 PC 和移�
   ```
 
 #### 重置密码
-- **URL**: `POST /api/v1/auth/reset-password`
+- **URL**: `POST /api/auth/reset-password`
 - **描述**: 重置用户密码
 - **请求参数**:
   ```json
@@ -94,7 +94,7 @@ AiOne MoniHub 是一个集成化监控和管理平台，旨在通过 PC 和移�
 ### 3.2 项目管理接口
 
 #### 获取项目列表
-- **URL**: `GET /api/v1/projects`
+- **URL**: `GET /api/projects`
 - **描述**: 获取项目列表，支持分页、搜索和过滤
 - **查询参数**:
   - `page`: 页码 (默认: 1)
@@ -126,7 +126,7 @@ AiOne MoniHub 是一个集成化监控和管理平台，旨在通过 PC 和移�
   ```
 
 #### 创建项目
-- **URL**: `POST /api/v1/projects`
+- **URL**: `POST /api/projects`
 - **描述**: 创建新项目
 - **请求参数**:
   ```json
@@ -139,11 +139,11 @@ AiOne MoniHub 是一个集成化监控和管理平台，旨在通过 PC 和移�
   ```
 
 #### 获取项目详情
-- **URL**: `GET /api/v1/projects/{id}`
+- **URL**: `GET /api/projects/{id}`
 - **描述**: 获取项目详细信息
 
 #### 更新项目
-- **URL**: `PUT /api/v1/projects/{id}`
+- **URL**: `PUT /api/projects/{id}`
 - **描述**: 更新项目信息
 - **请求参数**:
   ```json
@@ -156,13 +156,13 @@ AiOne MoniHub 是一个集成化监控和管理平台，旨在通过 PC 和移�
   ```
 
 #### 删除项目
-- **URL**: `DELETE /api/v1/projects/{id}`
+- **URL**: `DELETE /api/projects/{id}`
 - **描述**: 删除项目
 
 ### 3.3 应用管理接口
 
 #### 获取应用列表
-- **URL**: `GET /api/v1/applications`
+- **URL**: `GET /api/applications`
 - **描述**: 获取应用列表，支持分页、搜索和过滤
 - **查询参数**:
   - `page`: 页码 (默认: 1)
@@ -172,7 +172,7 @@ AiOne MoniHub 是一个集成化监控和管理平台，旨在通过 PC 和移�
   - `status`: 应用状态过滤
 
 #### 创建应用
-- **URL**: `POST /api/v1/applications`
+- **URL**: `POST /api/applications`
 - **描述**: 创建新应用
 - **请求参数**:
   ```json
@@ -190,21 +190,21 @@ AiOne MoniHub 是一个集成化监控和管理平台，旨在通过 PC 和移�
   ```
 
 #### 获取应用详情
-- **URL**: `GET /api/v1/applications/{id}`
+- **URL**: `GET /api/applications/{id}`
 - **描述**: 获取应用详细信息
 
 #### 更新应用
-- **URL**: `PUT /api/v1/applications/{id}`
+- **URL**: `PUT /api/applications/{id}`
 - **描述**: 更新应用信息
 
 #### 删除应用
-- **URL**: `DELETE /api/v1/applications/{id}`
+- **URL**: `DELETE /api/applications/{id}`
 - **描述**: 删除应用
 
 ### 3.4 部署管理接口
 
 #### 获取部署列表
-- **URL**: `GET /api/v1/deployments`
+- **URL**: `GET /api/deployments`
 - **描述**: 获取部署列表，支持分页、搜索和过滤
 - **查询参数**:
   - `page`: 页码 (默认: 1)
@@ -214,7 +214,7 @@ AiOne MoniHub 是一个集成化监控和管理平台，旨在通过 PC 和移�
   - `status`: 部署状态过滤
 
 #### 创建部署
-- **URL**: `POST /api/v1/deployments`
+- **URL**: `POST /api/deployments`
 - **描述**: 创建新部署
 - **请求参数**:
   ```json
@@ -234,33 +234,33 @@ AiOne MoniHub 是一个集成化监控和管理平台，旨在通过 PC 和移�
   ```
 
 #### 获取部署详情
-- **URL**: `GET /api/v1/deployments/{id}`
+- **URL**: `GET /api/deployments/{id}`
 - **描述**: 获取部署详细信息
 
 #### 更新部署
-- **URL**: `PUT /api/v1/deployments/{id}`
+- **URL**: `PUT /api/deployments/{id}`
 - **描述**: 更新部署信息
 
 #### 删除部署
-- **URL**: `DELETE /api/v1/deployments/{id}`
+- **URL**: `DELETE /api/deployments/{id}`
 - **描述**: 删除部署
 
 #### 远程终端访问
-- **URL**: `GET /api/v1/deployments/{id}/terminal`
+- **URL**: `GET /api/deployments/{id}/terminal`
 - **描述**: 建立远程终端连接 (WebSocket)
 
 #### 文件管理
-- **URL**: `GET /api/v1/deployments/{id}/files`
+- **URL**: `GET /api/deployments/{id}/files`
 - **描述**: 获取文件列表
-- **URL**: `POST /api/v1/deployments/{id}/files/upload`
+- **URL**: `POST /api/deployments/{id}/files/upload`
 - **描述**: 上传文件
-- **URL**: `GET /api/v1/deployments/{id}/files/{file_path}`
+- **URL**: `GET /api/deployments/{id}/files/{file_path}`
 - **描述**: 下载文件
-- **URL**: `DELETE /api/v1/deployments/{id}/files/{file_path}`
+- **URL**: `DELETE /api/deployments/{id}/files/{file_path}`
 - **描述**: 删除文件
 
 #### 系统监控
-- **URL**: `GET /api/v1/deployments/{id}/monitoring`
+- **URL**: `GET /api/deployments/{id}/monitoring`
 - **描述**: 获取系统监控数据
 - **响应**:
   ```json
@@ -279,41 +279,41 @@ AiOne MoniHub 是一个集成化监控和管理平台，旨在通过 PC 和移�
 ### 3.5 用户管理接口
 
 #### 获取用户列表
-- **URL**: `GET /api/v1/users`
+- **URL**: `GET /api/users`
 - **描述**: 获取用户列表，支持分页、搜索和过滤
 
 #### 创建用户
-- **URL**: `POST /api/v1/users`
+- **URL**: `POST /api/users`
 - **描述**: 创建新用户
 
 #### 获取用户详情
-- **URL**: `GET /api/v1/users/{id}`
+- **URL**: `GET /api/users/{id}`
 - **描述**: 获取用户详细信息
 
 #### 更新用户
-- **URL**: `PUT /api/v1/users/{id}`
+- **URL**: `PUT /api/users/{id}`
 - **描述**: 更新用户信息
 
 #### 删除用户
-- **URL**: `DELETE /api/v1/users/{id}`
+- **URL**: `DELETE /api/users/{id}`
 - **描述**: 删除用户
 
 #### 禁用用户
-- **URL**: `POST /api/v1/users/{id}/disable`
+- **URL**: `POST /api/users/{id}/disable`
 - **描述**: 禁用用户
 
 #### 启用用户
-- **URL**: `POST /api/v1/users/{id}/enable`
+- **URL**: `POST /api/users/{id}/enable`
 - **描述**: 启用用户
 
 ### 3.6 角色管理接口
 
 #### 获取角色列表
-- **URL**: `GET /api/v1/roles`
+- **URL**: `GET /api/roles`
 - **描述**: 获取角色列表
 
 #### 创建角色
-- **URL**: `POST /api/v1/roles`
+- **URL**: `POST /api/roles`
 - **描述**: 创建新角色
 - **请求参数**:
   ```json
@@ -325,25 +325,25 @@ AiOne MoniHub 是一个集成化监控和管理平台，旨在通过 PC 和移�
   ```
 
 #### 获取角色详情
-- **URL**: `GET /api/v1/roles/{id}`
+- **URL**: `GET /api/roles/{id}`
 - **描述**: 获取角色详细信息
 
 #### 更新角色
-- **URL**: `PUT /api/v1/roles/{id}`
+- **URL**: `PUT /api/roles/{id}`
 - **描述**: 更新角色信息
 
 #### 删除角色
-- **URL**: `DELETE /api/v1/roles/{id}`
+- **URL**: `DELETE /api/roles/{id}`
 - **描述**: 删除角色
 
 ### 3.7 权限管理接口
 
 #### 获取权限列表
-- **URL**: `GET /api/v1/permissions`
+- **URL**: `GET /api/permissions`
 - **描述**: 获取权限列表
 
 #### 批量分配权限
-- **URL**: `POST /api/v1/permissions/assign`
+- **URL**: `POST /api/permissions/assign`
 - **描述**: 批量分配权限给角色
 - **请求参数**:
   ```json
@@ -354,13 +354,13 @@ AiOne MoniHub 是一个集成化监控和管理平台，旨在通过 PC 和移�
   ```
 
 #### 批量撤销权限
-- **URL**: `POST /api/v1/permissions/revoke`
+- **URL**: `POST /api/permissions/revoke`
 - **描述**: 批量撤销角色的权限
 
 ### 3.8 日志管理接口
 
 #### 获取日志列表
-- **URL**: `GET /api/v1/logs`
+- **URL**: `GET /api/logs`
 - **描述**: 获取日志列表，支持分页、搜索和过滤
 - **查询参数**:
   - `page`: 页码 (默认: 1)
@@ -371,17 +371,17 @@ AiOne MoniHub 是一个集成化监控和管理平台，旨在通过 PC 和移�
   - `end_date`: 结束日期
 
 #### 导出日志
-- **URL**: `GET /api/v1/logs/export`
+- **URL**: `GET /api/logs/export`
 - **描述**: 导出日志数据
 
 ### 3.9 机器管理接口
 
 #### 获取机器列表
-- **URL**: `GET /api/v1/machines`
+- **URL**: `GET /api/machines`
 - **描述**: 获取机器列表，支持分页、搜索和过滤
 
 #### 创建机器
-- **URL**: `POST /api/v1/machines`
+- **URL**: `POST /api/machines`
 - **描述**: 创建新机器
 - **请求参数**:
   ```json
@@ -395,19 +395,19 @@ AiOne MoniHub 是一个集成化监控和管理平台，旨在通过 PC 和移�
   ```
 
 #### 获取机器详情
-- **URL**: `GET /api/v1/machines/{id}`
+- **URL**: `GET /api/machines/{id}`
 - **描述**: 获取机器详细信息
 
 #### 更新机器
-- **URL**: `PUT /api/v1/machines/{id}`
+- **URL**: `PUT /api/machines/{id}`
 - **描述**: 更新机器信息
 
 #### 删除机器
-- **URL**: `DELETE /api/v1/machines/{id}`
+- **URL**: `DELETE /api/machines/{id}`
 - **描述**: 删除机器
 
 #### 获取机器监控数据
-- **URL**: `GET /api/v1/machines/{id}/monitoring-data`
+- **URL**: `GET /api/machines/{id}/monitoring-data`
 - **描述**: 获取机器监控历史数据，用于统计分析
 - **查询参数**:
   - `start_time`: 开始时间
@@ -418,7 +418,7 @@ AiOne MoniHub 是一个集成化监控和管理平台，旨在通过 PC 和移�
 ### 3.10 元数据配置接口
 
 #### 获取配置列表
-- **URL**: `GET /api/v1/configs`
+- **URL**: `GET /api/configs`
 - **描述**: 获取配置列表，支持分页、搜索和过滤（默认每个code只返回最新版本）
 - **查询参数**:
   - `page`: 页码 (默认: 1)
@@ -429,7 +429,7 @@ AiOne MoniHub 是一个集成化监控和管理平台，旨在通过 PC 和移�
   - `all_versions`: 是否返回所有版本 (默认: false)
 
 #### 创建配置
-- **URL**: `POST /api/v1/configs`
+- **URL**: `POST /api/configs`
 - **描述**: 创建新配置（相同code和environment的新版本，版本号自动递增）
 - **请求参数**:
   ```json
@@ -444,19 +444,19 @@ AiOne MoniHub 是一个集成化监控和管理平台，旨在通过 PC 和移�
   ```
 
 #### 根据编码获取所有环境的配置
-- **URL**: `GET /api/v1/configs/code/{code}`
+- **URL**: `GET /api/configs/code/{code}`
 - **描述**: 根据配置编码获取所有环境下的最新配置版本
 
 #### 根据编码和环境获取配置
-- **URL**: `GET /api/v1/configs/code/{code}/environment/{environment}`
+- **URL**: `GET /api/configs/code/{code}/environment/{environment}`
 - **描述**: 根据配置编码和环境获取配置详情（返回该环境下的最新版本）
 
 #### 根据编码、环境和版本获取配置
-- **URL**: `GET /api/v1/configs/code/{code}/environment/{environment}/version/{version}`
+- **URL**: `GET /api/configs/code/{code}/environment/{environment}/version/{version}`
 - **描述**: 根据配置编码、环境和版本号获取特定版本的配置
 
 #### 删除配置
-- **URL**: `DELETE /api/v1/configs/{id}`
+- **URL**: `DELETE /api/configs/{id}`
 - **描述**: 删除配置
 
 ## 4. 数据模型设计
