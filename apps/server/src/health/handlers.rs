@@ -22,7 +22,7 @@ pub struct HealthResponse {
 pub async fn health() -> Result<HttpResponse> {
     let response = HealthResponse {
         status: "ok".to_string(),
-        message: "Server is running".to_string(),
+        message: "Server is running1".to_string(),
     };
     Ok(HttpResponse::Ok().json(response))
 }

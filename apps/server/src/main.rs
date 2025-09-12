@@ -6,7 +6,6 @@ use utoipa_swagger_ui::SwaggerUi;
 
 // 使用新的模块结构
 use aione_monihub_server::{DatabaseManager, WsServer};
-use aione_monihub_server::health::handlers::health;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -116,7 +115,7 @@ use aione_monihub_server::websocket::routes::websocket_routes;
 async fn main() -> io::Result<()> {
     env_logger::init();
     
-    println!("Starting AiOne MoniHub API server with PostgreSQL...");
+    println!("Starting AiOne MoniHub API server with PostgresSQL...");
     
     // Load .env file
     dotenv::dotenv().ok();
@@ -142,8 +141,6 @@ async fn main() -> io::Result<()> {
                 SwaggerUi::new("/swagger-ui/{_:.*}")
                     .url("/api-docs/openapi.json", ApiDoc::openapi())
             )
-            // Health endpoint
-            .route("/health", web::get().to(health))
             // 注册所有模块的路由
             .configure(health_routes)
             .configure(auth_routes)
