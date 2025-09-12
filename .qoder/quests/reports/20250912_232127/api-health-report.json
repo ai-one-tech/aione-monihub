@@ -1,0 +1,64 @@
+{
+  "timestamp": "2025-09-12T15:21:37Z",
+  "total_tests": 11,
+  "passed_tests": 11,
+  "failed_tests": 0,
+  "pass_rate": 1.0000,
+  "modules": {
+    "health": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "auth": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "users": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "projects": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "applications": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "deployments": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "machines": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "configs": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "roles": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "logs": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "websocket": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    }
+  }
+}

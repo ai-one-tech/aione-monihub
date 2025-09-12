@@ -1,0 +1,45 @@
+{
+  "timestamp": "2025-09-12T15:21:38Z",
+  "results": {
+
+    "GET /health": 1
+    ,
+    "GET /api/users": 1
+    ,
+    "GET /api/projects": 1
+    ,
+    "GET /api/applications": 0
+    ,
+    "GET /api/deployments": 0
+    ,
+    "GET /api/machines": 0
+    ,
+    "GET /api/configs": 0
+    ,
+    "GET /api/roles": 0
+    ,
+    "GET /api/permissions": 1
+    ,
+    "GET /api/v1/logs": 0
+    ,
+    "GET /health": 0
+    ,
+    "GET /api/users": 1
+    ,
+    "GET /api/projects": 0
+    ,
+    "GET /api/applications": 0
+    ,
+    "GET /api/deployments": 0
+    ,
+    "GET /api/machines": 0
+    ,
+    "GET /api/configs": 0
+    ,
+    "GET /api/roles": 0
+    ,
+    "GET /api/permissions": 0
+    ,
+    "GET /api/v1/logs": 0
+  }
+}

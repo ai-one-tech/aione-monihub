@@ -1,0 +1,11 @@
+{
+  "timestamp": "2025-09-12T15:21:38Z",
+  "health_check": {
+    "report_file": "/Users/billy/SourceCode/ai-one-tech/aione-monihub/.qoder/quests/reports/20250912_232127/api-health-report.json",
+    "log_file": "/Users/billy/SourceCode/ai-one-tech/aione-monihub/.qoder/quests/reports/20250912_232127/health-check.log"
+  },
+  "performance_test": {
+    "report_file": "/Users/billy/SourceCode/ai-one-tech/aione-monihub/.qoder/quests/reports/20250912_232127/api-performance-report.json",
+    "log_file": "/Users/billy/SourceCode/ai-one-tech/aione-monihub/.qoder/quests/reports/20250912_232127/performance-test.log"
+  }
+}
