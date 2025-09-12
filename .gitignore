@@ -106,7 +106,6 @@ Temporary Items
 
 ### Node ###
 # Logs
-logs
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -296,7 +295,6 @@ Session.vim
 Thumbs.db
 
 # Logs
-logs/
 *.log
 
 # Editor files
