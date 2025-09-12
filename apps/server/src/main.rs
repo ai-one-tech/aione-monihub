@@ -5,7 +5,7 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 // 使用新的模块结构
-use aione_monihub_server::{Database, WsServer};
+use aione_monihub_server::{DatabaseManager, WsServer};
 use aione_monihub_server::health::handlers::health;
 
 #[derive(OpenApi)]
@@ -116,17 +116,25 @@ use aione_monihub_server::websocket::routes::websocket_routes;
 async fn main() -> io::Result<()> {
     env_logger::init();
     
-    println!("Starting AiOne MoniHub API server...");
+    println!("Starting AiOne MoniHub API server with PostgreSQL...");
     
-    // Initialize database
-    let database = Database::new().expect("Failed to initialize database");
+    // Load .env file
+    dotenv::dotenv().ok();
+    
+    // Initialize database connection
+    let database_url = std::env::var("DATABASE_URL")
+        .expect("DATABASE_URL must be set in .env file");
+    let db_manager = DatabaseManager::new(&database_url).await
+        .expect("Failed to initialize database connection");
     
     // Start WebSocket server
     let ws_server = WsServer::new().start();
     
+    let db_connection = db_manager.get_connection().clone();
+    
     HttpServer::new(move || {
         App::new()
-            .app_data(web::Data::new(database.get_connection()))
+            .app_data(web::Data::new(db_connection.clone()))
             .app_data(web::Data::new(ws_server.clone()))
             .wrap(Logger::default())
             // Swagger UI

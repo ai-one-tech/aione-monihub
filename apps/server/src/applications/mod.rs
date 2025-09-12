@@ -1,16 +1,31 @@
 pub mod models;
-pub mod db;
 pub mod handlers;
 pub mod routes;
 
-use crate::shared::database::Database;
+use sea_orm::DatabaseConnection;
+use crate::entities::{applications, Applications};
 
 pub struct ApplicationsModule {
-    database: Database,
+    database: DatabaseConnection,
 }
 
 impl ApplicationsModule {
-    pub fn new(database: Database) -> Self {
+    pub fn new(database: DatabaseConnection) -> Self {
         Self { database }
+    }
+
+    pub async fn create_application(&self, app_data: applications::ActiveModel) -> Result<applications::Model, sea_orm::DbErr> {
+        use sea_orm::ActiveModelTrait;
+        app_data.insert(&self.database).await
+    }
+
+    pub async fn find_application_by_id(&self, id: i32) -> Result<Option<applications::Model>, sea_orm::DbErr> {
+        use sea_orm::EntityTrait;
+        Applications::find_by_id(id).one(&self.database).await
+    }
+
+    pub async fn find_all_applications(&self) -> Result<Vec<applications::Model>, sea_orm::DbErr> {
+        use sea_orm::EntityTrait;
+        Applications::find().all(&self.database).await
     }
 }

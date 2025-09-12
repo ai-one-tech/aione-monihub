@@ -7,6 +7,8 @@
     "apps/agent/js"
   ],
   "scripts": {
+    "server_migrations":"cd apps/server && cargo run --bin run_migrations",
+    "server_run": "cd apps/server && cargo run",
     "dev": "turbo dev",
     "build": "turbo build",
     "test": "turbo test"

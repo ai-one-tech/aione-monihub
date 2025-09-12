@@ -1,16 +1,31 @@
 pub mod models;
-pub mod db;
 pub mod handlers;
 pub mod routes;
 
-use crate::shared::database::Database;
+use sea_orm::DatabaseConnection;
+use crate::entities::{deployments, Deployments};
 
 pub struct DeploymentsModule {
-    database: Database,
+    database: DatabaseConnection,
 }
 
 impl DeploymentsModule {
-    pub fn new(database: Database) -> Self {
+    pub fn new(database: DatabaseConnection) -> Self {
         Self { database }
+    }
+
+    pub async fn create_deployment(&self, deployment_data: deployments::ActiveModel) -> Result<deployments::Model, sea_orm::DbErr> {
+        use sea_orm::ActiveModelTrait;
+        deployment_data.insert(&self.database).await
+    }
+
+    pub async fn find_deployment_by_id(&self, id: i32) -> Result<Option<deployments::Model>, sea_orm::DbErr> {
+        use sea_orm::EntityTrait;
+        Deployments::find_by_id(id).one(&self.database).await
+    }
+
+    pub async fn find_all_deployments(&self) -> Result<Vec<deployments::Model>, sea_orm::DbErr> {
+        use sea_orm::EntityTrait;
+        Deployments::find().all(&self.database).await
     }
 }

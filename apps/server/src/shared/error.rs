@@ -55,9 +55,9 @@ impl ResponseError for ApiError {
     }
 }
 
-// Implement From<rusqlite::Error> for our custom error type
-impl From<rusqlite::Error> for ApiError {
-    fn from(error: rusqlite::Error) -> Self {
+// Implement From<sea_orm::DbErr> for our custom error type
+impl From<sea_orm::DbErr> for ApiError {
+    fn from(error: sea_orm::DbErr) -> Self {
         ApiError::DatabaseError(error.to_string())
     }
 }
