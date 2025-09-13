@@ -13,7 +13,11 @@ use crate::projects::models::{ProjectListResponse, ProjectResponse, ProjectCreat
     responses(
         (status = 200, description = "List projects successfully", body = ProjectListResponse),
         (status = 400, description = "Bad request"),
+        (status = 401, description = "Unauthorized"),
         (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("bearer_auth" = [])
     ),
     tag = "Projects"
 )]

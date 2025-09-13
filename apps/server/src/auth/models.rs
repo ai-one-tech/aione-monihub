@@ -45,3 +45,13 @@ pub struct Claims {
     pub sub: String, // Subject (user ID)
     pub exp: usize,  // Expiration time (as UTC timestamp)
 }
+
+// Current user response struct (for /api/auth/me endpoint)
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct CurrentUserResponse {
+    pub id: String,
+    pub username: String,
+    pub email: String,
+    pub roles: Vec<String>,
+    pub exp: usize, // Token expiration time
+}

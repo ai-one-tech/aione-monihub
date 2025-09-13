@@ -2,7 +2,7 @@ use actix_web::{web, HttpResponse, Result, HttpRequest};
 use jsonwebtoken::{encode, decode, Header, Validation, EncodingKey, DecodingKey, Algorithm};
 use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
-use crate::auth::models::{LoginRequest, LoginResponse, UserResponse, ForgotPasswordRequest, ResetPasswordRequest, Claims};
+use crate::auth::models::{LoginRequest, LoginResponse, UserResponse, ForgotPasswordRequest, ResetPasswordRequest, Claims, CurrentUserResponse};
 
 // JWT secret key (in production, this should be loaded from environment variables)
 const JWT_SECRET: &str = "aione_monihub_secret_key";
@@ -143,6 +143,66 @@ pub async fn validate_token(req: HttpRequest) -> Result<HttpResponse> {
                     Err(_) => {
                         // Token is invalid
                         Ok(HttpResponse::Unauthorized().json("Invalid token"))
+                    }
+                }
+            } else {
+                Ok(HttpResponse::Unauthorized().json("Invalid authorization header format"))
+            }
+        } else {
+            Ok(HttpResponse::Unauthorized().json("Invalid authorization header"))
+        }
+    } else {
+        Ok(HttpResponse::Unauthorized().json("Missing authorization header"))
+    }
+}
+
+// Get current user information
+#[utoipa::path(
+    get,
+    path = "/api/auth/me",
+    responses(
+        (status = 200, description = "Current user information", body = CurrentUserResponse),
+        (status = 401, description = "Unauthorized - invalid or missing token"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("bearer_auth" = [])
+    ),
+    tag = "Authentication"
+)]
+pub async fn get_current_user(req: HttpRequest) -> Result<HttpResponse> {
+    // Get the Authorization header
+    let auth_header = req.headers().get("Authorization");
+    
+    if let Some(auth_header) = auth_header {
+        if let Ok(auth_str) = auth_header.to_str() {
+            // Check if it starts with "Bearer "
+            if auth_str.starts_with("Bearer ") {
+                let token = &auth_str[7..]; // Remove "Bearer " prefix
+                
+                // Validate the token
+                let validation = Validation::new(Algorithm::HS256);
+                match decode::<Claims>(
+                    token,
+                    &DecodingKey::from_secret(JWT_SECRET.as_ref()),
+                    &validation,
+                ) {
+                    Ok(token_data) => {
+                        // Token is valid, return user information
+                        // In a real implementation, you would fetch user data from the database
+                        // using token_data.claims.sub (user ID)
+                        let user_response = CurrentUserResponse {
+                            id: token_data.claims.sub.clone(),
+                            username: "admin".to_string(), // This should come from database
+                            email: "admin@example.com".to_string(), // This should come from database
+                            roles: vec!["admin".to_string()], // This should come from database
+                            exp: token_data.claims.exp,
+                        };
+                        Ok(HttpResponse::Ok().json(user_response))
+                    }
+                    Err(_) => {
+                        // Token is invalid
+                        Ok(HttpResponse::Unauthorized().json("Invalid or expired token"))
                     }
                 }
             } else {

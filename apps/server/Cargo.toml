@@ -34,3 +34,4 @@ actix = "0.13"
 utoipa = { version = "4.2", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "6.0", features = ["actix-web"] }
 dotenv = "0.15"
+futures-util = "0.3"

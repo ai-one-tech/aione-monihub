@@ -41,6 +41,9 @@ export function UserAuthForm({
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
   const { auth } = useAuthStore()
+  
+  // 检查是否在弹窗中打开
+  const isInPopup = window.opener !== null
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -66,14 +69,29 @@ export function UserAuthForm({
           setIsLoading(false)
           const { token, user } = response.data
 
-          // 设置用户和访问令牌
-          auth.setUser({
+          // 使用新的setLoginData方法一次性设置用户和token
+          const userData = {
             accountNo: user.id,
             email: user.email,
             role: user.roles,
-            exp: Date.now() + 24 * 60 * 60 * 1000, // 24 hours from now
-          })
-          auth.setAccessToken(token)
+            exp: Date.now() + 24 * 60 * 60 * 1000, // 24小时后过期
+          }
+          
+          auth.setLoginData(token, userData)
+
+          // 如果是在弹窗中，通知父窗口登录成功并关闭当前窗口
+          if (isInPopup && window.opener) {
+            try {
+              window.opener.postMessage(
+                { type: 'LOGIN_SUCCESS', user, token },
+                window.location.origin
+              )
+              window.close()
+              return `登录成功！窗口即将关闭...`
+            } catch (error) {
+              console.error('通知父窗口失败:', error)
+            }
+          }
 
           // 重定向到存储的位置或默认仪表盘
           const targetPath = redirectTo || '/'

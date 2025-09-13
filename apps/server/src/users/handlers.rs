@@ -13,7 +13,11 @@ use crate::users::models::{UserListResponse, UserResponse, UserCreateRequest, Us
     responses(
         (status = 200, description = "List users successfully", body = UserListResponse),
         (status = 400, description = "Bad request"),
+        (status = 401, description = "Unauthorized"),
         (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("bearer_auth" = [])
     ),
     tag = "Users"
 )]
@@ -59,7 +63,11 @@ pub async fn get_users(query: web::Query<UserListQuery>) -> Result<HttpResponse,
     responses(
         (status = 200, description = "User created successfully", body = UserResponse),
         (status = 400, description = "Bad request"),
+        (status = 401, description = "Unauthorized"),
         (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("bearer_auth" = [])
     ),
     tag = "Users"
 )]
@@ -87,8 +95,12 @@ pub async fn create_user(user: web::Json<UserCreateRequest>) -> Result<HttpRespo
     ),
     responses(
         (status = 200, description = "User found successfully", body = UserResponse),
+        (status = 401, description = "Unauthorized"),
         (status = 404, description = "User not found"),
         (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("bearer_auth" = [])
     ),
     tag = "Users"
 )]
@@ -119,9 +131,13 @@ pub async fn get_user(path: web::Path<String>) -> Result<HttpResponse, ApiError>
     request_body = UserCreateRequest,
     responses(
         (status = 200, description = "User updated successfully", body = UserResponse),
-        (status = 404, description = "User not found"),
         (status = 400, description = "Bad request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "User not found"),
         (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("bearer_auth" = [])
     ),
     tag = "Users"
 )]
@@ -154,8 +170,12 @@ pub async fn update_user(
     ),
     responses(
         (status = 200, description = "User deleted successfully"),
+        (status = 401, description = "Unauthorized"),
         (status = 404, description = "User not found"),
         (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("bearer_auth" = [])
     ),
     tag = "Users"
 )]
@@ -176,8 +196,12 @@ pub async fn delete_user(path: web::Path<String>) -> Result<HttpResponse, ApiErr
     ),
     responses(
         (status = 200, description = "User disabled successfully"),
+        (status = 401, description = "Unauthorized"),
         (status = 404, description = "User not found"),
         (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("bearer_auth" = [])
     ),
     tag = "Users"
 )]
@@ -198,8 +222,12 @@ pub async fn disable_user(path: web::Path<String>) -> Result<HttpResponse, ApiEr
     ),
     responses(
         (status = 200, description = "User enabled successfully"),
+        (status = 401, description = "Unauthorized"),
         (status = 404, description = "User not found"),
         (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("bearer_auth" = [])
     ),
     tag = "Users"
 )]

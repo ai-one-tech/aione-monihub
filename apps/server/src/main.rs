@@ -4,9 +4,11 @@ use env_logger;
 use std::io;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
+use utoipa::{Modify, openapi::security::{SecurityScheme, HttpAuthScheme, Http}};
 
 // 使用新的模块结构
 use aione_monihub_server::{DatabaseManager, WsServer};
+use aione_monihub_server::auth::middleware::AuthMiddleware;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -33,6 +35,7 @@ use aione_monihub_server::{DatabaseManager, WsServer};
         aione_monihub_server::auth::handlers::forgot_password,
         aione_monihub_server::auth::handlers::reset_password,
         aione_monihub_server::auth::handlers::validate_token,
+        aione_monihub_server::auth::handlers::get_current_user,
         aione_monihub_server::configs::handlers::get_configs,
         aione_monihub_server::configs::handlers::create_config,
         aione_monihub_server::configs::handlers::get_config_by_code,
@@ -68,6 +71,7 @@ use aione_monihub_server::{DatabaseManager, WsServer};
             aione_monihub_server::auth::models::ForgotPasswordRequest,
             aione_monihub_server::auth::models::ResetPasswordRequest,
             aione_monihub_server::auth::models::Claims,
+            aione_monihub_server::auth::models::CurrentUserResponse,
             aione_monihub_server::configs::models::Config,
             aione_monihub_server::configs::models::ConfigResponse,
             aione_monihub_server::configs::models::ConfigCreateRequest,
@@ -84,6 +88,10 @@ use aione_monihub_server::{DatabaseManager, WsServer};
             email = "support@aione.tech"
         )
     ),
+    security(
+        ("bearer_auth" = [])
+    ),
+    modifiers(&SecurityAddon),
     tags(
         (name = "health", description = "健康检查相关接口"),
         (name = "Users", description = "用户管理相关接口"),
@@ -94,6 +102,22 @@ use aione_monihub_server::{DatabaseManager, WsServer};
     )
 )]
 struct ApiDoc;
+
+// Security addon for Swagger authentication
+struct SecurityAddon;
+
+impl Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        if let Some(components) = openapi.components.as_mut() {
+            components.add_security_scheme(
+                "bearer_auth",
+                SecurityScheme::Http(
+                    Http::new(HttpAuthScheme::Bearer)
+                ),
+            )
+        }
+    }
+}
 
 // 导入所有模块的路由函数
 use aione_monihub_server::health::routes::health_routes;
@@ -145,6 +169,7 @@ async fn main() -> io::Result<()> {
                     .supports_credentials() // 支持cookies和认证信息
             )
             .wrap(Logger::default())
+            .wrap(AuthMiddleware) // 添加JWT认证中间件
             // Swagger UI
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}")
