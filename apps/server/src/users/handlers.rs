@@ -1,8 +1,10 @@
-use actix_web::{web, HttpResponse, Result};
-use uuid::Uuid;
-use chrono::Utc;
 use crate::shared::error::ApiError;
-use crate::users::models::{UserListResponse, UserResponse, UserCreateRequest, UserListQuery, Pagination};
+use crate::users::models::{
+    Pagination, UserCreateRequest, UserListQuery, UserListResponse, UserResponse,
+};
+use actix_web::{web, HttpResponse, Result};
+use chrono::Utc;
+use uuid::Uuid;
 
 #[utoipa::path(
     get,
@@ -24,21 +26,19 @@ use crate::users::models::{UserListResponse, UserResponse, UserCreateRequest, Us
 pub async fn get_users(query: web::Query<UserListQuery>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual user listing logic
     // This is a placeholder implementation
-    
+
     let page = query.page.unwrap_or(1);
     let limit = query.limit.unwrap_or(10);
-    
-    let users = vec![
-        UserResponse {
-            id: "1".to_string(),
-            username: "admin".to_string(),
-            email: "admin@example.com".to_string(),
-            status: "active".to_string(),
-            created_at: "2023-01-01T00:00:00Z".to_string(),
-            updated_at: "2023-01-01T00:00:00Z".to_string(),
-        }
-    ];
-    
+
+    let users = vec![UserResponse {
+        id: "1".to_string(),
+        username: "admin".to_string(),
+        email: "admin@example.com".to_string(),
+        status: "active".to_string(),
+        created_at: "2023-01-01T00:00:00Z".to_string(),
+        updated_at: "2023-01-01T00:00:00Z".to_string(),
+    }];
+
     let response = UserListResponse {
         data: users,
         pagination: Pagination {
@@ -52,7 +52,7 @@ pub async fn get_users(query: web::Query<UserListQuery>) -> Result<HttpResponse,
             .as_secs(),
         trace_id: Uuid::new_v4().to_string(),
     };
-    
+
     Ok(HttpResponse::Ok().json(response))
 }
 
@@ -74,7 +74,7 @@ pub async fn get_users(query: web::Query<UserListQuery>) -> Result<HttpResponse,
 pub async fn create_user(user: web::Json<UserCreateRequest>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual user creation logic
     // This is a placeholder implementation
-    
+
     let response = UserResponse {
         id: Uuid::new_v4().to_string(),
         username: user.username.clone(),
@@ -83,7 +83,7 @@ pub async fn create_user(user: web::Json<UserCreateRequest>) -> Result<HttpRespo
         created_at: Utc::now().to_rfc3339(),
         updated_at: Utc::now().to_rfc3339(),
     };
-    
+
     Ok(HttpResponse::Ok().json(response))
 }
 
@@ -107,9 +107,9 @@ pub async fn create_user(user: web::Json<UserCreateRequest>) -> Result<HttpRespo
 pub async fn get_user(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual user retrieval logic
     // This is a placeholder implementation
-    
+
     let user_id = path.into_inner();
-    
+
     let response = UserResponse {
         id: user_id,
         username: "admin".to_string(),
@@ -118,7 +118,7 @@ pub async fn get_user(path: web::Path<String>) -> Result<HttpResponse, ApiError>
         created_at: "2023-01-01T00:00:00Z".to_string(),
         updated_at: "2023-01-01T00:00:00Z".to_string(),
     };
-    
+
     Ok(HttpResponse::Ok().json(response))
 }
 
@@ -143,13 +143,13 @@ pub async fn get_user(path: web::Path<String>) -> Result<HttpResponse, ApiError>
 )]
 pub async fn update_user(
     path: web::Path<String>,
-    user: web::Json<UserCreateRequest>
+    user: web::Json<UserCreateRequest>,
 ) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual user update logic
     // This is a placeholder implementation
-    
+
     let user_id = path.into_inner();
-    
+
     let response = UserResponse {
         id: user_id,
         username: user.username.clone(),
@@ -158,7 +158,7 @@ pub async fn update_user(
         created_at: "2023-01-01T00:00:00Z".to_string(),
         updated_at: Utc::now().to_rfc3339(),
     };
-    
+
     Ok(HttpResponse::Ok().json(response))
 }
 
@@ -182,9 +182,9 @@ pub async fn update_user(
 pub async fn delete_user(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual user deletion logic
     // This is a placeholder implementation
-    
+
     let _user_id = path.into_inner();
-    
+
     Ok(HttpResponse::Ok().json("User deleted successfully"))
 }
 
@@ -208,9 +208,9 @@ pub async fn delete_user(path: web::Path<String>) -> Result<HttpResponse, ApiErr
 pub async fn disable_user(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual user disable logic
     // This is a placeholder implementation
-    
+
     let _user_id = path.into_inner();
-    
+
     Ok(HttpResponse::Ok().json("User disabled successfully"))
 }
 
@@ -234,8 +234,8 @@ pub async fn disable_user(path: web::Path<String>) -> Result<HttpResponse, ApiEr
 pub async fn enable_user(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual user enable logic
     // This is a placeholder implementation
-    
+
     let _user_id = path.into_inner();
-    
+
     Ok(HttpResponse::Ok().json("User enabled successfully"))
 }

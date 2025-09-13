@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate, useLocation } from '@tanstack/react-router'
 import { authApi, CurrentUserResponse } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
 import { AuthUtils } from '@/lib/auth-utils'
@@ -20,7 +21,10 @@ export function useAuthCheck(): UseAuthCheckResult {
   const [user, setUser] = useState<CurrentUserResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showLoginDialog, setShowLoginDialog] = useState(false)
+  const [isPageRefresh, setIsPageRefresh] = useState(true)
   
+  const navigate = useNavigate()
+  const location = useLocation()
   const authStore = useAuthStore()
 
   const checkAuth = useCallback(async () => {
@@ -32,7 +36,18 @@ export function useAuthCheck(): UseAuthCheckResult {
       if (!AuthUtils.isAuthenticated()) {
         setIsAuthenticated(false)
         setUser(null)
-        setShowLoginDialog(true)
+        
+        // 如果是页面刷新且没有登录，直接跳转到登录页面
+        if (isPageRefresh) {
+          const currentPath = location.href
+          navigate({
+            to: '/sign-in',
+            search: { redirect: currentPath },
+            replace: true,
+          })
+          return
+        }
+        
         return
       }
       
@@ -53,10 +68,20 @@ export function useAuthCheck(): UseAuthCheckResult {
           setShowLoginDialog(false)
         }
       } else {
-        // token无效，显示登录弹窗
+        // token无效
         setIsAuthenticated(false)
         setUser(null)
-        setShowLoginDialog(true)
+        
+        // 如果是页面刷新且token无效，直接跳转到登录页面
+        if (isPageRefresh) {
+          const currentPath = location.href
+          navigate({
+            to: '/sign-in',
+            search: { redirect: currentPath },
+            replace: true,
+          })
+          return
+        }
       }
     } catch (err: any) {
       console.error('身份验证检查失败:', err)
@@ -66,14 +91,30 @@ export function useAuthCheck(): UseAuthCheckResult {
         setIsAuthenticated(false)
         setUser(null)
         setError('身份验证已过期，请重新登录')
-        setShowLoginDialog(true)
         AuthUtils.logout()
+        
+        // 如果是页面刷新，跳转到登录页面；否则显示弹窗
+        if (isPageRefresh) {
+          const currentPath = location.href
+          navigate({
+            to: '/sign-in',
+            search: { redirect: currentPath },
+            replace: true,
+          })
+          return
+        } else {
+          setShowLoginDialog(true)
+        }
       } else {
         // 其他错误
         setError(err.message || '身份验证检查失败')
       }
     } finally {
       setIsLoading(false)
+      // 标记不再是页面刷新状态
+      if (isPageRefresh) {
+        setIsPageRefresh(false)
+      }
     }
   }, [])
 
@@ -87,6 +128,26 @@ export function useAuthCheck(): UseAuthCheckResult {
   useEffect(() => {
     checkAuth()
   }, [checkAuth])
+
+  // 监听API错误事件
+  useEffect(() => {
+    const handleApiAuthError = (event: CustomEvent) => {
+      const { status, message } = event.detail
+      if (status === 401) {
+        console.log('API返回401错误，显示登录弹窗')
+        setIsAuthenticated(false)
+        setUser(null)
+        setError(message)
+        setShowLoginDialog(true)
+      }
+    }
+
+    window.addEventListener('api-auth-error', handleApiAuthError as EventListener)
+    
+    return () => {
+      window.removeEventListener('api-auth-error', handleApiAuthError as EventListener)
+    }
+  }, [])
 
   // 监听认证状态变化
   useEffect(() => {

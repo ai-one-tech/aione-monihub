@@ -117,7 +117,7 @@ export function LoginDialog({ open, onOpenChange, onLoginSuccess }: LoginDialogP
   }, [open, loginWindow])
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} modal>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

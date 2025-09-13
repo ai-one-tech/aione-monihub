@@ -145,12 +145,12 @@ export function UserAuthForm({
                 <PasswordInput placeholder='请输入密码' {...field} />
               </FormControl>
               <FormMessage />
-              <Link
+              {/* <Link
                 to='/forgot-password'
                 className='text-muted-foreground absolute end-0 -top-0.5 text-sm font-medium hover:opacity-75'
               >
                 忘记密码？
-              </Link>
+              </Link> */}
             </FormItem>
           )}
         />

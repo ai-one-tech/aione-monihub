@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
-use utoipa::{ToSchema, IntoParams};
+use serde::{Deserialize, Serialize};
+use utoipa::{IntoParams, ToSchema};
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Config {
@@ -8,7 +8,7 @@ pub struct Config {
     pub code: String,
     pub environment: String,
     pub name: String,
-    pub type_: String, // Renamed from 'type' as it's a reserved keyword
+    pub config_type: String, // 使用与数据库一致的字段名
     pub content: String,
     pub description: String,
     pub version: i32,
@@ -26,7 +26,7 @@ pub struct ConfigResponse {
     pub code: String,
     pub environment: String,
     pub name: String,
-    pub type_: String,
+    pub config_type: String,
     pub content: String,
     pub description: String,
     pub version: u32,
@@ -39,7 +39,7 @@ pub struct ConfigCreateRequest {
     pub code: String,
     pub environment: String,
     pub name: String,
-    pub type_: String,
+    pub config_type: String,
     pub content: String,
     pub description: String,
 }
@@ -49,7 +49,7 @@ pub struct ConfigUpdateRequest {
     pub code: String,
     pub environment: String,
     pub name: String,
-    pub type_: String,
+    pub config_type: String,
     pub content: String,
     pub description: String,
 }
@@ -75,7 +75,7 @@ pub struct ConfigListQuery {
     pub page: Option<u32>,
     pub limit: Option<u32>,
     pub search: Option<String>,
-    pub type_: Option<String>,
+    pub config_type: Option<String>,
     pub environment: Option<String>,
     pub all_versions: Option<bool>,
 }

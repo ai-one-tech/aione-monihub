@@ -1,12 +1,15 @@
 use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
-    Error, HttpMessage, error::ErrorUnauthorized,
+    error::ErrorUnauthorized,
+    Error, HttpMessage, HttpRequest,
 };
-use futures_util::future::{ready, Ready, LocalBoxFuture};
-use jsonwebtoken::{decode, DecodingKey, Validation, Algorithm};
+use futures_util::future::{ready, LocalBoxFuture, Ready};
+use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use std::rc::Rc;
+use uuid::Uuid;
 
 use crate::auth::models::Claims;
+use crate::shared::error::ApiError;
 
 // JWT secret key (should match the one in handlers.rs)
 const JWT_SECRET: &str = "aione_monihub_secret_key";
@@ -53,11 +56,11 @@ where
 
         Box::pin(async move {
             let path = req.path();
-            
+
             // 允许的公开路径（不需要认证）
             let public_paths = vec![
                 "/api/auth/login",
-                "/api/auth/forgot-password", 
+                "/api/auth/forgot-password",
                 "/api/auth/reset-password",
                 "/health",
                 "/swagger-ui",
@@ -65,9 +68,9 @@ where
             ];
 
             // 检查是否是公开路径
-            let is_public = public_paths.iter().any(|public_path| {
-                path.starts_with(public_path)
-            });
+            let is_public = public_paths
+                .iter()
+                .any(|public_path| path.starts_with(public_path));
 
             if is_public {
                 // 公开路径，直接放行
@@ -79,7 +82,7 @@ where
                 if let Ok(auth_str) = auth_header.to_str() {
                     if auth_str.starts_with("Bearer ") {
                         let token = &auth_str[7..]; // Remove "Bearer " prefix
-                        
+
                         // 验证token
                         let validation = Validation::new(Algorithm::HS256);
                         match decode::<Claims>(
@@ -104,4 +107,15 @@ where
             Err(ErrorUnauthorized("Valid authentication token required"))
         })
     }
+}
+
+/// 从HTTP请求中获取当前登录用户的ID
+pub fn get_user_id_from_request(req: &HttpRequest) -> Result<Uuid, ApiError> {
+    let extensions = req.extensions();
+    let claims = extensions
+        .get::<Claims>()
+        .ok_or_else(|| ApiError::Unauthorized("User not authenticated".to_string()))?;
+
+    Uuid::parse_str(&claims.sub)
+        .map_err(|_| ApiError::Unauthorized("Invalid user ID in token".to_string()))
 }

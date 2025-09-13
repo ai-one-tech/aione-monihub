@@ -1,0 +1,128 @@
+import { useQuery } from '@tanstack/react-query'
+import { menuApi, type MenuItemResponse } from '@/lib/api'
+import { type NavGroup, type NavItem } from '@/components/layout/types'
+import { useAuthStore } from '@/stores/auth-store'
+import { ElementType } from 'react'
+import {
+  LayoutDashboard,
+  ListTodo,
+  Package,
+  MessagesSquare,
+  Users,
+  Settings,
+  HelpCircle,
+  Wrench,
+  Palette,
+  Bell,
+  Monitor,
+  UserCog,
+} from 'lucide-react'
+
+// 图标映射表
+const iconMap: Record<string, ElementType> = {
+  'LayoutDashboard': LayoutDashboard,
+  'ListTodo': ListTodo,
+  'Package': Package,
+  'MessagesSquare': MessagesSquare,
+  'Users': Users,
+  'Settings': Settings,
+  'HelpCircle': HelpCircle,
+  'Wrench': Wrench,
+  'Palette': Palette,
+  'Bell': Bell,
+  'Monitor': Monitor,
+  'UserCog': UserCog,
+}
+
+/**
+ * 将后端菜单数据转换为前端菜单格式
+ */
+function transformMenuToNavItems(menuItems: MenuItemResponse[]): NavItem[] {
+  return menuItems.map((item): NavItem => {
+    const icon = item.icon ? iconMap[item.icon] : undefined
+    
+    if (item.children && item.children.length > 0) {
+      // 有子菜单的情况
+      return {
+        title: item.title,
+        icon: icon,
+        items: item.children.map((child) => ({
+          title: child.title,
+          url: child.path,
+          icon: child.icon ? iconMap[child.icon] : undefined,
+        })),
+      }
+    } else {
+      // 没有子菜单的情况
+      return {
+        title: item.title,
+        url: item.path,
+        icon: icon,
+      }
+    }
+  })
+}
+
+/**
+ * 将菜单数据按分组进行组织
+ */
+function organizeMenuIntoGroups(menuItems: MenuItemResponse[]): NavGroup[] {
+  // 这里可以根据业务需求进行分组
+  // 目前简单地将所有菜单放在 "General" 组下
+  const navItems = transformMenuToNavItems(menuItems)
+  
+  return [
+    {
+      title: 'General',
+      items: navItems,
+    },
+  ]
+}
+
+/**
+ * 获取用户菜单数据的Hook
+ */
+export function useMenuData() {
+  const { auth } = useAuthStore()
+  const { isAuthenticated } = auth
+  
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['userMenu'],
+    queryFn: async () => {
+      const response = await menuApi.getUserMenu()
+      return response.data
+    },
+    enabled: isAuthenticated, // 只有在用户已认证时才请求菜单数据
+    retry: 2,
+    staleTime: 5 * 60 * 1000, // 5分钟缓存
+    gcTime: 10 * 60 * 1000, // 10分钟垃圾回收
+  })
+
+  // 将API响应转换为前端菜单格式
+  const navGroups = data?.data ? organizeMenuIntoGroups(data.data) : []
+
+  return {
+    navGroups,
+    isLoading: isAuthenticated ? isLoading : false, // 未认证时不显示加载状态
+    error: isAuthenticated ? error : null, // 未认证时不显示错误
+    refetch,
+    timestamp: data?.timestamp,
+    traceId: data?.trace_id,
+  }
+}
+
+/**
+ * 静态菜单数据（作为降级方案）
+ */
+export const fallbackNavGroups: NavGroup[] = [
+  {
+    title: 'General',
+    items: [
+      {
+        title: 'Dashboard',
+        url: '/',
+        icon: LayoutDashboard,
+      },
+    ],
+  },
+]

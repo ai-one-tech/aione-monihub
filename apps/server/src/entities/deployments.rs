@@ -5,15 +5,15 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "deployments")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: i32,
-    pub application_id: i32,
+    pub id: String,
+    pub application_id: String,
     pub version: String,
     pub environment: String,
     pub status: String,
     pub config: Option<String>,
-    pub deployed_at: Option<DateTime>,
-    pub created_at: DateTime,
-    pub updated_at: DateTime,
+    pub deployed_at: Option<DateTimeWithTimeZone>,
+    pub created_at: DateTimeWithTimeZone,
+    pub updated_at: DateTimeWithTimeZone,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -1,9 +1,10 @@
-pub mod models;
 pub mod handlers;
+pub mod models;
 pub mod routes;
 
-use sea_orm::DatabaseConnection;
 use crate::entities::{permissions, Permissions};
+use sea_orm::DatabaseConnection;
+use uuid::Uuid;
 
 pub struct PermissionsModule {
     database: DatabaseConnection,
@@ -14,12 +15,18 @@ impl PermissionsModule {
         Self { database }
     }
 
-    pub async fn create_permission(&self, permission_data: permissions::ActiveModel) -> Result<permissions::Model, sea_orm::DbErr> {
+    pub async fn create_permission(
+        &self,
+        permission_data: permissions::ActiveModel,
+    ) -> Result<permissions::Model, sea_orm::DbErr> {
         use sea_orm::ActiveModelTrait;
         permission_data.insert(&self.database).await
     }
 
-    pub async fn find_permission_by_id(&self, id: i32) -> Result<Option<permissions::Model>, sea_orm::DbErr> {
+    pub async fn find_permission_by_id(
+        &self,
+        id: Uuid,
+    ) -> Result<Option<permissions::Model>, sea_orm::DbErr> {
         use sea_orm::EntityTrait;
         Permissions::find_by_id(id).one(&self.database).await
     }

@@ -1,19 +1,19 @@
 // 导出所有模块
-pub mod shared;
-pub mod entities;
-pub mod migrator;
-pub mod auth;
-pub mod projects;
 pub mod applications;
+pub mod auth;
+pub mod configs;
 pub mod deployments;
-pub mod users;
-pub mod roles;
-pub mod permissions;
+pub mod entities;
+pub mod health;
 pub mod logs;
 pub mod machines;
-pub mod configs;
+// pub mod migrator; // 已使用SQL迁移文件
+pub mod permissions;
+pub mod projects;
+pub mod roles;
+pub mod shared;
+pub mod users;
 pub mod websocket;
-pub mod health;
 
 // 导出主要的结构体和函数
 pub use shared::database::DatabaseManager;

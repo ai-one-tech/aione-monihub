@@ -13,7 +13,7 @@ pub struct LogListResponse {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LogResponse {
     pub id: String,
-    pub type_: String,
+    pub log_level: String,
     pub user_id: String,
     pub action: String,
     pub ip_address: String,
@@ -35,7 +35,7 @@ pub struct Pagination {
 pub struct LogListQuery {
     pub page: Option<u32>,
     pub limit: Option<u32>,
-    pub type_: Option<String>,
+    pub log_level: Option<String>,
     pub user_id: Option<String>,
     pub start_date: Option<String>,
     pub end_date: Option<String>,
@@ -44,24 +44,22 @@ pub struct LogListQuery {
 pub async fn get_logs(query: web::Query<LogListQuery>) -> Result<HttpResponse> {
     // TODO: Implement actual log listing logic
     // This is a placeholder implementation
-    
+
     let page = query.page.unwrap_or(1);
     let limit = query.limit.unwrap_or(10);
-    
-    let logs = vec![
-        LogResponse {
-            id: "1".to_string(),
-            type_: "login".to_string(),
-            user_id: "1".to_string(),
-            action: "User logged in".to_string(),
-            ip_address: "192.168.1.1".to_string(),
-            user_agent: "Mozilla/5.0".to_string(),
-            timestamp: "2023-01-01T00:00:00Z".to_string(),
-            created_at: "2023-01-01T00:00:00Z".to_string(),
-            updated_at: "2023-01-01T00:00:00Z".to_string(),
-        }
-    ];
-    
+
+    let logs = vec![LogResponse {
+        id: "1".to_string(),
+        log_level: "login".to_string(),
+        user_id: "1".to_string(),
+        action: "User logged in".to_string(),
+        ip_address: "192.168.1.1".to_string(),
+        user_agent: "Mozilla/5.0".to_string(),
+        timestamp: "2023-01-01T00:00:00Z".to_string(),
+        created_at: "2023-01-01T00:00:00Z".to_string(),
+        updated_at: "2023-01-01T00:00:00Z".to_string(),
+    }];
+
     let response = LogListResponse {
         data: logs,
         pagination: Pagination {
@@ -75,13 +73,13 @@ pub async fn get_logs(query: web::Query<LogListQuery>) -> Result<HttpResponse> {
             .as_secs(),
         trace_id: Uuid::new_v4().to_string(),
     };
-    
+
     Ok(HttpResponse::Ok().json(response))
 }
 
 pub async fn export_logs() -> Result<HttpResponse> {
     // TODO: Implement actual log export logic
     // This is a placeholder implementation
-    
+
     Ok(HttpResponse::Ok().json("Logs exported successfully"))
 }

@@ -1,6 +1,6 @@
 use actix_web::{HttpResponse, Result};
-use utoipa::ToSchema;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct HealthResponse {
@@ -9,7 +9,7 @@ pub struct HealthResponse {
 }
 
 /// 健康检查接口
-/// 
+///
 /// 检查服务器运行状态
 #[utoipa::path(
     get,

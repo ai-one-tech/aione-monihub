@@ -1,14 +1,17 @@
-use actix_web::{web, App, HttpServer, middleware::Logger};
 use actix_cors::Cors;
+use actix_web::{middleware::Logger, web, App, HttpServer};
 use env_logger;
 use std::io;
 use utoipa::OpenApi;
+use utoipa::{
+    openapi::security::{Http, HttpAuthScheme, SecurityScheme},
+    Modify,
+};
 use utoipa_swagger_ui::SwaggerUi;
-use utoipa::{Modify, openapi::security::{SecurityScheme, HttpAuthScheme, Http}};
 
 // 使用新的模块结构
-use aione_monihub_server::{DatabaseManager, WsServer};
 use aione_monihub_server::auth::middleware::AuthMiddleware;
+use aione_monihub_server::{DatabaseManager, WsServer};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -111,26 +114,24 @@ impl Modify for SecurityAddon {
         if let Some(components) = openapi.components.as_mut() {
             components.add_security_scheme(
                 "bearer_auth",
-                SecurityScheme::Http(
-                    Http::new(HttpAuthScheme::Bearer)
-                ),
+                SecurityScheme::Http(Http::new(HttpAuthScheme::Bearer)),
             )
         }
     }
 }
 
 // 导入所有模块的路由函数
-use aione_monihub_server::health::routes::health_routes;
-use aione_monihub_server::auth::routes::auth_routes;
-use aione_monihub_server::projects::routes::project_routes;
 use aione_monihub_server::applications::routes::application_routes;
-use aione_monihub_server::deployments::routes::deployment_routes;
-use aione_monihub_server::users::routes::user_routes;
-use aione_monihub_server::roles::routes::role_routes;
-use aione_monihub_server::permissions::routes::permission_routes;
-use aione_monihub_server::machines::routes::machine_routes;
+use aione_monihub_server::auth::routes::auth_routes;
 use aione_monihub_server::configs::routes::config_routes;
+use aione_monihub_server::deployments::routes::deployment_routes;
+use aione_monihub_server::health::routes::health_routes;
 use aione_monihub_server::logs::routes::log_routes;
+use aione_monihub_server::machines::routes::machine_routes;
+use aione_monihub_server::permissions::routes::permission_routes;
+use aione_monihub_server::projects::routes::project_routes;
+use aione_monihub_server::roles::routes::role_routes;
+use aione_monihub_server::users::routes::user_routes;
 
 // 添加Actor trait导入以使用start方法
 use actix::Actor;
@@ -139,23 +140,31 @@ use aione_monihub_server::websocket::routes::websocket_routes;
 #[actix_web::main]
 async fn main() -> io::Result<()> {
     env_logger::init();
-    
+
     println!("Starting AiOne MoniHub API server with PostgresSQL...");
-    
+
     // Load .env file
     dotenv::dotenv().ok();
-    
+
     // Initialize database connection
-    let database_url = std::env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set in .env file");
-    let db_manager = DatabaseManager::new(&database_url).await
+    let database_url =
+        std::env::var("DATABASE_URL").expect("DATABASE_URL must be set in .env file");
+    let db_manager = DatabaseManager::new(&database_url)
+        .await
         .expect("Failed to initialize database connection");
-    
+
     // Start WebSocket server
     let ws_server = WsServer::new().start();
-    
+
+    // 获取服务器配置
+    let server_host = std::env::var("SERVER_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
+    let server_port = std::env::var("SERVER_PORT").unwrap_or_else(|_| "9080".to_string());
+    let bind_address = format!("{}:{}", server_host, server_port);
+
+    println!("服务器将在 {} 上启动", bind_address);
+
     let db_connection = db_manager.get_connection().clone();
-    
+
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(db_connection.clone()))
@@ -166,14 +175,14 @@ async fn main() -> io::Result<()> {
                     .allow_any_origin() // 允许所有源（生产环境中应该指定具体的域名）
                     .allow_any_method() // 允许所有HTTP方法
                     .allow_any_header() // 允许所有请求头
-                    .supports_credentials() // 支持cookies和认证信息
+                    .supports_credentials(), // 支持cookies和认证信息
             )
             .wrap(Logger::default())
             .wrap(AuthMiddleware) // 添加JWT认证中间件
             // Swagger UI
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}")
-                    .url("/api-docs/openapi.json", ApiDoc::openapi())
+                    .url("/api-docs/openapi.json", ApiDoc::openapi()),
             )
             // 注册所有模块的路由
             .configure(health_routes)
@@ -189,7 +198,7 @@ async fn main() -> io::Result<()> {
             .configure(websocket_routes)
             .configure(log_routes)
     })
-    .bind("127.0.0.1:9080")?
+    .bind(&bind_address)?
     .run()
     .await
 }

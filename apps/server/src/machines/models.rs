@@ -1,11 +1,11 @@
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Machine {
     pub id: String,
     pub name: String,
-    pub type_: String, // Renamed from 'type' as it's a reserved keyword
+    pub machine_type: String, // 与数据库字段一致
     pub status: String,
     pub deployment_id: String,
     pub application_id: String,
@@ -21,7 +21,7 @@ pub struct Machine {
 pub struct MachineResponse {
     pub id: String,
     pub name: String,
-    pub type_: String,
+    pub machine_type: String,
     pub status: String,
     pub deployment_id: String,
     pub application_id: String,
@@ -32,7 +32,7 @@ pub struct MachineResponse {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MachineCreateRequest {
     pub name: String,
-    pub type_: String,
+    pub machine_type: String,
     pub status: String,
     pub deployment_id: String,
     pub application_id: String,
@@ -41,7 +41,7 @@ pub struct MachineCreateRequest {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MachineUpdateRequest {
     pub name: String,
-    pub type_: String,
+    pub machine_type: String,
     pub status: String,
     pub deployment_id: String,
     pub application_id: String,

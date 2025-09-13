@@ -8,7 +8,8 @@
   ],
   "scripts": {
     "server_migrations": "cd apps/server && cargo run --bin run_migrations",
-    "server_run": "cd apps/server && cargo run"
+    "server_run": "cd apps/server && cargo run",
+    "frontend_run": "cd apps/frontend && npm run dev"
   },
   "devDependencies": {
     

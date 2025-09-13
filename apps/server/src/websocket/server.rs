@@ -1,8 +1,8 @@
+use crate::websocket::models::{ClientMessage, Connect, Disconnect, WsMessage};
 use actix::prelude::*;
 use actix_web_actors::ws;
-use uuid::Uuid;
 use std::time::{Duration, Instant};
-use crate::websocket::models::{WsMessage, Connect, Disconnect, ClientMessage};
+use uuid::Uuid;
 
 // WebSocket session
 pub struct WsSession {
@@ -98,7 +98,8 @@ impl WsSession {
 
 // WebSocket server
 pub struct WsServer {
-    sessions: std::collections::HashMap<String, std::collections::HashMap<String, Recipient<WsMessage>>>,
+    sessions:
+        std::collections::HashMap<String, std::collections::HashMap<String, Recipient<WsMessage>>>,
 }
 
 impl WsServer {

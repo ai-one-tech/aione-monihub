@@ -1,15 +1,22 @@
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
+use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Permission {
-    pub id: String,
+    pub id: Uuid,
     pub name: String,
-    pub description: String,
+    pub description: Option<String>,
     pub resource: String,
     pub action: String,
-    pub created_by: String,
-    pub updated_by: String,
+    pub permission_type: String, // menu, action, button, page
+    pub menu_path: Option<String>,
+    pub menu_icon: Option<String>,
+    pub parent_permission_id: Option<Uuid>,
+    pub sort_order: Option<i32>,
+    pub created_by: Uuid,
+    pub updated_by: Uuid,
     pub deleted_at: Option<DateTime<Utc>>,
     pub revision: i32,
     pub created_at: DateTime<Utc>,
@@ -20,11 +27,34 @@ pub struct Permission {
 pub struct PermissionResponse {
     pub id: String,
     pub name: String,
-    pub description: String,
+    pub description: Option<String>,
     pub resource: String,
     pub action: String,
+    pub permission_type: String,
+    pub menu_path: Option<String>,
+    pub menu_icon: Option<String>,
+    pub parent_permission_id: Option<String>,
+    pub sort_order: Option<i32>,
     pub created_at: String,
     pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct MenuItemResponse {
+    pub id: String,
+    pub name: String,
+    pub title: String, // 菜单显示名称
+    pub icon: Option<String>,
+    pub path: String,
+    pub sort_order: i32,
+    pub children: Vec<MenuItemResponse>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct UserMenuResponse {
+    pub data: Vec<MenuItemResponse>,
+    pub timestamp: u64,
+    pub trace_id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

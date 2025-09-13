@@ -1,9 +1,11 @@
-pub mod models;
 pub mod handlers;
+pub mod models;
 pub mod routes;
 
-use sea_orm::DatabaseConnection;
 use crate::entities::{roles, Roles};
+use crate::shared::generate_snowflake_id;
+use sea_orm::{ActiveValue, DatabaseConnection};
+use chrono::Utc;
 
 pub struct RolesModule {
     database: DatabaseConnection,
@@ -14,12 +16,36 @@ impl RolesModule {
         Self { database }
     }
 
-    pub async fn create_role(&self, role_data: roles::ActiveModel) -> Result<roles::Model, sea_orm::DbErr> {
+    pub async fn create_role(
+        &self,
+        name: String,
+        description: Option<String>,
+        created_by: String,
+    ) -> Result<roles::Model, sea_orm::DbErr> {
         use sea_orm::ActiveModelTrait;
+        
+        // 生成 Snowflake ID
+        let id = generate_snowflake_id()
+            .map_err(|e| sea_orm::DbErr::Custom(format!("Failed to generate ID: {}", e)))?;
+        
+        let now = Utc::now().into();
+        
+        let role_data = roles::ActiveModel {
+            id: ActiveValue::Set(id),
+            name: ActiveValue::Set(name),
+            description: ActiveValue::Set(description),
+            created_by: ActiveValue::Set(created_by.clone()),
+            updated_by: ActiveValue::Set(created_by),
+            deleted_at: ActiveValue::Set(None),
+            revision: ActiveValue::Set(1),
+            created_at: ActiveValue::Set(now),
+            updated_at: ActiveValue::Set(now),
+        };
+        
         role_data.insert(&self.database).await
     }
 
-    pub async fn find_role_by_id(&self, id: i32) -> Result<Option<roles::Model>, sea_orm::DbErr> {
+    pub async fn find_role_by_id(&self, id: &str) -> Result<Option<roles::Model>, sea_orm::DbErr> {
         use sea_orm::EntityTrait;
         Roles::find_by_id(id).one(&self.database).await
     }

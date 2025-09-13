@@ -5,15 +5,19 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "applications")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: i32,
+    pub id: String,  // 改为String支持雪花ID
+    pub project_id: String,  // 改为String支持雪花ID
     pub name: String,
+    pub code: String,
+    pub status: String,
     pub description: Option<String>,
-    pub project_id: i32,
-    pub app_type: String,
-    pub config: Option<String>,
-    pub is_active: bool,
-    pub created_at: DateTime,
-    pub updated_at: DateTime,
+    pub auth_config: serde_json::Value,  // 修改字段名，使用JSON类型
+    pub created_by: String,  // 改为String支持雪花ID
+    pub updated_by: String,  // 改为String支持雪花ID
+    pub deleted_at: Option<DateTimeWithTimeZone>,  // 支持毫秒精度
+    pub revision: i32,
+    pub created_at: DateTimeWithTimeZone,  // 支持毫秒精度
+    pub updated_at: DateTimeWithTimeZone,  // 支持毫秒精度
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

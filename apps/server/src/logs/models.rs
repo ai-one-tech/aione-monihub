@@ -1,10 +1,10 @@
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Log {
     pub id: String,
-    pub type_: String, // Renamed from 'type' as it's a reserved keyword
+    pub log_level: String, // 与数据库字段一致
     pub user_id: String,
     pub action: String,
     pub ip_address: String,
@@ -21,8 +21,8 @@ pub struct Log {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LogResponse {
     pub id: String,
-    #[serde(rename = "type")]
-    pub type_: String,
+    #[serde(rename = "log_level")]
+    pub log_level: String,
     pub user_id: String,
     pub action: String,
     pub ip_address: String,

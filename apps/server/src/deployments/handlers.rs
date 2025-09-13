@@ -1,35 +1,38 @@
+use crate::deployments::models::{
+    DeploymentCreateRequest, DeploymentListQuery, DeploymentListResponse, DeploymentResponse,
+    MonitoringDataResponse, NetworkTraffic, Pagination,
+};
+use crate::shared::error::ApiError;
 use actix_web::{web, HttpResponse, Result};
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
-use chrono::Utc;
-use crate::shared::error::ApiError;
-use crate::deployments::models::{DeploymentListResponse, DeploymentResponse, DeploymentCreateRequest, DeploymentListQuery, Pagination, MonitoringDataResponse, NetworkTraffic};
 
-pub async fn get_deployments(query: web::Query<DeploymentListQuery>) -> Result<HttpResponse, ApiError> {
+pub async fn get_deployments(
+    query: web::Query<DeploymentListQuery>,
+) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual deployment listing logic
     // This is a placeholder implementation
-    
+
     let page = query.page.unwrap_or(1);
     let limit = query.limit.unwrap_or(10);
-    
-    let deployments = vec![
-        DeploymentResponse {
-            id: "1".to_string(),
-            application_id: "1".to_string(),
-            private_ip: "192.168.1.100".to_string(),
-            public_ip: "203.0.113.100".to_string(),
-            network_interface: "eth0".to_string(),
-            hostname: "server01".to_string(),
-            environment_vars: HashMap::new(),
-            service_port: 8080,
-            process_name: "app-server".to_string(),
-            status: "running".to_string(),
-            created_at: "2023-01-01T00:00:00Z".to_string(),
-            updated_at: "2023-01-01T00:00:00Z".to_string(),
-        }
-    ];
-    
+
+    let deployments = vec![DeploymentResponse {
+        id: "1".to_string(),
+        application_id: "1".to_string(),
+        private_ip: "192.168.1.100".to_string(),
+        public_ip: "203.0.113.100".to_string(),
+        network_interface: "eth0".to_string(),
+        hostname: "server01".to_string(),
+        environment_vars: HashMap::new(),
+        service_port: 8080,
+        process_name: "app-server".to_string(),
+        status: "running".to_string(),
+        created_at: "2023-01-01T00:00:00Z".to_string(),
+        updated_at: "2023-01-01T00:00:00Z".to_string(),
+    }];
+
     let response = DeploymentListResponse {
         data: deployments,
         pagination: Pagination {
@@ -43,14 +46,16 @@ pub async fn get_deployments(query: web::Query<DeploymentListQuery>) -> Result<H
             .as_secs(),
         trace_id: Uuid::new_v4().to_string(),
     };
-    
+
     Ok(HttpResponse::Ok().json(response))
 }
 
-pub async fn create_deployment(deployment: web::Json<DeploymentCreateRequest>) -> Result<HttpResponse, ApiError> {
+pub async fn create_deployment(
+    deployment: web::Json<DeploymentCreateRequest>,
+) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual deployment creation logic
     // This is a placeholder implementation
-    
+
     let response = DeploymentResponse {
         id: Uuid::new_v4().to_string(),
         application_id: deployment.application_id.clone(),
@@ -65,16 +70,16 @@ pub async fn create_deployment(deployment: web::Json<DeploymentCreateRequest>) -
         created_at: Utc::now().to_rfc3339(),
         updated_at: Utc::now().to_rfc3339(),
     };
-    
+
     Ok(HttpResponse::Ok().json(response))
 }
 
 pub async fn get_deployment(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual deployment retrieval logic
     // This is a placeholder implementation
-    
+
     let deployment_id = path.into_inner();
-    
+
     let response = DeploymentResponse {
         id: deployment_id,
         application_id: "1".to_string(),
@@ -89,19 +94,19 @@ pub async fn get_deployment(path: web::Path<String>) -> Result<HttpResponse, Api
         created_at: "2023-01-01T00:00:00Z".to_string(),
         updated_at: "2023-01-01T00:00:00Z".to_string(),
     };
-    
+
     Ok(HttpResponse::Ok().json(response))
 }
 
 pub async fn update_deployment(
     path: web::Path<String>,
-    deployment: web::Json<DeploymentCreateRequest>
+    deployment: web::Json<DeploymentCreateRequest>,
 ) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual deployment update logic
     // This is a placeholder implementation
-    
+
     let deployment_id = path.into_inner();
-    
+
     let response = DeploymentResponse {
         id: deployment_id,
         application_id: deployment.application_id.clone(),
@@ -116,25 +121,25 @@ pub async fn update_deployment(
         created_at: "2023-01-01T00:00:00Z".to_string(),
         updated_at: Utc::now().to_rfc3339(),
     };
-    
+
     Ok(HttpResponse::Ok().json(response))
 }
 
 pub async fn delete_deployment(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual deployment deletion logic
     // This is a placeholder implementation
-    
+
     let _deployment_id = path.into_inner();
-    
+
     Ok(HttpResponse::Ok().json("Deployment deleted successfully"))
 }
 
 pub async fn get_deployment_monitoring(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual monitoring data retrieval logic
     // This is a placeholder implementation
-    
+
     let _deployment_id = path.into_inner();
-    
+
     let response = MonitoringDataResponse {
         cpu_usage: 45.5,
         memory_usage: 60.2,
@@ -145,7 +150,7 @@ pub async fn get_deployment_monitoring(path: web::Path<String>) -> Result<HttpRe
         },
         timestamp: Utc::now().to_rfc3339(),
     };
-    
+
     Ok(HttpResponse::Ok().json(response))
 }
 
@@ -177,9 +182,9 @@ pub struct UploadFileResponse {
 pub async fn get_files(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual file listing logic
     // This is a placeholder implementation
-    
+
     let _deployment_id = path.into_inner();
-    
+
     // In a real implementation, this would list files from the deployment's file system
     let files = vec![
         FileInfoResponse {
@@ -195,9 +200,9 @@ pub async fn get_files(path: web::Path<String>) -> Result<HttpResponse, ApiError
             size: 0,
             modified_at: "2023-01-01T00:00:00Z".to_string(),
             is_directory: true,
-        }
+        },
     ];
-    
+
     let response = FileListResponse {
         data: files,
         timestamp: std::time::SystemTime::now()
@@ -206,16 +211,16 @@ pub async fn get_files(path: web::Path<String>) -> Result<HttpResponse, ApiError
             .as_secs(),
         trace_id: Uuid::new_v4().to_string(),
     };
-    
+
     Ok(HttpResponse::Ok().json(response))
 }
 
 pub async fn upload_file(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual file upload logic
     // This is a placeholder implementation
-    
+
     let _deployment_id = path.into_inner();
-    
+
     let response = UploadFileResponse {
         message: "File uploaded successfully".to_string(),
         file_path: format!("/deployments/{}/uploads/file.txt", _deployment_id),
@@ -225,28 +230,31 @@ pub async fn upload_file(path: web::Path<String>) -> Result<HttpResponse, ApiErr
             .as_secs(),
         trace_id: Uuid::new_v4().to_string(),
     };
-    
+
     Ok(HttpResponse::Ok().json(response))
 }
 
 pub async fn download_file(path: web::Path<(String, String)>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual file download logic
     // This is a placeholder implementation
-    
+
     let (_deployment_id, file_path) = path.into_inner();
-    
+
     // In a real implementation, this would stream the file content
     Ok(HttpResponse::Ok()
         .content_type("application/octet-stream")
-        .append_header(("Content-Disposition", format!("attachment; filename=\"{}\"", file_path)))
+        .append_header((
+            "Content-Disposition",
+            format!("attachment; filename=\"{}\"", file_path),
+        ))
         .body(format!("Content of file: {}", file_path)))
 }
 
 pub async fn delete_file(path: web::Path<(String, String)>) -> Result<HttpResponse, ApiError> {
     // TODO: Implement actual file deletion logic
     // This is a placeholder implementation
-    
+
     let (_deployment_id, _file_path) = path.into_inner();
-    
+
     Ok(HttpResponse::Ok().json("File deleted successfully"))
 }

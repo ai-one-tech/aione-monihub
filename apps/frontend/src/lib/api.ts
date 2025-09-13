@@ -59,8 +59,10 @@ apiClient.interceptors.response.use(
       console.warn('收到401错误，清除认证状态')
       authStore.auth.reset()
       
-      // 可以在这里触发登录弹窗或重定向到登录页
-      // 注意：不要在这里直接操作路由，应该通过事件或回调处理
+      // 发出全局事件，通知显示登录弹窗
+      window.dispatchEvent(new CustomEvent('api-auth-error', {
+        detail: { status: 401, message: '身份验证已过期，请重新登录' }
+      }))
     } else if (error.response?.status === 403) {
       console.warn('没有权限访问此资源')
     } else if (error.response?.status >= 500) {
@@ -106,6 +108,24 @@ export interface CurrentUserResponse {
   exp: number
 }
 
+// 菜单项接口
+export interface MenuItemResponse {
+  id: string
+  name: string
+  title: string
+  icon?: string
+  path: string
+  sort_order: number
+  children: MenuItemResponse[]
+}
+
+// 用户菜单响应接口
+export interface UserMenuResponse {
+  data: MenuItemResponse[]
+  timestamp: number
+  trace_id: string
+}
+
 // 登录API
 export const authApi = {
   login: (credentials: LoginRequest): Promise<AxiosResponse<LoginResponse>> => {
@@ -126,6 +146,13 @@ export const authApi = {
   
   getCurrentUser: (): Promise<AxiosResponse<CurrentUserResponse>> => {
     return apiClient.get('/api/auth/me')
+  }
+}
+
+// 权限菜单API
+export const menuApi = {
+  getUserMenu: (): Promise<AxiosResponse<UserMenuResponse>> => {
+    return apiClient.get('/api/user/menu')
   }
 }
 

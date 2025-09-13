@@ -6,22 +6,22 @@ use derive_more::Display;
 pub enum ApiError {
     #[display(fmt = "Internal server error")]
     InternalServerError,
-    
-    #[display(fmt = "Bad request")]
-    BadRequest,
-    
-    #[display(fmt = "Unauthorized")]
-    Unauthorized,
-    
-    #[display(fmt = "Forbidden")]
-    Forbidden,
-    
-    #[display(fmt = "Not found")]
-    NotFound,
-    
+
+    #[display(fmt = "Bad request: {}", _0)]
+    BadRequest(String),
+
+    #[display(fmt = "Unauthorized: {}", _0)]
+    Unauthorized(String),
+
+    #[display(fmt = "Forbidden: {}", _0)]
+    Forbidden(String),
+
+    #[display(fmt = "Not found: {}", _0)]
+    NotFound(String),
+
     #[display(fmt = "Database error: {}", _0)]
     DatabaseError(String),
-    
+
     #[display(fmt = "Validation error: {}", _0)]
     ValidationError(String),
 }
@@ -33,18 +33,16 @@ impl ResponseError for ApiError {
             ApiError::InternalServerError => {
                 HttpResponse::InternalServerError().json("Internal server error")
             }
-            ApiError::BadRequest => {
-                HttpResponse::BadRequest().json("Bad request")
+            ApiError::BadRequest(msg) => {
+                HttpResponse::BadRequest().json(format!("Bad request: {}", msg))
             }
-            ApiError::Unauthorized => {
-                HttpResponse::Unauthorized().json("Unauthorized")
+            ApiError::Unauthorized(msg) => {
+                HttpResponse::Unauthorized().json(format!("Unauthorized: {}", msg))
             }
-            ApiError::Forbidden => {
-                HttpResponse::Forbidden().json("Forbidden")
+            ApiError::Forbidden(msg) => {
+                HttpResponse::Forbidden().json(format!("Forbidden: {}", msg))
             }
-            ApiError::NotFound => {
-                HttpResponse::NotFound().json("Not found")
-            }
+            ApiError::NotFound(msg) => HttpResponse::NotFound().json(format!("Not found: {}", msg)),
             ApiError::DatabaseError(msg) => {
                 HttpResponse::InternalServerError().json(format!("Database error: {}", msg))
             }
