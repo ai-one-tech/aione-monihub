@@ -17,10 +17,10 @@ export function SignIn() {
     <AuthLayout>
       <Card className='gap-4'>
         <CardHeader>
-          <CardTitle className='text-lg tracking-tight'>Sign in</CardTitle>
+          <CardTitle className='text-lg tracking-tight'>登录</CardTitle>
           <CardDescription>
-            Enter your email and password below to <br />
-            log into your account
+            请输入您的用户名和密码 <br />
+            登录到您的账户
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -28,21 +28,21 @@ export function SignIn() {
         </CardContent>
         <CardFooter>
           <p className='text-muted-foreground px-8 text-center text-sm'>
-            By clicking sign in, you agree to our{' '}
+            点击登录，您同意我们的{' '}
             <a
               href='/terms'
               className='hover:text-primary underline underline-offset-4'
             >
-              Terms of Service
+              服务条款
             </a>{' '}
-            and{' '}
+            和{' '}
             <a
               href='/privacy'
               className='hover:text-primary underline underline-offset-4'
             >
-              Privacy Policy
+              隐私政策
             </a>
-            .
+            。
           </p>
         </CardFooter>
       </Card>
