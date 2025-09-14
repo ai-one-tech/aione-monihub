@@ -1,11 +1,6 @@
-use crate::applications::models::{
-    ApplicationCreateRequest, ApplicationListQuery, ApplicationListResponse, ApplicationResponse,
-    AuthorizationResponse, Pagination,
-};
-use crate::shared::error::ApiError;
-use actix_web::{web, HttpResponse, Result};
-use chrono::Utc;
-use uuid::Uuid;
+use crate::applications::mod.rs::ApplicationsModule;
+use crate::auth::middleware::get_user_id_from_request;
+use sea_orm::{DatabaseConnection, PaginatorTrait};
 
 #[utoipa::path(
     get,
@@ -14,40 +9,73 @@ use uuid::Uuid;
     responses(
         (status = 200, description = "List applications successfully", body = ApplicationListResponse),
         (status = 400, description = "Bad request"),
+        (status = 401, description = "Unauthorized"),
         (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("bearer_auth" = [])
     ),
     tag = "Applications"
 )]
 pub async fn get_applications(
+    db: web::Data<DatabaseConnection>,
     query: web::Query<ApplicationListQuery>,
+    req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
-    // TODO: Implement actual application listing logic
-    // This is a placeholder implementation
+    // 从JWT中获取用户ID
+    let user_id = get_user_id_from_request(&req)?;
 
+    // 分页参数处理
     let page = query.page.unwrap_or(1);
     let limit = query.limit.unwrap_or(10);
+    let offset = (page - 1) * limit;
 
-    let applications = vec![ApplicationResponse {
-        id: "1".to_string(),
-        project_id: "1".to_string(),
-        name: "Application 1".to_string(),
-        code: "APP001".to_string(),
-        status: "active".to_string(),
-        description: "First application".to_string(),
-        authorization: AuthorizationResponse {
-            users: vec!["user1".to_string()],
-            expiry_date: None,
-        },
-        created_at: "2023-01-01T00:00:00Z".to_string(),
-        updated_at: "2023-01-01T00:00:00Z".to_string(),
-    }];
+    // 创建ApplicationsModule实例
+    let applications_module = ApplicationsModule::new(db.get_ref().clone());
+
+    // 查询数据库获取应用列表
+    let mut select = applications_module.find_all_applications().await?;
+
+    // 如果有搜索参数，添加过滤条件
+    if let Some(search) = &query.search {
+        let search_pattern = format!("%{}%", search);
+        select = select
+            .filter(crate::entities::applications::Column::Name.like(&search_pattern));
+    }
+
+    // 获取总数和分页数据
+    let total = select.clone().count(&db).await?;
+    let applications: Vec<_> = select
+        .offset(offset as u64)
+        .limit(limit as u64)
+        .all(&db)
+        .await?;
+
+    // 转换为响应格式
+    let application_responses: Vec<ApplicationResponse> = applications
+        .into_iter()
+        .map(|app| ApplicationResponse {
+            id: app.id,
+            project_id: app.project_id,
+            name: app.name,
+            code: app.code,
+            status: app.status,
+            description: app.description.unwrap_or_default(),
+            authorization: AuthorizationResponse {
+                users: vec![app.created_by],
+                expiry_date: None,
+            },
+            created_at: app.created_at.to_rfc3339(),
+            updated_at: app.updated_at.to_rfc3339(),
+        })
+        .collect();
 
     let response = ApplicationListResponse {
-        data: applications,
+        data: application_responses,
         pagination: Pagination {
             page,
             limit,
-            total: 1,
+            total: total as u32,
         },
         timestamp: std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -71,24 +99,56 @@ pub async fn get_applications(
     tag = "Applications"
 )]
 pub async fn create_application(
+    db: web::Data<DatabaseConnection>,
     app: web::Json<ApplicationCreateRequest>,
+    req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
-    // TODO: Implement actual application creation logic
-    // This is a placeholder implementation
+    // 从JWT中获取用户ID
+    let user_id = get_user_id_from_request(&req)?;
 
+    // 验证请求数据
+    if app.name.is_empty() || app.code.is_empty() {
+        return Err(ApiError::BadRequest("Name and code are required".to_string()));
+    }
+
+    // 创建ApplicationsModule实例
+    let applications_module = ApplicationsModule::new(db.get_ref().clone());
+
+    // 检查应用名称是否已存在
+    if let Some(existing_app) = applications_module.find_application_by_name(&app.name).await? {
+        return Err(ApiError::BadRequest("Application name already exists".to_string()));
+    }
+
+    // 创建应用
+    let new_app = applications::ActiveModel {
+        id: ActiveValue::Set(Uuid::new_v4().to_string()),
+        project_id: ActiveValue::Set(app.project_id.clone()),
+        name: ActiveValue::Set(app.name.clone()),
+        code: ActiveValue::Set(app.code.clone()),
+        status: ActiveValue::Set(app.status.clone()),
+        description: ActiveValue::Set(app.description.clone()),
+        created_by: ActiveValue::Set(user_id.to_string()),
+        updated_by: ActiveValue::Set(user_id.to_string()),
+        created_at: ActiveValue::Set(Utc::now().into()),
+        updated_at: ActiveValue::Set(Utc::now().into()),
+    };
+
+    let created_app = applications_module.create_application(new_app).await?;
+
+    // 转换为响应格式
     let response = ApplicationResponse {
-        id: Uuid::new_v4().to_string(),
-        project_id: app.project_id.clone(),
-        name: app.name.clone(),
-        code: app.code.clone(),
-        status: app.status.clone(),
-        description: app.description.clone(),
+        id: created_app.id,
+        project_id: created_app.project_id,
+        name: created_app.name,
+        code: created_app.code,
+        status: created_app.status,
+        description: created_app.description.unwrap_or_default(),
         authorization: AuthorizationResponse {
-            users: app.authorization.users.clone(),
-            expiry_date: app.authorization.expiry_date.clone(),
+            users: vec![created_app.created_by],
+            expiry_date: None,
         },
-        created_at: Utc::now().to_rfc3339(),
-        updated_at: Utc::now().to_rfc3339(),
+        created_at: created_app.created_at.to_rfc3339(),
+        updated_at: created_app.updated_at.to_rfc3339(),
     };
 
     Ok(HttpResponse::Ok().json(response))
@@ -105,30 +165,51 @@ pub async fn create_application(
         (status = 404, description = "Application not found"),
         (status = 500, description = "Internal server error")
     ),
+    security(
+        ("bearer_auth" = [])
+    ),
     tag = "Applications"
 )]
-pub async fn get_application(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
-    // TODO: Implement actual application retrieval logic
-    // This is a placeholder implementation
+pub async fn get_application(
+    db: web::Data<DatabaseConnection>,
+    path: web::Path<String>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiError> {
+    // 从JWT中获取用户ID
+    let user_id = get_user_id_from_request(&req)?;
 
     let app_id = path.into_inner();
 
-    let response = ApplicationResponse {
-        id: app_id,
-        project_id: "1".to_string(),
-        name: "Application 1".to_string(),
-        code: "APP001".to_string(),
-        status: "active".to_string(),
-        description: "First application".to_string(),
-        authorization: AuthorizationResponse {
-            users: vec!["user1".to_string()],
-            expiry_date: None,
-        },
-        created_at: "2023-01-01T00:00:00Z".to_string(),
-        updated_at: "2023-01-01T00:00:00Z".to_string(),
-    };
+    // 创建ApplicationsModule实例
+    let applications_module = ApplicationsModule::new(db.get_ref().clone());
 
-    Ok(HttpResponse::Ok().json(response))
+    // 查询数据库获取应用信息
+    if let Some(application) = applications_module.find_application_by_id(&app_id).await? {
+        // 检查用户是否有访问权限
+        if application.created_by != user_id.to_string() {
+            return Err(ApiError::Unauthorized("You do not have permission to access this application".to_string()));
+        }
+
+        // 转换为响应格式
+        let response = ApplicationResponse {
+            id: application.id,
+            project_id: application.project_id,
+            name: application.name,
+            code: application.code,
+            status: application.status,
+            description: application.description.unwrap_or_default(),
+            authorization: AuthorizationResponse {
+                users: vec![application.created_by],
+                expiry_date: None,
+            },
+            created_at: application.created_at.to_rfc3339(),
+            updated_at: application.updated_at.to_rfc3339(),
+        };
+
+        Ok(HttpResponse::Ok().json(response))
+    } else {
+        Err(ApiError::NotFound("Application not found".to_string()))
+    }
 }
 
 #[utoipa::path(
@@ -144,33 +225,69 @@ pub async fn get_application(path: web::Path<String>) -> Result<HttpResponse, Ap
         (status = 400, description = "Bad request"),
         (status = 500, description = "Internal server error")
     ),
+    security(
+        ("bearer_auth" = [])
+    ),
     tag = "Applications"
 )]
 pub async fn update_application(
+    db: web::Data<DatabaseConnection>,
     path: web::Path<String>,
     app: web::Json<ApplicationCreateRequest>,
+    req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
-    // TODO: Implement actual application update logic
-    // This is a placeholder implementation
+    // 从JWT中获取用户ID
+    let user_id = get_user_id_from_request(&req)?;
 
     let app_id = path.into_inner();
 
-    let response = ApplicationResponse {
-        id: app_id,
-        project_id: app.project_id.clone(),
-        name: app.name.clone(),
-        code: app.code.clone(),
-        status: app.status.clone(),
-        description: app.description.clone(),
-        authorization: AuthorizationResponse {
-            users: app.authorization.users.clone(),
-            expiry_date: app.authorization.expiry_date.clone(),
-        },
-        created_at: "2023-01-01T00:00:00Z".to_string(),
-        updated_at: Utc::now().to_rfc3339(),
-    };
+    // 创建ApplicationsModule实例
+    let applications_module = ApplicationsModule::new(db.get_ref().clone());
 
-    Ok(HttpResponse::Ok().json(response))
+    // 验证请求数据
+    if app.name.is_empty() || app.code.is_empty() {
+        return Err(ApiError::BadRequest("Name and code are required".to_string()));
+    }
+
+    // 查询数据库获取应用信息
+    if let Some(mut application) = applications_module.find_application_by_id(&app_id).await? {
+        // 检查用户是否有更新权限
+        if application.created_by != user_id.to_string() {
+            return Err(ApiError::Unauthorized("You do not have permission to update this application".to_string()));
+        }
+
+        // 更新应用信息
+        application.name = app.name.clone();
+        application.project_id = app.project_id.clone();
+        application.code = app.code.clone();
+        application.status = app.status.clone();
+        application.description = app.description.clone();
+        application.updated_by = user_id.to_string();
+        application.updated_at = Utc::now().into();
+
+        // 保存更新
+        let updated_app = applications_module.update_application(application.into()).await?;
+
+        // 转换为响应格式
+        let response = ApplicationResponse {
+            id: updated_app.id,
+            project_id: updated_app.project_id,
+            name: updated_app.name,
+            code: updated_app.code,
+            status: updated_app.status,
+            description: updated_app.description.unwrap_or_default(),
+            authorization: AuthorizationResponse {
+                users: vec![updated_app.created_by],
+                expiry_date: None,
+            },
+            created_at: updated_app.created_at.to_rfc3339(),
+            updated_at: updated_app.updated_at.to_rfc3339(),
+        };
+
+        Ok(HttpResponse::Ok().json(response))
+    } else {
+        Err(ApiError::NotFound("Application not found".to_string()))
+    }
 }
 
 #[utoipa::path(
@@ -184,13 +301,36 @@ pub async fn update_application(
         (status = 404, description = "Application not found"),
         (status = 500, description = "Internal server error")
     ),
+    security(
+        ("bearer_auth" = [])
+    ),
     tag = "Applications"
 )]
-pub async fn delete_application(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
-    // TODO: Implement actual application deletion logic
-    // This is a placeholder implementation
+pub async fn delete_application(
+    db: web::Data<DatabaseConnection>,
+    path: web::Path<String>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiError> {
+    // 从JWT中获取用户ID
+    let user_id = get_user_id_from_request(&req)?;
 
-    let _app_id = path.into_inner();
+    let app_id = path.into_inner();
 
-    Ok(HttpResponse::Ok().json("Application deleted successfully"))
+    // 创建ApplicationsModule实例
+    let applications_module = ApplicationsModule::new(db.get_ref().clone());
+
+    // 查询数据库获取应用信息
+    if let Some(application) = applications_module.find_application_by_id(&app_id).await? {
+        // 检查用户是否有删除权限
+        if application.created_by != user_id.to_string() {
+            return Err(ApiError::Unauthorized("You do not have permission to delete this application".to_string()));
+        }
+
+        // 删除应用
+        applications_module.delete_application(&app_id).await?;
+
+        Ok(HttpResponse::Ok().json("Application deleted successfully"))
+    } else {
+        Err(ApiError::NotFound("Application not found".to_string()))
+    }
 }

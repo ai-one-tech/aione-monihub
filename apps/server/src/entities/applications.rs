@@ -45,3 +45,22 @@ impl Related<super::deployments::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ApplicationDetail {
+    pub id: String,
+    pub project_id: String,
+    pub name: String,
+    pub code: String,
+    pub status: String,
+    pub description: Option<String>,
+    pub auth_config: serde_json::Value,
+    pub created_by: String,
+    pub updated_by: String,
+    pub deleted_at: Option<DateTimeWithTimeZone>,
+    pub revision: i32,
+    pub created_at: DateTimeWithTimeZone,
+    pub updated_at: DateTimeWithTimeZone,
+    // 添加与部署的关联信息
+    pub deployments: Option<Vec<super::deployments::Model>>,
+}

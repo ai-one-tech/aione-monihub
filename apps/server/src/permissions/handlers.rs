@@ -109,7 +109,6 @@ async fn get_user_permissions_by_type(
     db: &DatabaseConnection,
 ) -> Result<Vec<PermissionModel>, sea_orm::DbErr> {
     // 简化的实现：暂时返回所有指定类型的权限
-    // TODO: 后续实现真正的基于用户角色的权限过滤
     let permissions = Permissions::find()
         .filter(crate::entities::permissions::Column::DeletedAt.is_null())
         .filter(crate::entities::permissions::Column::PermissionType.eq(permission_type))

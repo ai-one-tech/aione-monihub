@@ -1,35 +1,3 @@
-use crate::entities::roles::{ActiveModel, Entity as Roles, Model as RoleModel};
-use crate::roles::models::{RoleCreateRequest, RoleListResponse, RoleResponse};
-use crate::shared::error::ApiError;
-use crate::shared::snowflake::generate_snowflake_id;
-use actix_web::{web, HttpResponse, Result};
-use chrono::Utc;
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Set,
-};
-use uuid::Uuid;
-
-pub async fn get_roles(db: web::Data<DatabaseConnection>) -> Result<HttpResponse, ApiError> {
-    // 获取所有未删除的角色
-    let roles: Vec<RoleModel> = Roles::find()
-        .filter(crate::entities::roles::Column::DeletedAt.is_null())
-        .order_by_desc(crate::entities::roles::Column::CreatedAt)
-        .all(&**db)
-        .await?;
-
-    // 转换为响应格式
-    let role_responses: Vec<RoleResponse> = roles
-        .into_iter()
-        .map(|role| RoleResponse {
-            id: role.id,
-            name: role.name,
-            description: role.description.unwrap_or_default(),
-            permissions: vec![], // TODO: 从 role_permissions 表中获取权限
-            created_at: role.created_at.to_rfc3339(),
-            updated_at: role.updated_at.to_rfc3339(),
-        })
-        .collect();
-
     let response = RoleListResponse {
         data: role_responses,
         timestamp: std::time::SystemTime::now()
@@ -45,6 +13,7 @@ pub async fn get_roles(db: web::Data<DatabaseConnection>) -> Result<HttpResponse
 pub async fn create_role(
     db: web::Data<DatabaseConnection>,
     role: web::Json<RoleCreateRequest>,
+    req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
     // 检查角色名是否已存在
     let existing_role = Roles::find()
@@ -57,6 +26,9 @@ pub async fn create_role(
         return Err(ApiError::BadRequest("角色名已存在".to_string()));
     }
 
+    // 获取当前用户ID
+    let current_user_id = get_user_id_from_request(req.request())?;
+
     // 生成雪花ID
     let role_id = generate_snowflake_id().map_err(|e| ApiError::InternalServerError(e))?;
 
@@ -64,9 +36,9 @@ pub async fn create_role(
     let new_role = ActiveModel {
         id: Set(role_id.clone()),
         name: Set(role.name.clone()),
-        description: Set(Some(role.description.clone())),
-        created_by: Set("system".to_string()), // TODO: 从JWT中获取当前用户ID
-        updated_by: Set("system".to_string()),
+        description: Set(Some(role.name.clone())),
+        created_by: Set(current_user_id.to_string()),
+        updated_by: Set(current_user_id.to_string()),
         revision: Set(1),
         deleted_at: Set(None),
         created_at: Set(Utc::now().into()),
@@ -75,7 +47,30 @@ pub async fn create_role(
 
     let saved_role = new_role.insert(&**db).await?;
 
-    // TODO: 处理权限关联（在 role_permissions 表中插入记录）
+    // 处理权限关联（在 role_permissions 表中插入记录）
+    for permission_id in &role.permissions {
+        // 检查权限是否存在
+        let permission_exists = Permissions::find_by_id(permission_id)
+            .filter(crate::entities::permissions::Column::DeletedAt.is_null())
+            .one(&**db)
+            .await?;
+
+        if permission_exists.is_none() {
+            return Err(ApiError::BadRequest(format!("权限 {} 不存在", permission_id)));
+        }
+
+        // 创建角色权限关联
+        let role_permission_id = generate_snowflake_id().map_err(|e| ApiError::InternalServerError(e))?;
+
+        let role_permission = RolePermissionActiveModel {
+            id: Set(role_permission_id),
+            role_id: Set(role_id.clone()),
+            permission_id: Set(permission_id.clone()),
+            created_at: Set(Utc::now().into()),
+        };
+
+        role_permission.insert(&**db).await?;
+    }
 
     let response = RoleResponse {
         id: saved_role.id,
@@ -95,18 +90,29 @@ pub async fn get_role(
 ) -> Result<HttpResponse, ApiError> {
     let role_id = path.into_inner();
 
-    let role = Roles::find_by_id(role_id)
+    let role = Roles::find_by_id(&role_id)
         .filter(crate::entities::roles::Column::DeletedAt.is_null())
         .one(&**db)
         .await?;
 
     match role {
         Some(role) => {
+            // 从 role_permissions 表中获取权限
+            let role_permissions = RolePermissions::find()
+                .filter(crate::entities::role_permissions::Column::RoleId.eq(&role.id))
+                .all(&**db)
+                .await?;
+
+            let mut permissions: Vec<String> = Vec::new();
+            for role_permission in role_permissions {
+                permissions.push(role_permission.permission_id);
+            }
+
             let response = RoleResponse {
                 id: role.id,
                 name: role.name,
                 description: role.description.unwrap_or_default(),
-                permissions: vec![], // TODO: 从 role_permissions 表中获取权限
+                permissions,
                 created_at: role.created_at.to_rfc3339(),
                 updated_at: role.updated_at.to_rfc3339(),
             };
@@ -120,6 +126,7 @@ pub async fn update_role(
     db: web::Data<DatabaseConnection>,
     path: web::Path<String>,
     role: web::Json<RoleCreateRequest>,
+    req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
     let role_id = path.into_inner();
 
@@ -148,12 +155,15 @@ pub async fn update_role(
         }
     }
 
+    // 获取当前用户ID
+    let current_user_id = get_user_id_from_request(req.request())?;
+
     // 更新角色
     let updated_role = ActiveModel {
         id: Set(role_id),
         name: Set(role.name.clone()),
         description: Set(Some(role.description.clone())),
-        updated_by: Set("system".to_string()), // TODO: 从JWT中获取当前用户ID
+        updated_by: Set(current_user_id.to_string()),
         revision: Set(existing_role.revision + 1),
         updated_at: Set(Utc::now().into()),
         ..Default::default()
@@ -161,7 +171,37 @@ pub async fn update_role(
 
     let saved_role = updated_role.update(&**db).await?;
 
-    // TODO: 更新权限关联（删除旧权限，插入新权限）
+    // 更新权限关联（删除旧权限，插入新权限）
+    // 首先删除旧权限
+    RolePermissions::delete_many()
+        .filter(crate::entities::role_permissions::Column::RoleId.eq(&saved_role.id))
+        .exec(&**db)
+        .await?;
+
+    // 然后添加新权限
+    for permission_id in &role.permissions {
+        // 检查权限是否存在
+        let permission_exists = Permissions::find_by_id(permission_id)
+            .filter(crate::entities::permissions::Column::DeletedAt.is_null())
+            .one(&**db)
+            .await?;
+
+        if permission_exists.is_none() {
+            return Err(ApiError::BadRequest(format!("权限 {} 不存在", permission_id)));
+        }
+
+        // 创建角色权限关联
+        let role_permission_id = generate_snowflake_id().map_err(|e| ApiError::InternalServerError(e))?;
+
+        let role_permission = RolePermissionActiveModel {
+            id: Set(role_permission_id),
+            role_id: Set(saved_role.id.clone()),
+            permission_id: Set(permission_id.clone()),
+            created_at: Set(Utc::now().into()),
+        };
+
+        role_permission.insert(&**db).await?;
+    }
 
     let response = RoleResponse {
         id: saved_role.id,
@@ -178,6 +218,7 @@ pub async fn update_role(
 pub async fn delete_role(
     db: web::Data<DatabaseConnection>,
     path: web::Path<String>,
+    req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
     let role_id = path.into_inner();
 
@@ -192,11 +233,14 @@ pub async fn delete_role(
         None => return Err(ApiError::NotFound("角色不存在".to_string())),
     };
 
+    // 获取当前用户ID
+    let current_user_id = get_user_id_from_request(req.request())?;
+
     // 软删除角色（设置 deleted_at 时间戳）
     let deleted_role = ActiveModel {
         id: Set(role_id),
         deleted_at: Set(Some(Utc::now().into())),
-        updated_by: Set("system".to_string()), // TODO: 从JWT中获取当前用户ID
+        updated_by: Set(current_user_id.to_string()),
         revision: Set(existing_role.revision + 1),
         updated_at: Set(Utc::now().into()),
         ..Default::default()

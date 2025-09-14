@@ -30,8 +30,44 @@ impl ApplicationsModule {
         Applications::find_by_id(id).one(&self.database).await
     }
 
+    pub async fn find_application_by_name(
+        &self,
+        name: &str,
+    ) -> Result<Option<applications::Model>, sea_orm::DbErr> {
+        use sea_orm::EntityTrait;
+        Applications::find()
+            .filter(applications::Column::Name.eq(name))
+            .one(&self.database)
+            .await
+    }
+
     pub async fn find_all_applications(&self) -> Result<Vec<applications::Model>, sea_orm::DbErr> {
         use sea_orm::EntityTrait;
         Applications::find().all(&self.database).await
+    }
+
+    pub async fn update_application(
+        &self,
+        app_data: applications::ActiveModel,
+    ) -> Result<applications::Model, sea_orm::DbErr> {
+        use sea_orm::ActiveModelTrait;
+        app_data.update(&self.database).await
+    }
+
+    pub async fn delete_application(
+        &self,
+        id: &str,
+    ) -> Result<(), sea_orm::DbErr> {
+        use sea_orm::EntityTrait;
+        use sea_orm::PrimaryKeyTrait;
+        
+        // 找到应用
+        if let Some(app) = self.find_application_by_id(id).await? {
+            // 删除应用
+            app.delete(&self.database).await?;
+            Ok(())
+        } else {
+            Err(sea_orm::DbErr::Custom("Application not found".into()))
+        }
     }
 }

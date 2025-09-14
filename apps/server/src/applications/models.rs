@@ -94,3 +94,20 @@ pub struct ApplicationListQuery {
     pub project_id: Option<String>,
     pub status: Option<String>,
 }
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct ApplicationDetail {
+    pub id: String,
+    pub project_id: String,
+    pub name: String,
+    pub code: String,
+    pub status: String,
+    pub description: String,
+    pub authorization: AuthorizationResponse,
+    pub created_by: String,
+    pub updated_by: String,
+    pub deleted_at: Option<DateTime<Utc>>,
+    pub revision: i32,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
