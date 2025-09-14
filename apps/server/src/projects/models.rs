@@ -6,13 +6,10 @@ use utoipa::{IntoParams, ToSchema};
 pub struct Project {
     pub id: String,
     pub name: String,
-    pub code: String,
-    pub status: String,
-    pub description: String,
-    pub created_by: String,
-    pub updated_by: String,
-    pub deleted_at: Option<DateTime<Utc>>,
-    pub revision: i32,
+    pub description: Option<String>,
+    pub repository_url: Option<String>,
+    pub owner_id: String,
+    pub is_active: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -21,8 +18,6 @@ pub struct Project {
 pub struct ProjectResponse {
     pub id: String,
     pub name: String,
-    pub code: String,
-    pub status: String,
     pub description: String,
     pub created_at: String, // DateTime in ISO 8601 format
     pub updated_at: String, // DateTime in ISO 8601 format
@@ -31,17 +26,15 @@ pub struct ProjectResponse {
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ProjectCreateRequest {
     pub name: String,
-    pub code: String,
-    pub status: String,
     pub description: String,
+    pub repository_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ProjectUpdateRequest {
     pub name: String,
-    pub code: String,
-    pub status: String,
     pub description: String,
+    pub repository_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -65,5 +58,4 @@ pub struct ProjectListQuery {
     pub page: Option<u32>,
     pub limit: Option<u32>,
     pub search: Option<String>,
-    pub status: Option<String>,
 }

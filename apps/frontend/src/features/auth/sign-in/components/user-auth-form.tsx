@@ -25,8 +25,7 @@ const formSchema = z.object({
   username: z.string().min(1, '请输入用户名'),
   password: z
     .string()
-    .min(1, '请输入密码')
-    .min(7, '密码至少需要7个字符'),
+    .min(1, '请输入密码'),
 })
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLFormElement> {

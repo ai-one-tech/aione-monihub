@@ -2,11 +2,13 @@ pub mod handlers;
 pub mod models;
 pub mod routes;
 
-use crate::entities::{users, Roles, Users};
+use crate::entities::{users, Roles, Users, PasswordResetTokens};
+use crate::entities::password_reset_tokens;
 use crate::shared::generate_snowflake_id;
 use bcrypt::{hash, verify, DEFAULT_COST};
-use sea_orm::{ActiveValue, ColumnTrait, DatabaseConnection, QueryFilter};
-use chrono::Utc;
+use sea_orm::{ActiveValue, ColumnTrait, DatabaseConnection, QueryFilter, ActiveModelTrait};
+use chrono::{Utc, Duration};
+use uuid::Uuid;
 
 
 pub struct UsersModule {
@@ -121,5 +123,119 @@ impl UsersModule {
     pub async fn find_all_users(&self) -> Result<Vec<users::Model>, sea_orm::DbErr> {
         use sea_orm::EntityTrait;
         Users::find().all(&self.database).await
+    }
+
+    /// 创建密码重置令牌
+    pub async fn create_password_reset_token(
+        &self,
+        user_id: &str,
+    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+        // 生成唯一的重置令牌
+        let token = Uuid::new_v4().to_string();
+        
+        // 生成 Snowflake ID
+        let id = generate_snowflake_id()
+            .map_err(|e| format!("Failed to generate ID: {}", e))?;
+        
+        // 设置令牌过期时间（24小时后）
+        let expires_at = Utc::now() + Duration::hours(24);
+        
+        // 保存令牌到数据库
+        let reset_token = password_reset_tokens::ActiveModel {
+            id: ActiveValue::Set(id),
+            user_id: ActiveValue::Set(user_id.to_string()),
+            token: ActiveValue::Set(token.clone()),
+            expires_at: ActiveValue::Set(expires_at.into()),
+            used_at: ActiveValue::Set(None),
+            created_at: ActiveValue::Set(Utc::now().into()),
+        };
+        
+        reset_token.insert(&self.database).await
+            .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
+        
+        Ok(token)
+    }
+
+    /// 验证并使用密码重置令牌
+    pub async fn verify_and_use_reset_token(
+        &self,
+        token: &str,
+    ) -> Result<Option<String>, Box<dyn std::error::Error + Send + Sync>> {
+        use sea_orm::EntityTrait;
+        
+        // 查找令牌
+        let reset_token = PasswordResetTokens::find()
+            .filter(password_reset_tokens::Column::Token.eq(token))
+            .filter(password_reset_tokens::Column::UsedAt.is_null())
+            .filter(password_reset_tokens::Column::ExpiresAt.gt(Utc::now()))
+            .one(&self.database)
+            .await
+            .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
+        
+        match reset_token {
+            Some(token_record) => {
+                // 保存 user_id 在更新之前
+                let user_id = token_record.user_id.clone();
+                
+                // 标记令牌为已使用
+                let mut active_token: password_reset_tokens::ActiveModel = token_record.into();
+                active_token.used_at = ActiveValue::Set(Some(Utc::now().into()));
+                active_token.update(&self.database).await
+                    .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
+                
+                Ok(Some(user_id))
+            }
+            None => Ok(None), // 令牌无效、已使用或已过期
+        }
+    }
+
+    /// 更新用户密码
+    pub async fn update_user_password(
+        &self,
+        user_id: &str,
+        new_password: &str,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        use sea_orm::EntityTrait;
+        
+        // 查找用户
+        let user = Users::find_by_id(user_id)
+            .one(&self.database)
+            .await
+            .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
+        
+        match user {
+            Some(user_record) => {
+                // 加密新密码
+                let password_hash = Self::hash_password(new_password)
+                    .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
+                
+                // 更新用户密码
+                let mut active_user: users::ActiveModel = user_record.into();
+                active_user.password_hash = ActiveValue::Set(password_hash);
+                active_user.updated_at = ActiveValue::Set(Utc::now().into());
+                active_user.revision = ActiveValue::Set(active_user.revision.unwrap() + 1);
+                
+                active_user.update(&self.database).await
+                    .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
+                
+                Ok(())
+            }
+            None => Err("用户不存在".into()),
+        }
+    }
+
+    /// 清理过期的密码重置令牌
+    pub async fn cleanup_expired_reset_tokens(&self) -> Result<u64, sea_orm::DbErr> {
+        use sea_orm::{EntityTrait, QueryFilter};
+        
+        let result = PasswordResetTokens::delete_many()
+            .filter(
+                password_reset_tokens::Column::ExpiresAt.lt(Utc::now())
+                    .or(password_reset_tokens::Column::UsedAt.is_not_null())
+            )
+            .exec(&self.database)
+            .await?;
+        
+        Ok(result.rows_affected)
     }
 }

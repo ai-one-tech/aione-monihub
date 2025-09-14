@@ -4,8 +4,8 @@ use derive_more::Display;
 // Custom error type for our application
 #[derive(Debug, Display)]
 pub enum ApiError {
-    #[display(fmt = "Internal server error")]
-    InternalServerError,
+    #[display(fmt = "Internal server error: {}", _0)]
+    InternalServerError(String),
 
     #[display(fmt = "Bad request: {}", _0)]
     BadRequest(String),
@@ -30,8 +30,8 @@ pub enum ApiError {
 impl ResponseError for ApiError {
     fn error_response(&self) -> HttpResponse {
         match self {
-            ApiError::InternalServerError => {
-                HttpResponse::InternalServerError().json("Internal server error")
+            ApiError::InternalServerError(msg) => {
+                HttpResponse::InternalServerError().json(format!("Internal server error: {}", msg))
             }
             ApiError::BadRequest(msg) => {
                 HttpResponse::BadRequest().json(format!("Bad request: {}", msg))

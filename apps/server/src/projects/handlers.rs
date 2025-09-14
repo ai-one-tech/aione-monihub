@@ -1,9 +1,16 @@
+use crate::entities::projects::{ActiveModel, Entity as Projects, Model as ProjectModel};
 use crate::projects::models::{
     Pagination, ProjectCreateRequest, ProjectListQuery, ProjectListResponse, ProjectResponse,
 };
 use crate::shared::error::ApiError;
-use actix_web::{web, HttpResponse, Result};
+use crate::shared::snowflake::generate_snowflake_id;
+use crate::auth::middleware::get_user_id_from_request;
+use actix_web::{web, HttpRequest, HttpResponse, Result};
 use chrono::Utc;
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter,
+    QueryOrder, QuerySelect, Set,
+};
 use uuid::Uuid;
 
 #[utoipa::path(
@@ -23,30 +30,54 @@ use uuid::Uuid;
     ),
     tag = "Projects"
 )]
-pub async fn get_projects(query: web::Query<ProjectListQuery>) -> Result<HttpResponse, ApiError> {
-    // TODO: Implement actual project listing logic with database query
-    // This is a placeholder implementation
-
+pub async fn get_projects(
+    db: web::Data<DatabaseConnection>,
+    query: web::Query<ProjectListQuery>,
+) -> Result<HttpResponse, ApiError> {
     let page = query.page.unwrap_or(1);
     let limit = query.limit.unwrap_or(10);
+    let offset = (page - 1) * limit;
 
-    // In a real implementation, this would come from the database
-    let projects = vec![ProjectResponse {
-        id: "1".to_string(),
-        name: "Project 1".to_string(),
-        code: "PROJ001".to_string(),
-        status: "active".to_string(),
-        description: "First project".to_string(),
-        created_at: "2023-01-01T00:00:00Z".to_string(),
-        updated_at: "2023-01-01T00:00:00Z".to_string(),
-    }];
+    let mut select = Projects::find();
+
+    // 搜索过滤
+    if let Some(search) = &query.search {
+        let search_pattern = format!("%{}%", search);
+        select = select.filter(
+            crate::entities::projects::Column::Name
+                .like(&search_pattern)
+        );
+    }
+
+    // 排序
+    select = select.order_by_desc(crate::entities::projects::Column::CreatedAt);
+
+    // 获取总数和分页数据
+    let total = select.clone().count(&**db).await?;
+    let projects: Vec<ProjectModel> = select
+        .offset(offset as u64)
+        .limit(limit as u64)
+        .all(&**db)
+        .await?;
+
+    // 转换为响应格式
+    let project_responses: Vec<ProjectResponse> = projects
+        .into_iter()
+        .map(|project| ProjectResponse {
+            id: project.id,
+            name: project.name,
+            description: project.description.unwrap_or_default(),
+            created_at: project.created_at.to_rfc3339(),
+            updated_at: project.updated_at.to_rfc3339(),
+        })
+        .collect();
 
     let response = ProjectListResponse {
-        data: projects,
+        data: project_responses,
         pagination: Pagination {
             page,
             limit,
-            total: 1,
+            total: total as u32,
         },
         timestamp: std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -70,19 +101,46 @@ pub async fn get_projects(query: web::Query<ProjectListQuery>) -> Result<HttpRes
     tag = "Projects"
 )]
 pub async fn create_project(
+    db: web::Data<DatabaseConnection>,
     project: web::Json<ProjectCreateRequest>,
+    req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
-    // TODO: Implement actual project creation logic
-    // This is a placeholder implementation
+    // 检查项目名是否已存在
+    let existing_project = Projects::find()
+        .filter(crate::entities::projects::Column::Name.eq(&project.name))
+        .one(&**db)
+        .await?;
+
+    if existing_project.is_some() {
+        return Err(ApiError::BadRequest("项目名已存在".to_string()));
+    }
+
+    // 从JWT中获取当前用户ID
+    let current_user_id = get_user_id_from_request(&req)?;
+
+    // 生成雪花ID
+    let project_id = generate_snowflake_id().map_err(|e| ApiError::InternalServerError(e))?;
+
+    // 创建项目
+    let new_project = ActiveModel {
+        id: Set(project_id.clone()),
+        name: Set(project.name.clone()),
+        description: Set(Some(project.description.clone())),
+        repository_url: Set(project.repository_url.clone()),
+        owner_id: Set(current_user_id.to_string()),
+        is_active: Set(true),
+        created_at: Set(Utc::now().into()),
+        updated_at: Set(Utc::now().into()),
+    };
+
+    let saved_project = new_project.insert(&**db).await?;
 
     let response = ProjectResponse {
-        id: Uuid::new_v4().to_string(),
-        name: project.name.clone(),
-        code: project.code.clone(),
-        status: project.status.clone(),
-        description: project.description.clone(),
-        created_at: Utc::now().to_rfc3339(),
-        updated_at: Utc::now().to_rfc3339(),
+        id: saved_project.id,
+        name: saved_project.name,
+        description: saved_project.description.unwrap_or_default(),
+        created_at: saved_project.created_at.to_rfc3339(),
+        updated_at: saved_project.updated_at.to_rfc3339(),
     };
 
     Ok(HttpResponse::Ok().json(response))
@@ -101,23 +159,29 @@ pub async fn create_project(
     ),
     tag = "Projects"
 )]
-pub async fn get_project(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
-    // TODO: Implement actual project retrieval logic
-    // This is a placeholder implementation
-
+pub async fn get_project(
+    db: web::Data<DatabaseConnection>,
+    path: web::Path<String>,
+) -> Result<HttpResponse, ApiError> {
     let project_id = path.into_inner();
 
-    let response = ProjectResponse {
-        id: project_id,
-        name: "Project 1".to_string(),
-        code: "PROJ001".to_string(),
-        status: "active".to_string(),
-        description: "First project".to_string(),
-        created_at: "2023-01-01T00:00:00Z".to_string(),
-        updated_at: "2023-01-01T00:00:00Z".to_string(),
-    };
+    let project = Projects::find_by_id(project_id)
+        .one(&**db)
+        .await?;
 
-    Ok(HttpResponse::Ok().json(response))
+    match project {
+        Some(project) => {
+            let response = ProjectResponse {
+                id: project.id,
+                name: project.name,
+                description: project.description.unwrap_or_default(),
+                created_at: project.created_at.to_rfc3339(),
+                updated_at: project.updated_at.to_rfc3339(),
+            };
+            Ok(HttpResponse::Ok().json(response))
+        }
+        None => Err(ApiError::NotFound("项目不存在".to_string())),
+    }
 }
 
 #[utoipa::path(
@@ -136,22 +200,40 @@ pub async fn get_project(path: web::Path<String>) -> Result<HttpResponse, ApiErr
     tag = "Projects"
 )]
 pub async fn update_project(
+    db: web::Data<DatabaseConnection>,
     path: web::Path<String>,
     project: web::Json<ProjectCreateRequest>,
 ) -> Result<HttpResponse, ApiError> {
-    // TODO: Implement actual project update logic
-    // This is a placeholder implementation
-
     let project_id = path.into_inner();
 
+    // 查找项目
+    let existing_project = Projects::find_by_id(&project_id)
+        .one(&**db)
+        .await?;
+
+    let _existing_project = match existing_project {
+        Some(project) => project,
+        None => return Err(ApiError::NotFound("项目不存在".to_string())),
+    };
+
+    // 更新项目
+    let updated_project = ActiveModel {
+        id: Set(project_id),
+        name: Set(project.name.clone()),
+        description: Set(Some(project.description.clone())),
+        repository_url: Set(project.repository_url.clone()),
+        updated_at: Set(Utc::now().into()),
+        ..Default::default()
+    };
+
+    let saved_project = updated_project.update(&**db).await?;
+
     let response = ProjectResponse {
-        id: project_id,
-        name: project.name.clone(),
-        code: project.code.clone(),
-        status: project.status.clone(),
-        description: project.description.clone(),
-        created_at: "2023-01-01T00:00:00Z".to_string(),
-        updated_at: Utc::now().to_rfc3339(),
+        id: saved_project.id,
+        name: saved_project.name,
+        description: saved_project.description.unwrap_or_default(),
+        created_at: saved_project.created_at.to_rfc3339(),
+        updated_at: saved_project.updated_at.to_rfc3339(),
     };
 
     Ok(HttpResponse::Ok().json(response))
@@ -170,11 +252,31 @@ pub async fn update_project(
     ),
     tag = "Projects"
 )]
-pub async fn delete_project(path: web::Path<String>) -> Result<HttpResponse, ApiError> {
-    // TODO: Implement actual project deletion logic
-    // This is a placeholder implementation
+pub async fn delete_project(
+    db: web::Data<DatabaseConnection>,
+    path: web::Path<String>,
+) -> Result<HttpResponse, ApiError> {
+    let project_id = path.into_inner();
 
-    let _project_id = path.into_inner();
+    // 查找项目
+    let existing_project = Projects::find_by_id(&project_id)
+        .one(&**db)
+        .await?;
 
-    Ok(HttpResponse::Ok().json("Project deleted successfully"))
+    let _existing_project = match existing_project {
+        Some(project) => project,
+        None => return Err(ApiError::NotFound("项目不存在".to_string())),
+    };
+
+    // 软删除项目（设置为不活跃状态）
+    let deleted_project = ActiveModel {
+        id: Set(project_id),
+        is_active: Set(false),
+        updated_at: Set(Utc::now().into()),
+        ..Default::default()
+    };
+
+    deleted_project.update(&**db).await?;
+
+    Ok(HttpResponse::Ok().json("项目删除成功"))
 }

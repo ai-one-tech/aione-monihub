@@ -2,11 +2,12 @@ use crate::auth::models::{
     Claims, CurrentUserResponse, ForgotPasswordRequest, LoginRequest, LoginResponse,
     ResetPasswordRequest, UserResponse,
 };
+use crate::entities::users::{self as users};
 use crate::shared::error::ApiError;
 use crate::users::UsersModule;
 use actix_web::{web, HttpRequest, HttpResponse, Result};
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
-use sea_orm::DatabaseConnection;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
 
@@ -112,12 +113,40 @@ pub async fn login(
     tag = "Authentication"
 )]
 pub async fn forgot_password(
-    _forgot_req: web::Json<ForgotPasswordRequest>,
-) -> Result<HttpResponse> {
-    // TODO: Implement forgot password logic
-    // This would normally send an email with a reset link
+    db: web::Data<DatabaseConnection>,
+    forgot_req: web::Json<ForgotPasswordRequest>,
+) -> Result<HttpResponse, ApiError> {
+    // 查找用户
+    let user = users::Entity::find()
+        .filter(users::Column::Email.eq(&forgot_req.email))
+        .filter(users::Column::DeletedAt.is_null())
+        .one(db.get_ref())
+        .await
+        .map_err(|_| ApiError::InternalServerError("数据库错误".to_string()))?;
 
-    Ok(HttpResponse::Ok().json("Password reset email sent"))
+    match user {
+        Some(user) => {
+            // 生成重置令牌
+            let users_module = UsersModule::new(db.get_ref().clone());
+            match users_module.create_password_reset_token(&user.id).await {
+                Ok(token) => {
+                    // 模拟发送邮件（在实际应用中，这里应该调用邮件服务）
+                    println!("为用户 {} 发送密码重置邮件，重置令牌: {}", forgot_req.email, token);
+                    println!("重置链接: http://localhost:3000/reset-password?token={}", token);
+                    
+                    Ok(HttpResponse::Ok().json("密码重置邮件已发送"))
+                }
+                Err(err) => {
+                    eprintln!("生成重置令牌失败: {:?}", err);
+                    Err(ApiError::InternalServerError("生成重置令牌失败".to_string()))
+                }
+            }
+        }
+        None => {
+            // 为了安全考虑，即使用户不存在也返回成功信息
+            Ok(HttpResponse::Ok().json("如果该邮箱存在，密码重置邮件已发送"))
+        }
+    }
 }
 
 #[utoipa::path(
@@ -132,11 +161,46 @@ pub async fn forgot_password(
     ),
     tag = "Authentication"
 )]
-pub async fn reset_password(_reset_req: web::Json<ResetPasswordRequest>) -> Result<HttpResponse> {
-    // TODO: Implement password reset logic
-    // This would validate the token and update the user's password
-
-    Ok(HttpResponse::Ok().json("Password reset successful"))
+pub async fn reset_password(
+    db: web::Data<DatabaseConnection>,
+    reset_req: web::Json<ResetPasswordRequest>,
+) -> Result<HttpResponse, ApiError> {
+    // 验证令牌
+    if reset_req.token.is_empty() {
+        return Err(ApiError::BadRequest("无效的令牌".to_string()));
+    }
+    
+    // 验证密码长度
+    if reset_req.new_password.len() < 6 {
+        return Err(ApiError::BadRequest("密码长度不能少于6位".to_string()));
+    }
+    
+    let users_module = UsersModule::new(db.get_ref().clone());
+    
+    // 验证并使用重置令牌
+    match users_module.verify_and_use_reset_token(&reset_req.token).await {
+        Ok(Some(user_id)) => {
+            // 令牌有效，更新用户密码
+            match users_module.update_user_password(&user_id, &reset_req.new_password).await {
+                Ok(()) => {
+                    println!("用户 {} 密码重置成功", user_id);
+                    Ok(HttpResponse::Ok().json("密码重置成功"))
+                }
+                Err(err) => {
+                    eprintln!("更新密码失败: {:?}", err);
+                    Err(ApiError::InternalServerError("更新密码失败".to_string()))
+                }
+            }
+        }
+        Ok(None) => {
+            // 令牌无效、已使用或已过期
+            Err(ApiError::BadRequest("无效的或已过期的令牌".to_string()))
+        }
+        Err(err) => {
+            eprintln!("验证重置令牌失败: {:?}", err);
+            Err(ApiError::InternalServerError("验证令牌失败".to_string()))
+        }
+    }
 }
 
 // Middleware function to validate JWT tokens
