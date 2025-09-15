@@ -1,11 +1,11 @@
 use crate::auth::middleware::get_user_id_from_request;
-use crate::entities::{Permissions, RolePermissions as EntityRolePermissions, Roles as EntityRoles};
+use crate::entities::Permissions;
 use crate::shared::error::ApiError;
 use crate::shared::generate_snowflake_id;
 use actix_web::{HttpRequest, HttpResponse, web};
 use chrono::Utc;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, Set};
-use serde_json::json;
+
 use uuid::Uuid;
 use crate::entities::role_permissions::{ActiveModel as RolePermissionActiveModel, Entity as RolePermissions};
 use crate::entities::roles::{ActiveModel, Column, Entity as Roles};
@@ -23,7 +23,7 @@ pub async fn get_roles(
         .filter(Column::DeletedAt.is_null())
         .paginate(&**db, page_size);
 
-    let total = paginator.num_items().await?;
+    let _total = paginator.num_items().await?;
     let roles = paginator.fetch_page(page - 1).await?;
 
     // 转换为响应格式

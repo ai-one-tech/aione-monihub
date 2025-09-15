@@ -2,7 +2,7 @@ use crate::auth::middleware::get_user_id_from_request;
 use crate::entities::users::{ActiveModel, Entity as Users};
 use crate::entities::users::Model as UserModel;
 use crate::permissions::handlers::get_user_permissions_by_type;
-use crate::permissions::models::PermissionListResponse;
+
 use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
 use crate::users::models::{

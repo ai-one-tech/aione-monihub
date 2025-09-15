@@ -1,11 +1,7 @@
-use crate::auth::middleware::get_user_id_from_request;
-use crate::entities::logs::{ActiveModel, Column, Entity as Logs};
+use crate::entities::logs::{Column, Entity as Logs};
 use crate::shared::error::ApiError;
-use actix_web::{web, HttpResponse, HttpRequest};
-use chrono::Utc;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Set, PaginatorTrait, Order};
-use serde::{Deserialize, Serialize};
-use serde_json::json;
+use actix_web::{web, HttpResponse};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, PaginatorTrait, Order};
 use uuid::Uuid;
 use crate::logs::models::{LogListQuery, LogListResponse as ModelLogListResponse, LogResponse as ModelLogResponse, Pagination as ModelPagination};
 
@@ -16,7 +12,7 @@ pub async fn get_logs(
     // 获取分页参数
     let page = query.page.unwrap_or(1).max(1);
     let limit = query.limit.unwrap_or(10).max(1).min(100);
-    let offset = (page - 1) * limit;
+    let _offset = (page - 1) * limit;
 
     let paginator = Logs::find()
         .filter(Column::LogLevel.eq("INFO")) // 示例过滤条件
@@ -26,7 +22,7 @@ pub async fn get_logs(
     let logs = paginator.fetch_page((page - 1) as u64).await.map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
 
     // 计算偏移量
-    let offset = (page - 1) * limit;
+    let _offset = (page - 1) * limit;
 
     // 转换为响应格式
     let log_responses: Vec<ModelLogResponse> = logs

@@ -1,15 +1,11 @@
 use crate::applications::models::{ApplicationCreateRequest, ApplicationListQuery, ApplicationListResponse, ApplicationResponse, AuthorizationResponse, Pagination};
 use crate::applications::ApplicationsModule;
 use crate::auth::middleware::get_user_id_from_request;
-use crate::entities::applications::{ActiveModel, Column, Entity as Applications};
-use crate::entities::projects;
+use crate::entities::applications::Entity as Applications;
 use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
 use actix_web::{web, HttpRequest, HttpResponse};
-use sea_orm::{ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, DatabaseTransaction, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, Set};
-use serde_json::json;
-use std::sync::Arc;
-use tokio::sync::RwLock;
+use sea_orm::{ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect};
 use uuid::Uuid;
 use chrono::Utc;
 
@@ -34,7 +30,7 @@ pub async fn get_applications(
     req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
     // 从JWT中获取用户ID
-    let user_id = get_user_id_from_request(&req)?;
+    let _user_id = get_user_id_from_request(&req)?;
 
     // 分页参数处理
     let page = query.page.unwrap_or(1);
@@ -134,7 +130,7 @@ pub async fn create_application(
     let applications_module = ApplicationsModule::new(db.get_ref().clone());
 
     // 检查应用名称是否已存在
-    if let Some(existing_app) = applications_module.find_application_by_name(&app.name).await? {
+    if let Some(_existing_app) = applications_module.find_application_by_name(&app.name).await? {
         return Err(ApiError::BadRequest("Application name already exists".to_string()));
     }
 

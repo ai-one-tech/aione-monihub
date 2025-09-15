@@ -1,14 +1,12 @@
-use crate::auth::middleware::get_user_id_from_request;
 use crate::entities::configs::{ActiveModel, Column, Entity as Configs};
 use crate::shared::error::ApiError;
 use crate::shared::generate_snowflake_id;
-use actix_web::{web, HttpResponse, HttpRequest};
-use chrono::{Utc, DateTime, FixedOffset};
+use actix_web::{web, HttpResponse};
+use chrono::Utc;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set, Order, PaginatorTrait};
-use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::Value;
 use uuid::Uuid;
-use crate::configs::models::{Config, ConfigCreateRequest, ConfigListQuery, ConfigListResponse, ConfigResponse, ConfigUpdateRequest, Pagination};
+use crate::configs::models::{ConfigCreateRequest, ConfigListQuery, ConfigListResponse, ConfigResponse, Pagination};
 
 #[utoipa::path(
     get,
@@ -28,7 +26,7 @@ pub async fn get_configs(
     // 获取分页参数
     let page = query.page.unwrap_or(1).max(1);
     let limit = query.limit.unwrap_or(10).max(1).min(100);
-    let offset = (page - 1) * limit;
+    let _offset = (page - 1) * limit;
 
     // 构建查询
     let mut query_builder = Configs::find();
@@ -59,7 +57,7 @@ pub async fn get_configs(
     }
 
     // 获取总数
-    let total = query_builder.clone().count(db.get_ref()).await.map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
+    let _total = query_builder.clone().count(db.get_ref()).await.map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
     
     // 获取数据
     let paginator = Configs::find()
