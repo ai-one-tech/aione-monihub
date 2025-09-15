@@ -159,9 +159,9 @@ async fn main() -> io::Result<()> {
     // 获取服务器配置
     let server_host = std::env::var("SERVER_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
     let server_port = std::env::var("SERVER_PORT").unwrap_or_else(|_| "9080".to_string());
-    let bind_address = format!("http://{}:{}", server_host, server_port);
+    let bind_address = format!("{}:{}", server_host, server_port);
 
-    println!("服务器将在 {} 上启动", bind_address);
+    println!("服务器将在 http://{} 上启动", bind_address);
 
     let db_connection = db_manager.get_connection().clone();
 

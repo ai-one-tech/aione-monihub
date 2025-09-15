@@ -1,3 +1,56 @@
+use crate::auth::middleware::get_user_id_from_request;
+use crate::entities::{Permissions, RolePermissions as EntityRolePermissions, Roles as EntityRoles};
+use crate::shared::error::ApiError;
+use crate::shared::generate_snowflake_id;
+use actix_web::{HttpRequest, HttpResponse, web};
+use chrono::Utc;
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, Set};
+use serde_json::json;
+use uuid::Uuid;
+use crate::entities::role_permissions::{ActiveModel as RolePermissionActiveModel, Entity as RolePermissions};
+use crate::entities::roles::{ActiveModel, Column, Entity as Roles};
+use crate::roles::models::{RoleCreateRequest, RoleListResponse, RoleResponse};
+
+pub async fn get_roles(
+    db: web::Data<DatabaseConnection>,
+    query: web::Query<std::collections::HashMap<String, String>>,
+) -> Result<HttpResponse, ApiError> {
+    let page = query.get("page").and_then(|p| p.parse().ok()).unwrap_or(1);
+    let page_size = query.get("page_size").and_then(|p| p.parse().ok()).unwrap_or(10);
+
+    // 构建查询
+    let paginator = Roles::find()
+        .filter(Column::DeletedAt.is_null())
+        .paginate(&**db, page_size);
+
+    let total = paginator.num_items().await?;
+    let roles = paginator.fetch_page(page - 1).await?;
+
+    // 转换为响应格式
+    let mut role_responses = Vec::new();
+    for role in roles {
+        // 获取角色权限
+        let role_permissions = RolePermissions::find()
+            .filter(crate::entities::role_permissions::Column::RoleId.eq(&role.id))
+            .all(&**db)
+            .await?;
+
+        let mut permissions: Vec<String> = Vec::new();
+        for role_permission in role_permissions {
+            permissions.push(role_permission.permission_id);
+        }
+
+        let role_response = RoleResponse {
+            id: role.id,
+            name: role.name,
+            description: role.description.unwrap_or_default(),
+            permissions,
+            created_at: role.created_at.to_rfc3339(),
+            updated_at: role.updated_at.to_rfc3339(),
+        };
+        role_responses.push(role_response);
+    }
+
     let response = RoleListResponse {
         data: role_responses,
         timestamp: std::time::SystemTime::now()
@@ -27,7 +80,7 @@ pub async fn create_role(
     }
 
     // 获取当前用户ID
-    let current_user_id = get_user_id_from_request(req.request())?;
+    let current_user_id = get_user_id_from_request(&req)?;
 
     // 生成雪花ID
     let role_id = generate_snowflake_id().map_err(|e| ApiError::InternalServerError(e))?;
@@ -156,7 +209,7 @@ pub async fn update_role(
     }
 
     // 获取当前用户ID
-    let current_user_id = get_user_id_from_request(req.request())?;
+    let current_user_id = get_user_id_from_request(&req)?;
 
     // 更新角色
     let updated_role = ActiveModel {
@@ -234,7 +287,7 @@ pub async fn delete_role(
     };
 
     // 获取当前用户ID
-    let current_user_id = get_user_id_from_request(req.request())?;
+    let current_user_id = get_user_id_from_request(&req)?;
 
     // 软删除角色（设置 deleted_at 时间戳）
     let deleted_role = ActiveModel {

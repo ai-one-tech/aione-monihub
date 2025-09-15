@@ -1,12 +1,14 @@
 use crate::auth::middleware::get_user_id_from_request;
-use crate::permissions::handlers::{get_user_permissions_by_type, PermissionListResponse};
-use crate::permissions::PermissionsModule;
+use crate::entities::users::{ActiveModel, Entity as Users};
+use crate::entities::users::Model as UserModel;
+use crate::permissions::handlers::get_user_permissions_by_type;
+use crate::permissions::models::PermissionListResponse;
 use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
 use crate::users::models::{
-    Pagination, UserCreateRequest, UserListQuery, UserListResponse, UserResponse,
+    Pagination, UserCreateRequest, UserListQuery, UserListResponse, UserResponse, UserUpdateRequest,
 };
-use actix_web::{web, HttpResponse, Result};
+use actix_web::{web, HttpResponse, Result, HttpRequest};
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::Utc;
 use sea_orm::{
@@ -116,7 +118,7 @@ pub async fn get_users(
 pub async fn create_user(
     db: web::Data<DatabaseConnection>,
     user: web::Json<UserCreateRequest>,
-    req: web::HttpRequest,
+    req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
     // 检查用户名是否已存在
     let existing_user = Users::find()
@@ -144,7 +146,7 @@ pub async fn create_user(
     let user_id = generate_snowflake_id().map_err(|e| ApiError::InternalServerError(e))?;
 
     // 从JWT中获取当前用户ID
-    let current_user_id = get_user_id_from_request(req.request())?;
+    let current_user_id = get_user_id_from_request(&req)?;
 
     // 验证当前用户是否有创建用户的权限
     let permissions = get_user_permissions_by_type(&current_user_id.to_string(), "user_management", &db).await?;
@@ -252,13 +254,13 @@ pub async fn get_user(
 pub async fn update_user(
     db: web::Data<DatabaseConnection>,
     path: web::Path<String>,
-    user: web::Json<UserCreateRequest>,
-    req: web::HttpRequest,
+    user: web::Json<UserUpdateRequest>,
+    req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
     let user_id = path.into_inner();
 
     // 从JWT中获取当前用户ID
-    let current_user_id = get_user_id_from_request(req.request())?;
+    let current_user_id = get_user_id_from_request(&req)?;
 
     // 验证当前用户是否有更新用户的权限
     let permissions = get_user_permissions_by_type(&current_user_id.to_string(), "user_management", &db).await?;
@@ -307,18 +309,10 @@ pub async fn update_user(
     }
 
     // 更新用户
-    let password_hash = if !user.password.is_empty() {
-        hash(&user.password, DEFAULT_COST)
-            .map_err(|e| ApiError::InternalServerError(format!("密码加密失败: {}", e)))?
-    } else {
-        existing_user.password_hash.clone()
-    };
-
     let updated_user = ActiveModel {
         id: Set(user_id),
         username: Set(user.username.clone()),
         email: Set(user.email.clone()),
-        password_hash: Set(password_hash),
         status: Set(user.status.clone()),
         updated_by: Set(current_user_id.to_string()),
         revision: Set(existing_user.revision + 1),
@@ -360,12 +354,12 @@ pub async fn update_user(
 pub async fn delete_user(
     db: web::Data<DatabaseConnection>,
     path: web::Path<String>,
-    req: web::HttpRequest,
+    req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
     let user_id = path.into_inner();
 
     // 从JWT中获取当前用户ID
-    let current_user_id = get_user_id_from_request(req.request())?;
+    let current_user_id = get_user_id_from_request(&req)?;
 
     // 验证当前用户是否有删除用户的权限
     let permissions = get_user_permissions_by_type(&current_user_id.to_string(), "user_management", &db).await?;
@@ -420,12 +414,12 @@ pub async fn delete_user(
 pub async fn disable_user(
     db: web::Data<DatabaseConnection>,
     path: web::Path<String>,
-    req: web::HttpRequest,
+    req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
     let user_id = path.into_inner();
 
     // 从JWT中获取当前用户ID
-    let current_user_id = get_user_id_from_request(req.request())?;
+    let current_user_id = get_user_id_from_request(&req)?;
 
     // 验证当前用户是否有禁用用户的权限
     let permissions = get_user_permissions_by_type(&current_user_id.to_string(), "user_management", &db).await?;
@@ -480,12 +474,12 @@ pub async fn disable_user(
 pub async fn enable_user(
     db: web::Data<DatabaseConnection>,
     path: web::Path<String>,
-    req: web::HttpRequest,
+    req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
     let user_id = path.into_inner();
 
     // 从JWT中获取当前用户ID
-    let current_user_id = get_user_id_from_request(req.request())?;
+    let current_user_id = get_user_id_from_request(&req)?;
 
     // 验证当前用户是否有启用用户的权限
     let permissions = get_user_permissions_by_type(&current_user_id.to_string(), "user_management", &db).await?;

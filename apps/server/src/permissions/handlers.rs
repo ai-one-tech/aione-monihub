@@ -103,7 +103,7 @@ pub async fn get_user_menu(
 }
 
 /// 根据用户ID和权限类型获取用户权限
-async fn get_user_permissions_by_type(
+pub async fn get_user_permissions_by_type(
     _user_id: &str,
     permission_type: &str,
     db: &DatabaseConnection,

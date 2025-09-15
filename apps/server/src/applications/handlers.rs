@@ -1,6 +1,17 @@
-use crate::applications::mod.rs::ApplicationsModule;
+use crate::applications::models::{ApplicationCreateRequest, ApplicationListQuery, ApplicationListResponse, ApplicationResponse, AuthorizationResponse, Pagination};
+use crate::applications::ApplicationsModule;
 use crate::auth::middleware::get_user_id_from_request;
-use sea_orm::{DatabaseConnection, PaginatorTrait};
+use crate::entities::applications::{ActiveModel, Column, Entity as Applications};
+use crate::entities::projects;
+use crate::shared::error::ApiError;
+use crate::shared::snowflake::generate_snowflake_id;
+use actix_web::{web, HttpRequest, HttpResponse};
+use sea_orm::{ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, DatabaseTransaction, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, Set};
+use serde_json::json;
+use std::sync::Arc;
+use tokio::sync::RwLock;
+use uuid::Uuid;
+use chrono::Utc;
 
 #[utoipa::path(
     get,
@@ -30,26 +41,34 @@ pub async fn get_applications(
     let limit = query.limit.unwrap_or(10);
     let offset = (page - 1) * limit;
 
-    // 创建ApplicationsModule实例
-    let applications_module = ApplicationsModule::new(db.get_ref().clone());
+    let mut select = Applications::find().filter(crate::entities::applications::Column::DeletedAt.is_null());
 
-    // 查询数据库获取应用列表
-    let mut select = applications_module.find_all_applications().await?;
-
-    // 如果有搜索参数，添加过滤条件
+    // 搜索过滤
     if let Some(search) = &query.search {
         let search_pattern = format!("%{}%", search);
-        select = select
-            .filter(crate::entities::applications::Column::Name.like(&search_pattern));
+        select = select.filter(
+            crate::entities::applications::Column::Name
+                .like(&search_pattern)
+                .or(crate::entities::applications::Column::Code.like(&search_pattern)),
+        );
     }
 
+    // 状态过滤
+    if let Some(status) = &query.status {
+        select = select.filter(crate::entities::applications::Column::Status.eq(status));
+    }
+
+    // 排序
+    select = select.order_by_desc(crate::entities::applications::Column::CreatedAt);
+
     // 获取总数和分页数据
-    let total = select.clone().count(&db).await?;
-    let applications: Vec<_> = select
+    let total = select.clone().count(&**db).await.map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
+    let applications: Vec<crate::entities::applications::Model> = select
         .offset(offset as u64)
         .limit(limit as u64)
-        .all(&db)
-        .await?;
+        .all(&**db)
+        .await
+        .map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
 
     // 转换为响应格式
     let application_responses: Vec<ApplicationResponse> = applications
@@ -120,13 +139,16 @@ pub async fn create_application(
     }
 
     // 创建应用
-    let new_app = applications::ActiveModel {
-        id: ActiveValue::Set(Uuid::new_v4().to_string()),
+    let new_app = crate::entities::applications::ActiveModel {
+        id: ActiveValue::Set(generate_snowflake_id().map_err(|e| ApiError::InternalServerError(e))?),
         project_id: ActiveValue::Set(app.project_id.clone()),
         name: ActiveValue::Set(app.name.clone()),
         code: ActiveValue::Set(app.code.clone()),
         status: ActiveValue::Set(app.status.clone()),
-        description: ActiveValue::Set(app.description.clone()),
+        description: ActiveValue::Set(Some(app.description.clone())),
+        auth_config: ActiveValue::Set(serde_json::Value::Null),
+        revision: ActiveValue::Set(1),
+        deleted_at: ActiveValue::Set(None),
         created_by: ActiveValue::Set(user_id.to_string()),
         updated_by: ActiveValue::Set(user_id.to_string()),
         created_at: ActiveValue::Set(Utc::now().into()),
@@ -261,8 +283,9 @@ pub async fn update_application(
         application.project_id = app.project_id.clone();
         application.code = app.code.clone();
         application.status = app.status.clone();
-        application.description = app.description.clone();
+        application.description = Some(app.description.clone());
         application.updated_by = user_id.to_string();
+        application.revision = application.revision + 1;
         application.updated_at = Utc::now().into();
 
         // 保存更新

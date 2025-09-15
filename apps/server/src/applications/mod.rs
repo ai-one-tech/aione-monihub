@@ -2,8 +2,12 @@ pub mod handlers;
 pub mod models;
 pub mod routes;
 
-use crate::entities::{applications, Applications};
-use sea_orm::DatabaseConnection;
+use crate::entities::applications::{ActiveModel, Entity as Applications};
+use crate::entities::applications;
+use crate::shared::generate_snowflake_id;
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+
+use chrono::Utc;
 
 pub struct ApplicationsModule {
     database: DatabaseConnection,
@@ -64,7 +68,9 @@ impl ApplicationsModule {
         // 找到应用
         if let Some(app) = self.find_application_by_id(id).await? {
             // 删除应用
-            app.delete(&self.database).await?;
+            Applications::delete_by_id(id)
+                .exec(&self.database)
+                .await?;
             Ok(())
         } else {
             Err(sea_orm::DbErr::Custom("Application not found".into()))
