@@ -4,7 +4,6 @@ pub mod routes;
 
 use crate::entities::{permissions, Permissions};
 use sea_orm::DatabaseConnection;
-use uuid::Uuid;
 
 pub struct PermissionsModule {
     database: DatabaseConnection,
@@ -25,7 +24,7 @@ impl PermissionsModule {
 
     pub async fn find_permission_by_id(
         &self,
-        id: Uuid,
+        id: String,
     ) -> Result<Option<permissions::Model>, sea_orm::DbErr> {
         use sea_orm::EntityTrait;
         Permissions::find_by_id(id).one(&self.database).await

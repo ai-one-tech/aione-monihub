@@ -136,4 +136,29 @@ export class AuthUtils {
       return `${minutes}分钟`
     }
   }
+  
+  /**
+   * 检查认证状态并尝试恢复
+   */
+  static checkAndRestoreAuth(): boolean {
+    const authStore = useAuthStore.getState()
+    const { accessToken, user } = authStore.auth
+    
+    // 检查是否存在token和用户信息
+    if (!accessToken || !user) {
+      return false
+    }
+    
+    // 检查token是否过期
+    if (authStore.auth.isTokenExpired()) {
+      this.logout()
+      return false
+    }
+    
+    // 更新认证状态
+    authStore.auth.setAccessToken(accessToken)
+    authStore.auth.setUser(user)
+    
+    return true
+  }
 }

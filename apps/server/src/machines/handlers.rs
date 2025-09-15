@@ -7,7 +7,6 @@ use crate::shared::generate_snowflake_id;
 use crate::entities::machines::{Entity as Machines, ActiveModel};
 use actix_web::{web, HttpResponse, Result};
 use chrono::Utc;
-use uuid::Uuid;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, 
     PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, Set
@@ -66,7 +65,7 @@ pub async fn get_machines(
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs(),
-        trace_id: Uuid::new_v4().to_string(),
+        trace_id: generate_snowflake_id(),
     };
 
     Ok(HttpResponse::Ok().json(response))
@@ -77,8 +76,7 @@ pub async fn create_machine(
     machine: web::Json<MachineCreateRequest>,
 ) -> Result<HttpResponse, ApiError> {
     // 生成雪花ID
-    let machine_id = generate_snowflake_id()
-        .map_err(|e| ApiError::InternalServerError(e))?;
+    let machine_id = generate_snowflake_id();
 
     // 当前用户ID（从认证中间件获取，这里暂时使用系统用户）
     let current_user_id = "system".to_string();

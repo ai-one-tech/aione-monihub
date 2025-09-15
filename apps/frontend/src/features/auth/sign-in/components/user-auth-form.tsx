@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -77,6 +77,15 @@ export function UserAuthForm({
           }
           
           auth.setLoginData(token, userData)
+          
+          // 验证cookie是否正确设置
+          setTimeout(() => {
+            const storedToken = document.cookie.split(';').find(c => c.trim().startsWith('aione_auth_token='));
+            const storedUser = document.cookie.split(';').find(c => c.trim().startsWith('aione_user_info='));
+            if (!storedToken || !storedUser) {
+              console.warn('登录后cookie未正确设置');
+            }
+          }, 100);
 
           // 如果是在弹窗中，通知父窗口登录成功并关闭当前窗口
           if (isInPopup && window.opener) {

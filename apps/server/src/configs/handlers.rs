@@ -5,7 +5,6 @@ use actix_web::{web, HttpResponse};
 use chrono::Utc;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set, Order, PaginatorTrait};
 use serde_json::Value;
-use uuid::Uuid;
 use crate::configs::models::{ConfigCreateRequest, ConfigListQuery, ConfigListResponse, ConfigResponse, Pagination};
 
 #[utoipa::path(
@@ -95,7 +94,7 @@ pub async fn get_configs(
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs(),
-        trace_id: Uuid::new_v4().to_string(),
+        trace_id: generate_snowflake_id(),
     };
 
     Ok(HttpResponse::Ok().json(response))
@@ -141,7 +140,7 @@ pub async fn create_config(
     }
 
     // 生成雪花ID
-    let id = generate_snowflake_id().map_err(|e| ApiError::InternalServerError(e))?;
+    let id = generate_snowflake_id();
     
     // 检查是否存在相同code、environment的配置，如果存在则版本号+1，否则为1
     let max_version_result = Configs::find()
@@ -264,7 +263,7 @@ pub async fn get_config_by_code(
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs(),
-        trace_id: Uuid::new_v4().to_string(),
+        trace_id: generate_snowflake_id(),
     };
 
     Ok(HttpResponse::Ok().json(response))

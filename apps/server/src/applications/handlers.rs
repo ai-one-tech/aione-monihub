@@ -6,7 +6,6 @@ use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
 use actix_web::{web, HttpRequest, HttpResponse};
 use sea_orm::{ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect};
-use uuid::Uuid;
 use chrono::Utc;
 
 #[utoipa::path(
@@ -96,7 +95,7 @@ pub async fn get_applications(
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs(),
-        trace_id: Uuid::new_v4().to_string(),
+        trace_id: generate_snowflake_id(),
     };
 
     Ok(HttpResponse::Ok().json(response))
@@ -136,7 +135,7 @@ pub async fn create_application(
 
     // 创建应用
     let new_app = crate::entities::applications::ActiveModel {
-        id: ActiveValue::Set(generate_snowflake_id().map_err(|e| ApiError::InternalServerError(e))?),
+        id: ActiveValue::Set(generate_snowflake_id()),
         project_id: ActiveValue::Set(app.project_id.clone()),
         name: ActiveValue::Set(app.name.clone()),
         code: ActiveValue::Set(app.code.clone()),

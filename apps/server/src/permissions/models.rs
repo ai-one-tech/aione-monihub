@@ -1,11 +1,10 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Permission {
-    pub id: Uuid,
+    pub id: String,
     pub name: String,
     pub description: Option<String>,
     pub resource: String,
@@ -13,10 +12,10 @@ pub struct Permission {
     pub permission_type: String, // menu, action, button, page
     pub menu_path: Option<String>,
     pub menu_icon: Option<String>,
-    pub parent_permission_id: Option<Uuid>,
+    pub parent_permission_id: Option<String>,
     pub sort_order: Option<i32>,
-    pub created_by: Uuid,
-    pub updated_by: Uuid,
+    pub created_by: String,
+    pub updated_by: String,
     pub deleted_at: Option<DateTime<Utc>>,
     pub revision: i32,
     pub created_at: DateTime<Utc>,

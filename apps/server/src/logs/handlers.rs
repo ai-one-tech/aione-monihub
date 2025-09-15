@@ -1,8 +1,8 @@
 use crate::entities::logs::{Column, Entity as Logs};
 use crate::shared::error::ApiError;
+use crate::shared::snowflake::generate_snowflake_id;
 use actix_web::{web, HttpResponse};
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, PaginatorTrait, Order};
-use uuid::Uuid;
 use crate::logs::models::{LogListQuery, LogListResponse as ModelLogListResponse, LogResponse as ModelLogResponse, Pagination as ModelPagination};
 
 pub async fn get_logs(
@@ -51,7 +51,7 @@ pub async fn get_logs(
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs(),
-        trace_id: Uuid::new_v4().to_string(),
+        trace_id: generate_snowflake_id(),
     };
 
     Ok(HttpResponse::Ok().json(response))

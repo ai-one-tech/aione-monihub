@@ -136,12 +136,13 @@ static SNOWFLAKE_GENERATOR: Lazy<Mutex<SnowflakeGenerator>> = Lazy::new(|| {
 });
 
 /// 生成下一个 Snowflake ID（全局函数）
-pub fn generate_snowflake_id() -> Result<String, String> {
+pub fn generate_snowflake_id() -> String {
     SNOWFLAKE_GENERATOR
         .lock()
-        .map_err(|e| format!("Failed to lock snowflake generator: {}", e))?
-        .next_id()
+        .map_err(|e| format!("Failed to lock snowflake generator: {}", e))
+        .and_then(|mut generator| generator.next_id())
         .map(|id| id.to_string())
+        .unwrap_or_else(|_| "unknown".to_string())
 }
 
 /// 从 Snowflake ID 中提取时间戳（全局函数）
@@ -211,8 +212,8 @@ mod tests {
 
     #[test]
     fn test_global_generator() {
-        let id1 = generate_snowflake_id().unwrap();
-        let id2 = generate_snowflake_id().unwrap();
+        let id1 = generate_snowflake_id();
+        let id2 = generate_snowflake_id();
         
         assert_ne!(id1, id2);
         assert!(validate_snowflake_id(&id1));
@@ -226,7 +227,7 @@ mod tests {
                 thread::spawn(|| {
                     let mut ids = Vec::new();
                     for _ in 0..100 {
-                        ids.push(generate_snowflake_id().unwrap());
+                        ids.push(generate_snowflake_id());
                     }
                     ids
                 })

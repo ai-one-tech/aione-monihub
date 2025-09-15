@@ -32,8 +32,11 @@ export function useAuthCheck(): UseAuthCheckResult {
     setError(null)
     
     try {
+      // 尝试恢复认证状态
+      const isRestored = AuthUtils.checkAndRestoreAuth()
+      
       // 使用AuthUtils检查是否已登录
-      if (!AuthUtils.isAuthenticated()) {
+      if (!AuthUtils.isAuthenticated() || !isRestored) {
         setIsAuthenticated(false)
         setUser(null)
         
@@ -156,6 +159,19 @@ export function useAuthCheck(): UseAuthCheckResult {
     if (!currentState) {
       setIsAuthenticated(false)
       setUser(null)
+    } else {
+      // 如果认证状态为true，更新本地状态
+      setIsAuthenticated(true)
+      const currentUser = AuthUtils.getCurrentUser()
+      if (currentUser) {
+        setUser({
+          id: currentUser.accountNo,
+          username: 'admin', // 这里需要从API获取
+          email: currentUser.email,
+          roles: currentUser.role,
+          exp: currentUser.exp
+        })
+      }
     }
   }, [authStore.auth.isAuthenticated])
 

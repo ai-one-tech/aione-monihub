@@ -5,11 +5,11 @@ use crate::permissions::models::{
     UserMenuResponse,
 };
 use crate::shared::error::ApiError;
+use crate::shared::snowflake::generate_snowflake_id;
 use crate::auth::middleware::get_user_id_from_request;
 use actix_web::{web, HttpResponse, Result, HttpRequest};
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder};
 use std::collections::HashMap;
-use uuid::Uuid;
 
 pub async fn get_permissions(
     db: web::Data<DatabaseConnection>,
@@ -47,7 +47,7 @@ pub async fn get_permissions(
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs(),
-        trace_id: Uuid::new_v4().to_string(),
+        trace_id: generate_snowflake_id(),
     };
 
     Ok(HttpResponse::Ok().json(response))
@@ -82,7 +82,7 @@ pub async fn get_user_menu(
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
                 .as_secs(),
-            trace_id: Uuid::new_v4().to_string(),
+            trace_id: generate_snowflake_id(),
         };
         return Ok(HttpResponse::Ok().json(response));
     }
@@ -96,7 +96,7 @@ pub async fn get_user_menu(
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs(),
-        trace_id: Uuid::new_v4().to_string(),
+        trace_id: generate_snowflake_id(),
     };
 
     Ok(HttpResponse::Ok().json(response))
@@ -124,7 +124,7 @@ pub async fn get_user_permissions_by_type(
 /*
 /// 构建菜单树结构
 fn build_menu_tree(permissions: Vec<permissions::Model>) -> Vec<MenuItemResponse> {
-    let mut menu_map: HashMap<Option<Uuid>, Vec<MenuItemResponse>> = HashMap::new();
+    let mut menu_map: HashMap<Option<String>, Vec<MenuItemResponse>> = HashMap::new();
 
     // 先将所有权限转换为菜单项
     for permission in permissions {
@@ -146,14 +146,14 @@ fn build_menu_tree(permissions: Vec<permissions::Model>) -> Vec<MenuItemResponse
 
     // 递归构建菜单树
     fn build_children(
-        parent_id: Option<Uuid>,
-        menu_map: &HashMap<Option<Uuid>, Vec<MenuItemResponse>>,
+        parent_id: Option<String>,
+        menu_map: &HashMap<Option<String>, Vec<MenuItemResponse>>,
     ) -> Vec<MenuItemResponse> {
         if let Some(children) = menu_map.get(&parent_id) {
             children
                 .iter()
                 .map(|child| {
-                    let child_id = Some(&child.id);
+                    let child_id = Some(child.id.clone());
                     MenuItemResponse {
                         id: child.id.clone(),
                         name: child.name.clone(),
@@ -214,7 +214,6 @@ fn extract_menu_title(permission_name: &str) -> String {
 // 更新权限分配功能
 use crate::entities::role_permissions::{ActiveModel as RolePermissionActiveModel, Entity as RolePermissions};
 use sea_orm::{ActiveModelTrait, Set};
-use crate::shared::snowflake::generate_snowflake_id;
 use chrono::Utc;
 
 pub async fn assign_permissions(
@@ -251,7 +250,7 @@ pub async fn assign_permissions(
     
     // 添加新的权限关联
     for permission_id in &assign_req.permissions {
-        let role_permission_id = generate_snowflake_id().map_err(|e| ApiError::InternalServerError(e))?;
+        let role_permission_id = generate_snowflake_id();
         
         let role_permission = RolePermissionActiveModel {
             id: Set(role_permission_id),
@@ -284,7 +283,7 @@ pub async fn revoke_permissions(
 fn get_default_menu() -> Vec<MenuItemResponse> {
     vec![
         MenuItemResponse {
-            id: Uuid::new_v4().to_string(),
+                    id: generate_snowflake_id(),
             name: "menu.dashboard".to_string(),
             title: "Dashboard".to_string(),
             icon: Some("LayoutDashboard".to_string()),
@@ -293,7 +292,7 @@ fn get_default_menu() -> Vec<MenuItemResponse> {
             children: vec![],
         },
         MenuItemResponse {
-            id: Uuid::new_v4().to_string(),
+                    id: generate_snowflake_id(),
             name: "menu.tasks".to_string(),
             title: "Tasks".to_string(),
             icon: Some("ListTodo".to_string()),
@@ -302,7 +301,7 @@ fn get_default_menu() -> Vec<MenuItemResponse> {
             children: vec![],
         },
         MenuItemResponse {
-            id: Uuid::new_v4().to_string(),
+                    id: generate_snowflake_id(),
             name: "menu.users".to_string(),
             title: "Users".to_string(),
             icon: Some("Users".to_string()),
@@ -311,7 +310,7 @@ fn get_default_menu() -> Vec<MenuItemResponse> {
             children: vec![],
         },
         MenuItemResponse {
-            id: Uuid::new_v4().to_string(),
+            id: generate_snowflake_id(),
             name: "menu.settings".to_string(),
             title: "Settings".to_string(),
             icon: Some("Settings".to_string()),
@@ -319,7 +318,7 @@ fn get_default_menu() -> Vec<MenuItemResponse> {
             sort_order: 4,
             children: vec![
                 MenuItemResponse {
-                    id: Uuid::new_v4().to_string(),
+                    id: generate_snowflake_id(),
                     name: "menu.settings.account".to_string(),
                     title: "Account".to_string(),
                     icon: Some("Wrench".to_string()),
@@ -328,7 +327,7 @@ fn get_default_menu() -> Vec<MenuItemResponse> {
                     children: vec![],
                 },
                 MenuItemResponse {
-                    id: Uuid::new_v4().to_string(),
+                    id: generate_snowflake_id(),
                     name: "menu.settings.appearance".to_string(),
                     title: "Appearance".to_string(),
                     icon: Some("Palette".to_string()),

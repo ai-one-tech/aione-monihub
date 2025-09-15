@@ -6,7 +6,6 @@ use actix_web::{
 use futures_util::future::{ready, LocalBoxFuture, Ready};
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use std::rc::Rc;
-use uuid::Uuid;
 
 use crate::auth::models::Claims;
 use crate::shared::error::ApiError;
@@ -110,12 +109,11 @@ where
 }
 
 /// 从HTTP请求中获取当前登录用户的ID
-pub fn get_user_id_from_request(req: &HttpRequest) -> Result<Uuid, ApiError> {
+pub fn get_user_id_from_request(req: &HttpRequest) -> Result<String, ApiError> {
     let extensions = req.extensions();
     let claims = extensions
         .get::<Claims>()
         .ok_or_else(|| ApiError::Unauthorized("User not authenticated".to_string()))?;
 
-    Uuid::parse_str(&claims.sub)
-        .map_err(|_| ApiError::Unauthorized("Invalid user ID in token".to_string()))
+    Ok(claims.sub.clone())
 }

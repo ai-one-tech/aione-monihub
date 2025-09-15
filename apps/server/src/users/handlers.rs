@@ -15,7 +15,6 @@ use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter,
     QueryOrder, QuerySelect, Set,
 };
-use uuid::Uuid;
 
 #[utoipa::path(
     get,
@@ -94,7 +93,7 @@ pub async fn get_users(
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs(),
-        trace_id: Uuid::new_v4().to_string(),
+        trace_id: generate_snowflake_id(),
     };
 
     Ok(HttpResponse::Ok().json(response))
@@ -143,7 +142,7 @@ pub async fn create_user(
     }
 
     // 生成雪花ID
-    let user_id = generate_snowflake_id().map_err(|e| ApiError::InternalServerError(e))?;
+    let user_id = generate_snowflake_id();
 
     // 从JWT中获取当前用户ID
     let current_user_id = get_user_id_from_request(&req)?;

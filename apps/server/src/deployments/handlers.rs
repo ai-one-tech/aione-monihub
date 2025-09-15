@@ -14,7 +14,6 @@ use sea_orm::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json};
-use uuid::Uuid;
 
 pub async fn get_deployments(
     db: web::Data<DatabaseConnection>,
@@ -98,7 +97,7 @@ pub async fn get_deployments(
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs(),
-        trace_id: Uuid::new_v4().to_string(),
+        trace_id: generate_snowflake_id(),
     };
 
     Ok(HttpResponse::Ok().json(response))
@@ -122,8 +121,7 @@ pub async fn create_deployment(
     }
     
     // 生成雪花ID
-    let deployment_id = generate_snowflake_id()
-        .map_err(|e| ApiError::InternalServerError(e))?;
+    let deployment_id = generate_snowflake_id();
     
     // 构建 config JSON，包含运行时信息
     let config = json!({
@@ -312,7 +310,7 @@ pub async fn delete_deployment(
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs(),
-        "trace_id": Uuid::new_v4().to_string()
+        "trace_id": generate_snowflake_id()
     })))
 }
 
@@ -431,7 +429,7 @@ pub async fn get_files(
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs(),
-        trace_id: Uuid::new_v4().to_string(),
+        trace_id: generate_snowflake_id(),
     };
     
     Ok(HttpResponse::Ok().json(response))
@@ -455,7 +453,7 @@ pub async fn upload_file(
         .ok_or_else(|| ApiError::NotFound("部署不存在".to_string()))?;
     
     // 模拟文件上传（在实际中，这里应该处理多部分表单数据并上传到目标机器）
-    let file_name = format!("upload_{}.txt", Uuid::new_v4());
+    let file_name = format!("upload_{}.txt", generate_snowflake_id());
     let file_path = format!("/deployments/{}/uploads/{}", deployment_id, file_name);
     
     let response = UploadFileResponse {
@@ -465,7 +463,7 @@ pub async fn upload_file(
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs(),
-        trace_id: Uuid::new_v4().to_string(),
+        trace_id: generate_snowflake_id(),
     };
     
     Ok(HttpResponse::Ok().json(response))
@@ -541,6 +539,6 @@ pub async fn delete_file(
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs(),
-        "trace_id": Uuid::new_v4().to_string()
+        "trace_id": generate_snowflake_id()
     })))
 }

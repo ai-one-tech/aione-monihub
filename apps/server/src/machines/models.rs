@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
+use crate::shared::snowflake::generate_snowflake_id;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Machine {
@@ -136,7 +137,7 @@ impl MachineCreateRequest {
         crate::entities::machines::ActiveModel {
             id: Set(id),
             name: Set(self.name.clone()),
-            hostname: Set(format!("host-{}", uuid::Uuid::new_v4())), // 生成临时hostname
+            hostname: Set(format!("host-{}", generate_snowflake_id())), // 生成临时hostname
             ip_address: Set("0.0.0.0".to_string()), // 默认IP，实际使用时需要修改
             status: Set(self.status.clone()),
             specifications: Set(specifications),

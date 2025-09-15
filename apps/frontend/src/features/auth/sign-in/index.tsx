@@ -19,8 +19,7 @@ export function SignIn() {
         <CardHeader>
           <CardTitle className='text-lg tracking-tight'>登录</CardTitle>
           <CardDescription>
-            请输入您的用户名和密码 <br />
-            登录到您的账户
+            请输入您的用户名和密码
           </CardDescription>
         </CardHeader>
         <CardContent>

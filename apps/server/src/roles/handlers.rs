@@ -5,8 +5,6 @@ use crate::shared::generate_snowflake_id;
 use actix_web::{HttpRequest, HttpResponse, web};
 use chrono::Utc;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, Set};
-
-use uuid::Uuid;
 use crate::entities::role_permissions::{ActiveModel as RolePermissionActiveModel, Entity as RolePermissions};
 use crate::entities::roles::{ActiveModel, Column, Entity as Roles};
 use crate::roles::models::{RoleCreateRequest, RoleListResponse, RoleResponse};
@@ -57,7 +55,7 @@ pub async fn get_roles(
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs(),
-        trace_id: Uuid::new_v4().to_string(),
+        trace_id: generate_snowflake_id(),
     };
 
     Ok(HttpResponse::Ok().json(response))
@@ -83,7 +81,7 @@ pub async fn create_role(
     let current_user_id = get_user_id_from_request(&req)?;
 
     // 生成雪花ID
-    let role_id = generate_snowflake_id().map_err(|e| ApiError::InternalServerError(e))?;
+    let role_id = generate_snowflake_id();
 
     // 创建角色
     let new_role = ActiveModel {
@@ -113,7 +111,7 @@ pub async fn create_role(
         }
 
         // 创建角色权限关联
-        let role_permission_id = generate_snowflake_id().map_err(|e| ApiError::InternalServerError(e))?;
+        let role_permission_id = generate_snowflake_id();
 
         let role_permission = RolePermissionActiveModel {
             id: Set(role_permission_id),
@@ -244,7 +242,7 @@ pub async fn update_role(
         }
 
         // 创建角色权限关联
-        let role_permission_id = generate_snowflake_id().map_err(|e| ApiError::InternalServerError(e))?;
+        let role_permission_id = generate_snowflake_id();
 
         let role_permission = RolePermissionActiveModel {
             id: Set(role_permission_id),

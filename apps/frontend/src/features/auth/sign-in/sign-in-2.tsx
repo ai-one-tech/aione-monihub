@@ -18,8 +18,7 @@ export function SignIn2() {
           <div className='flex flex-col space-y-2 text-start'>
             <h2 className='text-lg font-semibold tracking-tight'>登录</h2>
             <p className='text-muted-foreground text-sm'>
-              请输入您的用户名和密码 <br />
-              登录到您的账户
+              请输入您的用户名和密码
             </p>
           </div>
           <UserAuthForm />

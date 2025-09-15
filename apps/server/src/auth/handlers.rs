@@ -4,12 +4,12 @@ use crate::auth::models::{
 };
 use crate::entities::users::{self as users};
 use crate::shared::error::ApiError;
+use crate::shared::snowflake::generate_snowflake_id;
 use crate::users::UsersModule;
-use actix_web::{web, HttpRequest, HttpResponse, Result};
-use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use actix_web::{web, HttpRequest, HttpResponse, Result, HttpMessage};
+use jsonwebtoken::{encode, EncodingKey, Header};
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use std::time::{SystemTime, UNIX_EPOCH};
-use uuid::Uuid;
 
 // JWT secret key (in production, this should be loaded from environment variables)
 const JWT_SECRET: &str = "aione_monihub_secret_key";
@@ -85,7 +85,7 @@ pub async fn login(
                     .duration_since(UNIX_EPOCH)
                     .unwrap()
                     .as_secs(),
-                trace_id: Uuid::new_v4().to_string(),
+                trace_id: generate_snowflake_id(),
             };
 
             Ok(HttpResponse::Ok().json(response))
@@ -217,41 +217,18 @@ pub async fn reset_password(
     ),
     tag = "Authentication"
 )]
-pub async fn validate_token(req: HttpRequest) -> Result<HttpResponse> {
-    // Get the Authorization header
-    let auth_header = req.headers().get("Authorization");
-
-    if let Some(auth_header) = auth_header {
-        if let Ok(auth_str) = auth_header.to_str() {
-            // Check if it starts with "Bearer "
-            if auth_str.starts_with("Bearer ") {
-                let token = &auth_str[7..]; // Remove "Bearer " prefix
-
-                // Validate the token
-                let validation = Validation::new(Algorithm::HS256);
-                match decode::<Claims>(
-                    token,
-                    &DecodingKey::from_secret(JWT_SECRET.as_ref()),
-                    &validation,
-                ) {
-                    Ok(token_data) => {
-                        // Token is valid
-                        println!("Token is valid for user ID: {}", token_data.claims.sub);
-                        Ok(HttpResponse::Ok().json("Token is valid"))
-                    }
-                    Err(_) => {
-                        // Token is invalid
-                        Ok(HttpResponse::Unauthorized().json("Invalid token"))
-                    }
-                }
-            } else {
-                Ok(HttpResponse::Unauthorized().json("Invalid authorization header format"))
-            }
-        } else {
-            Ok(HttpResponse::Unauthorized().json("Invalid authorization header"))
+pub async fn validate_token(req: HttpRequest) -> Result<HttpResponse, ApiError> {
+    // Get user ID from request extension (set by middleware)
+    match super::middleware::get_user_id_from_request(&req) {
+        Ok(user_id) => {
+            // User is authenticated
+            println!("Token is valid for user ID: {}", user_id);
+            Ok(HttpResponse::Ok().json("Token is valid"))
         }
-    } else {
-        Ok(HttpResponse::Unauthorized().json("Missing authorization header"))
+        Err(e) => {
+            // User is not authenticated
+            Err(e)
+        }
     }
 }
 
@@ -273,64 +250,37 @@ pub async fn get_current_user(
     req: HttpRequest,
     db: web::Data<DatabaseConnection>,
 ) -> Result<HttpResponse, ApiError> {
-    // Get the Authorization header
-    let auth_header = req.headers().get("Authorization");
+    // Get user ID from request extension (set by middleware)
+    let user_id = super::middleware::get_user_id_from_request(&req)?;
 
-    if let Some(auth_header) = auth_header {
-        if let Ok(auth_str) = auth_header.to_str() {
-            // Check if it starts with "Bearer "
-            if auth_str.starts_with("Bearer ") {
-                let token = &auth_str[7..]; // Remove "Bearer " prefix
+    // Fetch user data from database
+    let users_module = UsersModule::new(db.get_ref().clone());
 
-                // Validate the token
-                let validation = Validation::new(Algorithm::HS256);
-                match decode::<Claims>(
-                    token,
-                    &DecodingKey::from_secret(JWT_SECRET.as_ref()),
-                    &validation,
-                ) {
-                    Ok(token_data) => {
-                        // Token is valid, fetch user data from database
-                        let user_id = &token_data.claims.sub;
+    match users_module.find_user_by_id(&user_id).await {
+        Ok(Some(user)) => {
+            // Get user roles
+            let roles = match users_module.get_user_roles(&user.id).await {
+                Ok(roles) => roles,
+                Err(_) => vec![],
+            };
 
-                        let users_module = UsersModule::new(db.get_ref().clone());
+            // Get token expiration from request extension
+            let extensions = req.extensions();
+            let claims = extensions.get::<Claims>().unwrap(); // Safe to unwrap as we already verified auth
 
-                        match users_module.find_user_by_id(user_id).await {
-                            Ok(Some(user)) => {
-                                // Get user roles
-                                let roles = match users_module.get_user_roles(&user.id).await {
-                                    Ok(roles) => roles,
-                                    Err(_) => vec![],
-                                };
-
-                                let user_response = CurrentUserResponse {
-                                    id: user.id.to_string(),
-                                    username: user.username,
-                                    email: user.email,
-                                    roles,
-                                    exp: token_data.claims.exp,
-                                };
-                                Ok(HttpResponse::Ok().json(user_response))
-                            }
-                            Ok(None) => Ok(HttpResponse::NotFound().json("User not found")),
-                            Err(err) => {
-                                eprintln!("Database error: {:?}", err);
-                                Ok(HttpResponse::InternalServerError().json("Database error"))
-                            }
-                        }
-                    }
-                    Err(err) => {
-                        eprintln!("Token validation error: {:?}", err);
-                        Ok(HttpResponse::Unauthorized().json("Invalid or expired token"))
-                    }
-                }
-            } else {
-                Ok(HttpResponse::Unauthorized().json("Invalid authorization header format"))
-            }
-        } else {
-            Ok(HttpResponse::Unauthorized().json("Invalid authorization header"))
+            let user_response = CurrentUserResponse {
+                id: user.id.to_string(),
+                username: user.username,
+                email: user.email,
+                roles,
+                exp: claims.exp,
+            };
+            Ok(HttpResponse::Ok().json(user_response))
         }
-    } else {
-        Ok(HttpResponse::Unauthorized().json("Missing authorization header"))
+        Ok(None) => Ok(HttpResponse::NotFound().json("User not found")),
+        Err(err) => {
+            eprintln!("Database error: {:?}", err);
+            Ok(HttpResponse::InternalServerError().json("Database error"))
+        }
     }
 }

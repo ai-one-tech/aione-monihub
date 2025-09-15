@@ -1,8 +1,8 @@
 use crate::websocket::models::{ClientMessage, Connect, Disconnect, WsMessage};
+use crate::shared::snowflake::generate_snowflake_id;
 use actix::prelude::*;
 use actix_web_actors::ws;
 use std::time::{Duration, Instant};
-use uuid::Uuid;
 
 // WebSocket session
 pub struct WsSession {
@@ -15,7 +15,7 @@ pub struct WsSession {
 impl WsSession {
     pub fn new(deployment_id: String, addr: Addr<WsServer>) -> Self {
         Self {
-            id: Uuid::new_v4().to_string(),
+            id: generate_snowflake_id(),
             deployment_id,
             heartbeat: Instant::now(),
             addr,
@@ -128,7 +128,7 @@ impl Handler<Connect> for WsServer {
         self.sessions
             .entry(msg.deployment_id.clone())
             .or_insert_with(std::collections::HashMap::new)
-            .insert(Uuid::new_v4().to_string(), msg.addr);
+            .insert(generate_snowflake_id(), msg.addr);
     }
 }
 

@@ -8,7 +8,6 @@ use crate::shared::generate_snowflake_id;
 use bcrypt::{hash, verify, DEFAULT_COST};
 use sea_orm::{ActiveValue, ColumnTrait, DatabaseConnection, QueryFilter, ActiveModelTrait};
 use chrono::{Utc, Duration};
-use uuid::Uuid;
 
 
 pub struct UsersModule {
@@ -31,8 +30,7 @@ impl UsersModule {
         use sea_orm::ActiveModelTrait;
         
         // 生成 Snowflake ID
-        let id = generate_snowflake_id()
-            .map_err(|e| sea_orm::DbErr::Custom(format!("Failed to generate ID: {}", e)))?;
+        let id = generate_snowflake_id();
         
         // 对密码进行哈希
         let password_hash = hash(password, DEFAULT_COST)
@@ -131,11 +129,10 @@ impl UsersModule {
         user_id: &str,
     ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         // 生成唯一的重置令牌
-        let token = Uuid::new_v4().to_string();
+        let token = generate_snowflake_id();
         
         // 生成 Snowflake ID
-        let id = generate_snowflake_id()
-            .map_err(|e| format!("Failed to generate ID: {}", e))?;
+        let id = generate_snowflake_id();
         
         // 设置令牌过期时间（24小时后）
         let expires_at = Utc::now() + Duration::hours(24);

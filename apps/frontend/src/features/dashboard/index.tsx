@@ -16,6 +16,7 @@ import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Overview } from './components/overview'
 import { RecentSales } from './components/recent-sales'
+import { CookieDebug } from '@/components/cookie-debug'
 
 export function Dashboard() {
   return (
@@ -56,6 +57,9 @@ export function Dashboard() {
               <TabsTrigger value='notifications' disabled>
                 Notifications
               </TabsTrigger>
+              {import.meta.env.MODE === 'development' && (
+                <TabsTrigger value='debug'>Cookie调试</TabsTrigger>
+              )}
             </TabsList>
           </div>
           <TabsContent value='overview' className='space-y-4'>
@@ -184,6 +188,11 @@ export function Dashboard() {
               </Card>
             </div>
           </TabsContent>
+          {import.meta.env.MODE === 'development' && (
+            <TabsContent value='debug' className='space-y-4'>
+              <CookieDebug />
+            </TabsContent>
+          )}
         </Tabs>
       </Main>
     </>

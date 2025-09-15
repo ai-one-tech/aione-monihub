@@ -6,7 +6,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 1. 生成单个ID
     println!("1. 生成单个 Snowflake ID:");
-    let id1 = generate_snowflake_id()?;
+    let id1 = generate_snowflake_id();
     println!("   生成的ID: {}", id1);
     println!("   ID长度: {} 位", id1.len());
     println!("   ID验证: {}", if validate_snowflake_id(&id1) { "有效" } else { "无效" });
@@ -25,7 +25,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let count = 100;
     
     for i in 0..count {
-        let id = generate_snowflake_id()?;
+        let id = generate_snowflake_id();
         if !ids.insert(id.clone()) {
             println!("   错误: 发现重复ID: {}", id);
             return Ok(());
@@ -45,7 +45,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let start = std::time::Instant::now();
     
     for _ in 0..10000 {
-        let _id = generate_snowflake_id()?;
+        let _id = generate_snowflake_id();
     }
     
     let duration = start.elapsed();
@@ -60,9 +60,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             std::thread::spawn(move || {
                 let mut local_ids = Vec::new();
                 for _ in 0..1000 {
-                    if let Ok(id) = generate_snowflake_id() {
-                        local_ids.push(id);
-                    }
+                    let id = generate_snowflake_id();
+                    local_ids.push(id);
                 }
                 println!("   线程 {} 生成了 {} 个ID", thread_id, local_ids.len());
                 local_ids
@@ -87,8 +86,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 5. ID格式验证
     println!("5. ID格式验证:");
     let valid_ids = vec![
-        generate_snowflake_id()?,
-        generate_snowflake_id()?,
+        generate_snowflake_id(),
+        generate_snowflake_id(),
     ];
     
     let invalid_ids = vec![

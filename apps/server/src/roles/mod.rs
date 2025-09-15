@@ -25,8 +25,7 @@ impl RolesModule {
         use sea_orm::ActiveModelTrait;
         
         // 生成 Snowflake ID
-        let id = generate_snowflake_id()
-            .map_err(|e| sea_orm::DbErr::Custom(format!("Failed to generate ID: {}", e)))?;
+        let id = generate_snowflake_id();
         
         let now = Utc::now().into();
         
