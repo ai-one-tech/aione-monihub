@@ -51,6 +51,7 @@ pub async fn get_permissions(
             menu_icon: permission.menu_icon,
             parent_permission_id: permission.parent_permission_id,
             sort_order: permission.sort_order,
+            is_hidden: permission.is_hidden,
             created_at: permission.created_at.to_rfc3339(),
             updated_at: permission.updated_at.to_rfc3339(),
         })
@@ -118,6 +119,7 @@ pub async fn create_permission(
         menu_icon: Set(permission.menu_icon.clone()),
         parent_permission_id: Set(permission.parent_permission_id.clone()),
         sort_order: Set(permission.sort_order),
+        is_hidden: Set(permission.is_hidden.unwrap_or(false)),
         created_by: Set(current_user_id.to_string()),
         updated_by: Set(current_user_id.to_string()),
         revision: Set(1),
@@ -139,6 +141,7 @@ pub async fn create_permission(
         menu_icon: saved_permission.menu_icon,
         parent_permission_id: saved_permission.parent_permission_id,
         sort_order: saved_permission.sort_order,
+        is_hidden: saved_permission.is_hidden,
         created_at: saved_permission.created_at.to_rfc3339(),
         updated_at: saved_permission.updated_at.to_rfc3339(),
     };
@@ -188,6 +191,7 @@ pub async fn get_permission(
                 menu_icon: permission.menu_icon,
                 parent_permission_id: permission.parent_permission_id,
                 sort_order: permission.sort_order,
+                is_hidden: permission.is_hidden,
                 created_at: permission.created_at.to_rfc3339(),
                 updated_at: permission.updated_at.to_rfc3339(),
             };
@@ -265,6 +269,9 @@ pub async fn update_permission(
     permission_active.menu_icon = Set(permission.menu_icon.clone());
     permission_active.parent_permission_id = Set(permission.parent_permission_id.clone());
     permission_active.sort_order = Set(permission.sort_order);
+    if let Some(is_hidden) = permission.is_hidden {
+        permission_active.is_hidden = Set(is_hidden);
+    }
     permission_active.updated_by = Set(current_user_id.to_string());
     permission_active.updated_at = Set(Utc::now().into());
     permission_active.revision = Set(current_revision + 1);
@@ -282,6 +289,7 @@ pub async fn update_permission(
         menu_icon: updated_permission.menu_icon,
         parent_permission_id: updated_permission.parent_permission_id,
         sort_order: updated_permission.sort_order,
+        is_hidden: updated_permission.is_hidden,
         created_at: updated_permission.created_at.to_rfc3339(),
         updated_at: updated_permission.updated_at.to_rfc3339(),
     };
@@ -392,113 +400,6 @@ pub async fn get_user_permissions_by_type(
     Ok(permissions)
 }
 
-// 暂时注释掉这些函数，等实体模型修复后再开启
-/*
-/// 构建菜单树结构
-fn build_menu_tree(permissions: Vec<permissions::Model>) -> Vec<MenuItemResponse> {
-    let mut menu_map: HashMap<Option<String>, Vec<MenuItemResponse>> = HashMap::new();
-
-    // 先将所有权限转换为菜单项
-    for permission in permissions {
-        let menu_item = MenuItemResponse {
-            id: permission.id.to_string(),
-            name: permission.name.clone(),
-            title: extract_menu_title(&permission.name),
-            icon: permission.menu_icon,
-            path: permission.menu_path.unwrap_or_default(),
-            sort_order: permission.sort_order.unwrap_or(0),
-            children: vec![],
-        };
-
-        menu_map
-            .entry(permission.parent_permission_id)
-            .or_insert_with(Vec::new)
-            .push(menu_item);
-    }
-
-    // 递归构建菜单树
-    fn build_children(
-        parent_id: Option<String>,
-        menu_map: &HashMap<Option<String>, Vec<MenuItemResponse>>,
-    ) -> Vec<MenuItemResponse> {
-        if let Some(children) = menu_map.get(&parent_id) {
-            children
-                .iter()
-                .map(|child| {
-                    let child_id = Some(child.id.clone());
-                    MenuItemResponse {
-                        id: child.id.clone(),
-                        name: child.name.clone(),
-                        title: child.title.clone(),
-                        icon: child.icon.clone(),
-                        path: child.path.clone(),
-                        sort_order: child.sort_order,
-                        children: build_children(child_id, menu_map),
-                    }
-                })
-                .collect()
-        } else {
-            vec![]
-        }
-    }
-
-    // 获取根菜单项（parent_permission_id 为 None 的项目）
-    let mut root_items = build_children(None, &menu_map);
-
-    // 按sort_order排序
-    root_items.sort_by_key(|item| item.sort_order);
-
-    root_items
-}
-
-/// 从权限名称中提取菜单标题
-fn extract_menu_title(permission_name: &str) -> String {
-    match permission_name {
-        // 新的中文菜单项
-        "menu.dashboard" => "仪表板".to_string(),
-        "menu.projects" => "项目".to_string(),
-        "menu.applications" => "应用".to_string(),
-        "menu.machines" => "机器".to_string(),
-        "menu.deployments" => "部署".to_string(),
-        "menu.logs" => "日志".to_string(),
-        "menu.logs.system" => "系统日志".to_string(),
-        "menu.logs.operations" => "操作日志".to_string(),
-        "menu.logs.requests" => "请求日志".to_string(),
-        "menu.system" => "系统".to_string(),
-        "menu.system.users" => "用户".to_string(),
-        "menu.system.roles" => "角色".to_string(),
-        "menu.system.permissions" => "权限".to_string(),
-        
-        // 保留原有的英文菜单项（用于兼容）
-        "menu.tasks" => "Tasks".to_string(),
-        "menu.apps" => "Apps".to_string(),
-        "menu.chats" => "Chats".to_string(),
-        "menu.users" => "Users".to_string(),
-        "menu.settings" => "Settings".to_string(),
-        "menu.help-center" => "Help Center".to_string(),
-        "menu.settings.account" => "Account".to_string(),
-        "menu.settings.appearance" => "Appearance".to_string(),
-        "menu.settings.notifications" => "Notifications".to_string(),
-        "menu.settings.display" => "Display".to_string(),
-        
-        _ => permission_name
-            .strip_prefix("menu.")
-            .unwrap_or(&permission_name)
-            .replace('.', " ")
-            .split_whitespace()
-            .map(|word| {
-                let mut chars = word.chars();
-                match chars.next() {
-                    None => String::new(),
-                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-                }
-            })
-            .collect::<Vec<_>>()
-            .join(" "),
-    }
-}
-*/
-
 // 更新权限分配功能
 use crate::entities::role_permissions::{ActiveModel as RolePermissionActiveModel, Entity as RolePermissions};
 
@@ -569,8 +470,9 @@ pub async fn revoke_permissions(
 fn build_menu_tree(permissions: Vec<PermissionModel>) -> Vec<MenuItemResponse> {
     let mut menu_map: HashMap<Option<String>, Vec<MenuItemResponse>> = HashMap::new();
 
-    // 先将所有权限转换为菜单项
+    // 先将所有权限转换为菜单项，过滤掉隐藏的菜单
     for permission in permissions {
+        
         let menu_item = MenuItemResponse {
             id: permission.id.clone(),
             name: permission.name.clone(),
@@ -578,6 +480,7 @@ fn build_menu_tree(permissions: Vec<PermissionModel>) -> Vec<MenuItemResponse> {
             icon: permission.menu_icon.clone(),
             path: permission.menu_path.unwrap_or_default(),
             sort_order: permission.sort_order.unwrap_or(0),
+            is_hidden: permission.is_hidden,
             children: vec![],
         };
 
@@ -604,6 +507,7 @@ fn build_menu_tree(permissions: Vec<PermissionModel>) -> Vec<MenuItemResponse> {
                         icon: child.icon.clone(),
                         path: child.path.clone(),
                         sort_order: child.sort_order,
+                        is_hidden: child.is_hidden,
                         children: build_children(child_id, menu_map),
                     }
                 })

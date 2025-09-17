@@ -16,6 +16,7 @@ pub struct Model {
     pub menu_icon: Option<String>,
     pub parent_permission_id: Option<String>,  // 改为String支持雪花ID
     pub sort_order: Option<i32>,
+    pub is_hidden: bool,  // 是否隐藏菜单
     pub created_by: String,  // 改为String支持雪花ID
     pub updated_by: String,  // 改为String支持雪花ID
     pub deleted_at: Option<DateTimeWithTimeZone>,  // 支持毫秒精度

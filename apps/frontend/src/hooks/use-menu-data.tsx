@@ -40,9 +40,11 @@ const iconMap: Record<string, ElementType> = {
 
 /**
  * 将后端菜单数据转换为前端菜单格式
+ * 注意：隐藏的菜单项已在后端过滤，这里不需要额外处理
+ * 但保留原始数据以便权限判断时使用
  */
 function transformMenuToNavItems(menuItems: MenuItemResponse[]): NavItem[] {
-  return menuItems.map((item): NavItem => {
+  return menuItems.filter(item => !item.is_hidden).map((item): NavItem => {
     const icon = item.icon ? iconMap[item.icon] : undefined
     
     if (item.children && item.children.length > 0) {
@@ -50,7 +52,7 @@ function transformMenuToNavItems(menuItems: MenuItemResponse[]): NavItem[] {
       return {
         title: item.title,
         icon: icon,
-        items: item.children.map((child) => ({
+        items: item.children.filter(item => !item.is_hidden).map((child) => ({
           title: child.title,
           url: child.path,
           icon: child.icon ? iconMap[child.icon] : undefined,
@@ -104,9 +106,13 @@ export function useMenuData() {
 
   // 将API响应转换为前端菜单格式
   const navGroups = data?.data ? organizeMenuIntoGroups(data.data) : []
+  
+  // 保存原始菜单数据用于权限判断（包含隐藏菜单）
+  const rawMenuData = data?.data || []
 
   return {
     navGroups,
+    rawMenuData, // 原始菜单数据，包含所有菜单项（用于权限判断）
     isLoading: isAuthenticated ? isLoading : false, // 未认证时不显示加载状态
     error: isAuthenticated ? error : null, // 未认证时不显示错误
     refetch,

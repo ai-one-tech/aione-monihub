@@ -14,6 +14,7 @@ pub struct Permission {
     pub menu_icon: Option<String>,
     pub parent_permission_id: Option<String>,
     pub sort_order: Option<i32>,
+    pub is_hidden: Option<bool>,
     pub created_by: String,
     pub updated_by: String,
     pub deleted_at: Option<DateTime<Utc>>,
@@ -34,6 +35,7 @@ pub struct PermissionResponse {
     pub menu_icon: Option<String>,
     pub parent_permission_id: Option<String>,
     pub sort_order: Option<i32>,
+    pub is_hidden: bool,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -46,6 +48,7 @@ pub struct MenuItemResponse {
     pub icon: Option<String>,
     pub path: String,
     pub sort_order: i32,
+    pub is_hidden: bool,
     pub children: Vec<MenuItemResponse>,
 }
 
@@ -67,6 +70,7 @@ pub struct PermissionCreateRequest {
     pub menu_icon: Option<String>,
     pub parent_permission_id: Option<String>,
     pub sort_order: Option<i32>,
+    pub is_hidden: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -80,6 +84,7 @@ pub struct PermissionUpdateRequest {
     pub menu_icon: Option<String>,
     pub parent_permission_id: Option<String>,
     pub sort_order: Option<i32>,
+    pub is_hidden: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

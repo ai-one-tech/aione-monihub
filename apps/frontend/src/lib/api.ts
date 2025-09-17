@@ -108,7 +108,7 @@ export interface CurrentUserResponse {
   exp: number
 }
 
-// 菜单项接口
+// 菜单项响应接口
 export interface MenuItemResponse {
   id: string
   name: string
@@ -116,6 +116,7 @@ export interface MenuItemResponse {
   icon?: string
   path: string
   sort_order: number
+  is_hidden: boolean
   children: MenuItemResponse[]
 }
 
