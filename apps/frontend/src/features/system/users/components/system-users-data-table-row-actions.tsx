@@ -1,5 +1,5 @@
 import { type Row } from '@tanstack/react-table'
-import { MoreHorizontal, Edit, Trash2, Eye } from 'lucide-react'
+import { MoreHorizontal, Edit, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -18,12 +18,13 @@ interface SystemUsersDataTableRowActionsProps {
 export function SystemUsersDataTableRowActions({
   row,
 }: SystemUsersDataTableRowActionsProps) {
-  const { setIsEditDialogOpen, setIsDeleteDialogOpen, setSelectedUserId } = useSystemUsersContext()
+  const { setIsUserSheetOpen, setUserSheetMode, setIsDeleteDialogOpen, setSelectedUserId } = useSystemUsersContext()
   const user = row.original
 
   const handleEdit = () => {
     setSelectedUserId(user.id)
-    setIsEditDialogOpen(true)
+    setUserSheetMode('edit')
+    setIsUserSheetOpen(true)
   }
 
   const handleDelete = () => {
@@ -43,10 +44,6 @@ export function SystemUsersDataTableRowActions({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end' className='w-[160px]'>
-        <DropdownMenuItem>
-          <Eye className='mr-2 h-4 w-4' />
-          查看详情
-        </DropdownMenuItem>
         <DropdownMenuItem onClick={handleEdit}>
           <Edit className='mr-2 h-4 w-4' />
           编辑

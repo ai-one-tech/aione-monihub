@@ -60,25 +60,25 @@ export function setCookie(
     cookieString += `; Domain=${config.domain}`
   }
 
-  if (config.isDevelopment) {
-    console.log(`🍪 设置Cookie [${name}]:`, cookieString)
-  }
+  // if (config.isDevelopment) {
+  //   console.log(`🍪 设置Cookie [${name}]:`, cookieString)
+  // }
 
   document.cookie = cookieString
 
   // 验证cookie是否设置成功
-  if (config.isDevelopment) {
-    setTimeout(() => {
-      const testValue = getCookie(name)
-      if (!testValue) {
-        console.warn(`❌ Cookie设置失败: ${name}`)
-        console.log('当前所有cookies:', document.cookie)
-        debugCookies()
-      } else {
-        console.log(`✅ Cookie设置成功: ${name}`)
-      }
-    }, 10)
-  }
+  // if (config.isDevelopment) {
+  //   setTimeout(() => {
+  //     const testValue = getCookie(name)
+  //     if (!testValue) {
+  //       console.warn(`❌ Cookie设置失败: ${name}`)
+  //       console.log('当前所有cookies:', document.cookie)
+  //       debugCookies()
+  //     } else {
+  //       console.log(`✅ Cookie设置成功: ${name}`)
+  //     }
+  //   }, 10)
+  // }
 }
 
 /**
@@ -152,36 +152,36 @@ export function checkCookie(name: string): boolean {
 export function checkCookiePersistence(): void {
   if (typeof document === 'undefined') return
 
-  const config = getCookieConfig()
+  // const config = getCookieConfig()
 
-  if (config.isDevelopment) {
-    console.group('🔍 Cookie持久化检查')
-    console.log('当前URL:', window.location.href)
-    console.log('当前域名:', window.location.hostname)
-    console.log('当前协议:', window.location.protocol)
-    console.log('Cookie配置:', config)
+  // if (config.isDevelopment) {
+  //   console.group('🔍 Cookie持久化检查')
+  //   console.log('当前URL:', window.location.href)
+  //   console.log('当前域名:', window.location.hostname)
+  //   console.log('当前协议:', window.location.protocol)
+  //   console.log('Cookie配置:', config)
 
-    // 检查是否是页面刷新
-    const isPageRefresh = performance.navigation?.type === 1 ||
-      performance.getEntriesByType('navigation')[0]?.type === 'reload'
+  //   // 检查是否是页面刷新
+  //   const isPageRefresh = performance.navigation?.type === 1 ||
+  //     performance.getEntriesByType('navigation')[0]?.type === 'reload'
 
-    console.log('是否为页面刷新:', isPageRefresh)
+  //   console.log('是否为页面刷新:', isPageRefresh)
 
-    if (document.cookie) {
-      console.log('当前cookies:', document.cookie)
-      const cookies = document.cookie.split(';').map(cookie => {
-        const [name, value] = cookie.trim().split('=')
-        return {
-          name,
-          value: value ? decodeURIComponent(value).substring(0, 50) + '...' : '',
-          length: value ? decodeURIComponent(value).length : 0
-        }
-      })
-      console.table(cookies)
-    } else {
-      console.warn('❌ 页面刷新后没有找到任何cookie')
-    }
+  //   if (document.cookie) {
+  //     console.log('当前cookies:', document.cookie)
+  //     const cookies = document.cookie.split(';').map(cookie => {
+  //       const [name, value] = cookie.trim().split('=')
+  //       return {
+  //         name,
+  //         value: value ? decodeURIComponent(value).substring(0, 50) + '...' : '',
+  //         length: value ? decodeURIComponent(value).length : 0
+  //       }
+  //     })
+  //     console.table(cookies)
+  //   } else {
+  //     console.warn('❌ 页面刷新后没有找到任何cookie')
+  //   }
 
-    console.groupEnd()
-  }
+  //   console.groupEnd()
+  // }
 }

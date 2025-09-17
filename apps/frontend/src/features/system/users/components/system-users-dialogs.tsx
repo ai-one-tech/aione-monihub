@@ -1,12 +1,10 @@
-import { SystemUsersCreateDialog } from './system-users-create-dialog'
-import { SystemUsersEditDialog } from './system-users-edit-dialog'
+import { SystemUsersEditSheet } from './system-users-edit-sheet'
 import { SystemUsersDeleteDialog } from './system-users-delete-dialog'
 
 export function SystemUsersDialogs() {
   return (
     <>
-      <SystemUsersCreateDialog />
-      <SystemUsersEditDialog />
+      <SystemUsersEditSheet />
       <SystemUsersDeleteDialog />
     </>
   )

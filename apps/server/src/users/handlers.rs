@@ -6,7 +6,7 @@ use crate::permissions::handlers::get_user_permissions_by_type;
 use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
 use crate::users::models::{
-    Pagination, UserCreateRequest, UserListQuery, UserListResponse, UserResponse, UserUpdateRequest,
+    Pagination, RoleInfo, UserCreateRequest, UserListQuery, UserListResponse, UserResponse, UserUpdateRequest,
     UserRoleAssignRequest, UserRoleResponse, UserRoleListResponse,
 };
 use crate::entities::user_roles::{ActiveModel as UserRoleActiveModel, Entity as UserRoles};
@@ -77,18 +77,35 @@ pub async fn get_users(
         .all(&**db)
         .await?;
 
-    // 转换为响应格式
-    let user_responses: Vec<UserResponse> = users
-        .into_iter()
-        .map(|user| UserResponse {
+    // 转换为响应格式，并查询每个用户的角色
+    let mut user_responses: Vec<UserResponse> = Vec::new();
+    for user in users {
+        // 查询用户角色
+        let user_roles = UserRoles::find()
+            .filter(crate::entities::user_roles::Column::UserId.eq(&user.id))
+            .find_with_related(Roles)
+            .all(&**db)
+            .await?;
+        
+        let role_infos: Vec<RoleInfo> = user_roles
+            .into_iter()
+            .filter_map(|(_, roles)| roles.into_iter().next())
+            .map(|role| RoleInfo {
+                name: role.name,
+                description: role.description,
+            })
+            .collect();
+        
+        user_responses.push(UserResponse {
             id: user.id,
             username: user.username,
             email: user.email,
             status: user.status,
+            roles: role_infos,
             created_at: user.created_at.to_rfc3339(),
             updated_at: user.updated_at.to_rfc3339(),
-        })
-        .collect();
+        });
+    }
 
     let response = UserListResponse {
         data: user_responses,
@@ -191,6 +208,7 @@ pub async fn create_user(
         username: saved_user.username,
         email: saved_user.email,
         status: saved_user.status,
+        roles: vec![], // 新创建的用户暂无角色
         created_at: saved_user.created_at.to_rfc3339(),
         updated_at: saved_user.updated_at.to_rfc3339(),
     };
@@ -228,11 +246,28 @@ pub async fn get_user(
 
     match user {
         Some(user) => {
+            // 查询用户角色
+            let user_roles = UserRoles::find()
+                .filter(crate::entities::user_roles::Column::UserId.eq(&user.id))
+                .find_with_related(Roles)
+                .all(&**db)
+                .await?;
+            
+            let role_infos: Vec<RoleInfo> = user_roles
+                .into_iter()
+                .filter_map(|(_, roles)| roles.into_iter().next())
+                .map(|role| RoleInfo {
+                    name: role.name,
+                    description: role.description,
+                })
+                .collect();
+            
             let response = UserResponse {
                 id: user.id,
                 username: user.username,
                 email: user.email,
                 status: user.status,
+                roles: role_infos,
                 created_at: user.created_at.to_rfc3339(),
                 updated_at: user.updated_at.to_rfc3339(),
             };
@@ -335,11 +370,28 @@ pub async fn update_user(
 
     let saved_user = updated_user.update(&**db).await?;
 
+    // 查询用户角色
+    let user_roles = UserRoles::find()
+        .filter(crate::entities::user_roles::Column::UserId.eq(&saved_user.id))
+        .find_with_related(Roles)
+        .all(&**db)
+        .await?;
+    
+    let role_infos: Vec<RoleInfo> = user_roles
+        .into_iter()
+        .filter_map(|(_, roles)| roles.into_iter().next())
+        .map(|role| RoleInfo {
+            name: role.name,
+            description: role.description,
+        })
+        .collect();
+    
     let response = UserResponse {
         id: saved_user.id,
         username: saved_user.username,
         email: saved_user.email,
         status: saved_user.status,
+        roles: role_infos,
         created_at: saved_user.created_at.to_rfc3339(),
         updated_at: saved_user.updated_at.to_rfc3339(),
     };

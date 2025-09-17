@@ -1,10 +1,9 @@
 import { type ColumnDef } from '@tanstack/react-table'
 import { cn } from '@/lib/utils'
-import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
-import { type ApiUserResponse } from '../data/api-schema'
+import { type ApiUserResponse, type RoleInfo } from '../data/api-schema'
 import { SystemUsersDataTableRowActions } from './system-users-data-table-row-actions'
 
 export const systemUsersColumns: ColumnDef<ApiUserResponse>[] = [
@@ -59,7 +58,6 @@ export const systemUsersColumns: ColumnDef<ApiUserResponse>[] = [
     cell: ({ row }) => (
       <LongText className='max-w-36'>{row.getValue('username')}</LongText>
     ),
-    meta: { className: 'w-36' },
   },
   {
     accessorKey: 'email',
@@ -76,24 +74,25 @@ export const systemUsersColumns: ColumnDef<ApiUserResponse>[] = [
       <DataTableColumnHeader column={column} title='角色' />
     ),
     cell: ({ row }) => {
-      const roles = row.getValue('roles') as string[] | undefined
+      const roles = row.getValue('roles') as RoleInfo[] | undefined
       if (!roles || !Array.isArray(roles) || roles.length === 0) {
         return <span className='text-muted-foreground text-xs'>暂无角色</span>
       }
       return (
-        <div className='flex flex-wrap gap-1'>
-          {roles.map((role, index) => (
-            <Badge key={index} variant='outline' className='text-xs'>
-              {role}
-            </Badge>
-          ))}
+        <div className='w-fit text-nowrap'>
+          {roles.map((role, index) => {
+            const displayText = role.description 
+              ? `${role.description}`
+              : role.name
+            return index === 0 ? displayText : `, ${displayText}`
+          }).join(', ')}
         </div>
       )
     },
     filterFn: (row, id, value) => {
-      const roles = row.getValue(id) as string[] | undefined
+      const roles = row.getValue(id) as RoleInfo[] | undefined
       if (!roles || !Array.isArray(roles)) return false
-      return value.some((v: string) => roles.includes(v))
+      return value.some((v: string) => roles.some(role => role.name.includes(v)))
     },
     enableSorting: false,
     enableHiding: false,

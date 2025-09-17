@@ -2,15 +2,15 @@ use crate::auth::models::{
     Claims, CurrentUserResponse, ForgotPasswordRequest, LoginRequest, LoginResponse,
     ResetPasswordRequest, UserResponse,
 };
-use crate::entities::users::{self as users};
+use crate::entities::users;
 use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
 use crate::users::UsersModule;
-use actix_web::{web, HttpRequest, HttpResponse, Result, HttpMessage};
+use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Result};
 use jsonwebtoken::{encode, EncodingKey, Header};
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
-use std::time::{SystemTime, UNIX_EPOCH};
 use std::env;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 // JWT secret key from environment variable
 fn get_jwt_secret() -> String {
@@ -54,19 +54,20 @@ pub async fn login(
             }
 
             // Get user roles
-            let roles = match users_module.get_user_roles(&user.id).await {
-                Ok(roles) => roles,
-                Err(_) => vec![],
-            };
+            let roles = users_module
+                .get_user_roles(&user.id)
+                .await
+                .unwrap_or_else(|_| vec![]);
 
             // Generate JWT token
+            let cur = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs() as usize;
+            let exp = cur + (3600 * 24 * 30);
             let claims = Claims {
                 sub: user.id.to_string(), // Use actual user ID from database
-                exp: SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs() as usize
-                    + 3600, // Token expires in 1 hour
+                exp,                 // Token expires in 30 days
             };
 
             let jwt_secret = get_jwt_secret();
@@ -135,14 +136,22 @@ pub async fn forgot_password(
             match users_module.create_password_reset_token(&user.id).await {
                 Ok(token) => {
                     // 模拟发送邮件（在实际应用中，这里应该调用邮件服务）
-                    println!("为用户 {} 发送密码重置邮件，重置令牌: {}", forgot_req.email, token);
-                    println!("重置链接: http://localhost:3000/reset-password?token={}", token);
-                    
+                    println!(
+                        "为用户 {} 发送密码重置邮件，重置令牌: {}",
+                        forgot_req.email, token
+                    );
+                    println!(
+                        "重置链接: http://localhost:3000/reset-password?token={}",
+                        token
+                    );
+
                     Ok(HttpResponse::Ok().json("密码重置邮件已发送"))
                 }
                 Err(err) => {
                     eprintln!("生成重置令牌失败: {:?}", err);
-                    Err(ApiError::InternalServerError("生成重置令牌失败".to_string()))
+                    Err(ApiError::InternalServerError(
+                        "生成重置令牌失败".to_string(),
+                    ))
                 }
             }
         }
@@ -173,19 +182,25 @@ pub async fn reset_password(
     if reset_req.token.is_empty() {
         return Err(ApiError::BadRequest("无效的令牌".to_string()));
     }
-    
+
     // 验证密码长度
     if reset_req.new_password.len() < 6 {
         return Err(ApiError::BadRequest("密码长度不能少于6位".to_string()));
     }
-    
+
     let users_module = UsersModule::new(db.get_ref().clone());
-    
+
     // 验证并使用重置令牌
-    match users_module.verify_and_use_reset_token(&reset_req.token).await {
+    match users_module
+        .verify_and_use_reset_token(&reset_req.token)
+        .await
+    {
         Ok(Some(user_id)) => {
             // 令牌有效，更新用户密码
-            match users_module.update_user_password(&user_id, &reset_req.new_password).await {
+            match users_module
+                .update_user_password(&user_id, &reset_req.new_password)
+                .await
+            {
                 Ok(()) => {
                     println!("用户 {} 密码重置成功", user_id);
                     Ok(HttpResponse::Ok().json("密码重置成功"))

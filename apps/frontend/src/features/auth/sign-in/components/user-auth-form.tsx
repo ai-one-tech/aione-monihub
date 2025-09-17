@@ -8,7 +8,7 @@ import { toast } from 'sonner'
 // 移除第三方登录图标导入
 import { useAuthStore } from '@/stores/auth-store'
 import { cn } from '@/lib/utils'
-import { authApi, LoginRequest } from '@/lib/api'
+import { authApi, type LoginRequest } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -78,15 +78,6 @@ export function UserAuthForm({
           
           auth.setLoginData(token, userData)
           
-          // 验证cookie是否正确设置
-          setTimeout(() => {
-            const storedToken = document.cookie.split(';').find(c => c.trim().startsWith('aione_auth_token='));
-            const storedUser = document.cookie.split(';').find(c => c.trim().startsWith('aione_user_info='));
-            if (!storedToken || !storedUser) {
-              console.warn('登录后cookie未正确设置');
-            }
-          }, 100);
-
           // 如果是在弹窗中，通知父窗口登录成功并关闭当前窗口
           if (isInPopup && window.opener) {
             try {

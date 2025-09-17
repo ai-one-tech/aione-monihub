@@ -28,7 +28,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useSystemUsersContext } from './system-users-provider'
-import { systemRoles, departments } from '../data/data'
+import { departments } from '../data/data'
+import { useRolesQuery } from '@/features/system/roles/hooks/use-roles-query'
 
 const editUserSchema = z.object({
   username: z.string().min(1, '用户名不能为空'),
@@ -46,6 +47,9 @@ type EditUserFormData = z.infer<typeof editUserSchema>
 export function SystemUsersEditDialog() {
   const { isEditDialogOpen, setIsEditDialogOpen, selectedUserId } = useSystemUsersContext()
   const [isLoading, setIsLoading] = useState(false)
+  
+  // 获取角色列表
+  const { data: rolesData, isLoading: rolesLoading } = useRolesQuery({})
 
   const form = useForm<EditUserFormData>({
     resolver: zodResolver(editUserSchema),
@@ -189,11 +193,17 @@ export function SystemUsersEditDialog() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {systemRoles.map((role) => (
-                          <SelectItem key={role.value} value={role.value}>
-                            {role.label}
+                        {rolesLoading ? (
+                          <SelectItem value="" disabled>
+                            加载中...
                           </SelectItem>
-                        ))}
+                        ) : (
+                          rolesData?.data?.map((role) => (
+                            <SelectItem key={role.id} value={role.id}>
+                              {role.name}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />

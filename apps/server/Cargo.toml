@@ -22,12 +22,10 @@ path = "src/bin/snowflake_demo.rs"
 [dependencies]
 actix-web = "4.4"
 actix-cors = "0.7"
-tokio = { version = "1.35", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 jsonwebtoken = "9.2"
 sea-orm = { version = "0.12.15", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros", "with-chrono"] }
-sea-orm-migration = "0.12.15"
 chrono = { version = "0.4.31", features = ["serde"] }
 derive_more = "0.99"
 log = "0.4"

@@ -1,10 +1,12 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
 
+type UserSheetMode = 'create' | 'edit'
+
 interface SystemUsersContextType {
-  isCreateDialogOpen: boolean
-  setIsCreateDialogOpen: (open: boolean) => void
-  isEditDialogOpen: boolean
-  setIsEditDialogOpen: (open: boolean) => void
+  isUserSheetOpen: boolean
+  setIsUserSheetOpen: (open: boolean) => void
+  userSheetMode: UserSheetMode
+  setUserSheetMode: (mode: UserSheetMode) => void
   isDeleteDialogOpen: boolean
   setIsDeleteDialogOpen: (open: boolean) => void
   selectedUserId: string | null
@@ -26,16 +28,16 @@ interface SystemUsersProviderProps {
 }
 
 export function SystemUsersProvider({ children }: SystemUsersProviderProps) {
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isUserSheetOpen, setIsUserSheetOpen] = useState(false)
+  const [userSheetMode, setUserSheetMode] = useState<UserSheetMode>('create')
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
   const value: SystemUsersContextType = {
-    isCreateDialogOpen,
-    setIsCreateDialogOpen,
-    isEditDialogOpen,
-    setIsEditDialogOpen,
+    isUserSheetOpen,
+    setIsUserSheetOpen,
+    userSheetMode,
+    setUserSheetMode,
     isDeleteDialogOpen,
     setIsDeleteDialogOpen,
     selectedUserId,

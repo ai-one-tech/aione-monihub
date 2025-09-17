@@ -18,11 +18,18 @@ pub struct User {
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct RoleInfo {
+    pub name: String,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct UserResponse {
     pub id: String,
     pub username: String,
     pub email: String,
     pub status: String,
+    pub roles: Vec<RoleInfo>,
     pub created_at: String,
     pub updated_at: String,
 }

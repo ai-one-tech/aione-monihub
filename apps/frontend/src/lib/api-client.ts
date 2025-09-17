@@ -64,6 +64,7 @@ class ApiClient {
   private addAuthHeader(headers: Record<string, string>, skipAuth?: boolean): Record<string, string> {
     if (!skipAuth) {
       const authHeader = authToken.getAuthorizationHeader()
+      console.log('添加认证头 Authorization:', authHeader)
       if (authHeader) {
         headers['Authorization'] = authHeader
       }
@@ -77,14 +78,14 @@ class ApiClient {
   private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`
-      
+
       try {
         const errorData = await response.json()
         errorMessage = errorData.message || errorData.error || errorMessage
       } catch {
         // 如果响应不是JSON格式，使用默认错误消息
       }
-      
+
       throw new ApiError(errorMessage, response.status, response)
     }
 
@@ -102,10 +103,10 @@ class ApiClient {
    */
   private async fetchWithTimeout(url: string, options: RequestOptions): Promise<Response> {
     const { timeout = this.config.timeout, ...fetchOptions } = options
-    
+
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), timeout)
-    
+
     try {
       const response = await fetch(url, {
         ...fetchOptions,
@@ -127,7 +128,7 @@ class ApiClient {
    */
   async request<T = any>(endpoint: string, options: RequestOptions = {}): Promise<ApiResponse<T>> {
     const url = `${this.config.baseURL}${endpoint}`
-    
+
     const headers = this.addAuthHeader(
       { ...this.config.headers, ...options.headers },
       options.skipAuth
