@@ -33,9 +33,9 @@ export const sidebarData: SidebarData = {
   },
   teams: [
     {
-      name: 'Shadcn Admin',
+      name: 'AiOne MoniHub',
       logo: Command,
-      plan: 'Vite + ShadcnUI',
+      plan: 'Enterprise',
     },
     {
       name: 'Acme Inc',
@@ -50,7 +50,76 @@ export const sidebarData: SidebarData = {
   ],
   navGroups: [
     {
-      title: 'General',
+      title: '',
+      items: [
+        {
+          title: '仪表板',
+          url: '/dashboard',
+          icon: LayoutDashboard,
+        },
+        {
+          title: '项目',
+          url: '/projects',
+          icon: ListTodo,
+        },
+        {
+          title: '应用',
+          url: '/applications',
+          icon: Package,
+        },
+        {
+          title: '机器',
+          url: '/machines',
+          icon: Monitor,
+        },
+        {
+          title: '部署',
+          url: '/deployments',
+          icon: ServerOff,
+        },
+        {
+          title: '日志',
+          icon: FileX,
+          items: [
+            {
+              title: '系统日志',
+              url: '/logs/system',
+            },
+            {
+              title: '操作日志',
+              url: '/logs/operations',
+            },
+            {
+              title: '请求日志',
+              url: '/logs/requests',
+            },
+          ],
+        },
+        {
+          title: '系统',
+          icon: Settings,
+          items: [
+            {
+              title: '用户',
+              url: '/system/users',
+              icon: Users,
+            },
+            {
+              title: '角色',
+              url: '/system/roles',
+              icon: UserCog,
+            },
+            {
+              title: '权限',
+              url: '/system/permissions',
+              icon: Lock,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      title: 'Original Pages',
       items: [
         {
           title: 'Dashboard',
@@ -96,11 +165,6 @@ export const sidebarData: SidebarData = {
             },
           ],
         },
-      ],
-    },
-    {
-      title: 'Pages',
-      items: [
         {
           title: 'Auth',
           icon: ShieldCheck,
@@ -158,11 +222,6 @@ export const sidebarData: SidebarData = {
             },
           ],
         },
-      ],
-    },
-    {
-      title: 'Other',
-      items: [
         {
           title: 'Settings',
           icon: Settings,

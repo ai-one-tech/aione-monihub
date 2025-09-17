@@ -182,7 +182,22 @@ fn build_menu_tree(permissions: Vec<permissions::Model>) -> Vec<MenuItemResponse
 /// 从权限名称中提取菜单标题
 fn extract_menu_title(permission_name: &str) -> String {
     match permission_name {
-        "menu.dashboard" => "Dashboard".to_string(),
+        // 新的中文菜单项
+        "menu.dashboard" => "仪表板".to_string(),
+        "menu.projects" => "项目".to_string(),
+        "menu.applications" => "应用".to_string(),
+        "menu.machines" => "机器".to_string(),
+        "menu.deployments" => "部署".to_string(),
+        "menu.logs" => "日志".to_string(),
+        "menu.logs.system" => "系统日志".to_string(),
+        "menu.logs.operations" => "操作日志".to_string(),
+        "menu.logs.requests" => "请求日志".to_string(),
+        "menu.system" => "系统".to_string(),
+        "menu.system.users" => "用户".to_string(),
+        "menu.system.roles" => "角色".to_string(),
+        "menu.system.permissions" => "权限".to_string(),
+        
+        // 保留原有的英文菜单项（用于兼容）
         "menu.tasks" => "Tasks".to_string(),
         "menu.apps" => "Apps".to_string(),
         "menu.chats" => "Chats".to_string(),
@@ -193,6 +208,7 @@ fn extract_menu_title(permission_name: &str) -> String {
         "menu.settings.appearance" => "Appearance".to_string(),
         "menu.settings.notifications" => "Notifications".to_string(),
         "menu.settings.display" => "Display".to_string(),
+        
         _ => permission_name
             .strip_prefix("menu.")
             .unwrap_or(permission_name)

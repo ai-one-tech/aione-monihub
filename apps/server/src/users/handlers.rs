@@ -1,6 +1,6 @@
 use crate::auth::middleware::get_user_id_from_request;
-use crate::entities::users::{ActiveModel, Entity as Users};
 use crate::entities::users::Model as UserModel;
+use crate::entities::users::{ActiveModel, Entity as Users};
 use crate::permissions::handlers::get_user_permissions_by_type;
 
 use crate::shared::error::ApiError;
@@ -8,7 +8,7 @@ use crate::shared::snowflake::generate_snowflake_id;
 use crate::users::models::{
     Pagination, UserCreateRequest, UserListQuery, UserListResponse, UserResponse, UserUpdateRequest,
 };
-use actix_web::{web, HttpResponse, Result, HttpRequest};
+use actix_web::{web, HttpRequest, HttpResponse, Result};
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::Utc;
 use sea_orm::{
@@ -45,17 +45,22 @@ pub async fn get_users(
 
     // 搜索过滤
     if let Some(search) = &query.search {
-        let search_pattern = format!("%{}%", search);
-        select = select.filter(
-            crate::entities::users::Column::Username
-                .like(&search_pattern)
-                .or(crate::entities::users::Column::Email.like(&search_pattern)),
-        );
+        // 只有当search参数非空时才执行过滤
+        if !search.trim().is_empty() {
+            let search_pattern = format!("%{}%", search.trim());
+            select = select.filter(
+                crate::entities::users::Column::Username
+                    .like(&search_pattern)
+                    .or(crate::entities::users::Column::Email.like(&search_pattern)),
+            );
+        }
     }
 
     // 状态过滤
     if let Some(status) = &query.status {
-        select = select.filter(crate::entities::users::Column::Status.eq(status));
+        if !status.trim().is_empty() {
+            select = select.filter(crate::entities::users::Column::Status.eq(status));
+        }
     }
 
     // 排序
@@ -148,8 +153,11 @@ pub async fn create_user(
     let current_user_id = get_user_id_from_request(&req)?;
 
     // 验证当前用户是否有创建用户的权限
-    let permissions = get_user_permissions_by_type(&current_user_id.to_string(), "user_management", &db).await?;
-    let has_permission = permissions.iter().any(|p| p.name == "user_management.create");
+    let permissions =
+        get_user_permissions_by_type(&current_user_id.to_string(), "user_management", &db).await?;
+    let has_permission = permissions
+        .iter()
+        .any(|p| p.name == "user_management.create");
     if !has_permission {
         return Err(ApiError::Forbidden("没有权限创建用户".to_string()));
     }
@@ -262,8 +270,11 @@ pub async fn update_user(
     let current_user_id = get_user_id_from_request(&req)?;
 
     // 验证当前用户是否有更新用户的权限
-    let permissions = get_user_permissions_by_type(&current_user_id.to_string(), "user_management", &db).await?;
-    let has_permission = permissions.iter().any(|p| p.name == "user_management.update");
+    let permissions =
+        get_user_permissions_by_type(&current_user_id.to_string(), "user_management", &db).await?;
+    let has_permission = permissions
+        .iter()
+        .any(|p| p.name == "user_management.update");
     if !has_permission {
         return Err(ApiError::Forbidden("没有权限更新用户".to_string()));
     }
@@ -361,8 +372,11 @@ pub async fn delete_user(
     let current_user_id = get_user_id_from_request(&req)?;
 
     // 验证当前用户是否有删除用户的权限
-    let permissions = get_user_permissions_by_type(&current_user_id.to_string(), "user_management", &db).await?;
-    let has_permission = permissions.iter().any(|p| p.name == "user_management.delete");
+    let permissions =
+        get_user_permissions_by_type(&current_user_id.to_string(), "user_management", &db).await?;
+    let has_permission = permissions
+        .iter()
+        .any(|p| p.name == "user_management.delete");
     if !has_permission {
         return Err(ApiError::Forbidden("没有权限删除用户".to_string()));
     }
@@ -421,8 +435,11 @@ pub async fn disable_user(
     let current_user_id = get_user_id_from_request(&req)?;
 
     // 验证当前用户是否有禁用用户的权限
-    let permissions = get_user_permissions_by_type(&current_user_id.to_string(), "user_management", &db).await?;
-    let has_permission = permissions.iter().any(|p| p.name == "user_management.disable");
+    let permissions =
+        get_user_permissions_by_type(&current_user_id.to_string(), "user_management", &db).await?;
+    let has_permission = permissions
+        .iter()
+        .any(|p| p.name == "user_management.disable");
     if !has_permission {
         return Err(ApiError::Forbidden("没有权限禁用用户".to_string()));
     }
@@ -481,8 +498,11 @@ pub async fn enable_user(
     let current_user_id = get_user_id_from_request(&req)?;
 
     // 验证当前用户是否有启用用户的权限
-    let permissions = get_user_permissions_by_type(&current_user_id.to_string(), "user_management", &db).await?;
-    let has_permission = permissions.iter().any(|p| p.name == "user_management.enable");
+    let permissions =
+        get_user_permissions_by_type(&current_user_id.to_string(), "user_management", &db).await?;
+    let has_permission = permissions
+        .iter()
+        .any(|p| p.name == "user_management.enable");
     if !has_permission {
         return Err(ApiError::Forbidden("没有权限启用用户".to_string()));
     }

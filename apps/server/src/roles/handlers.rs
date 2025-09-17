@@ -9,6 +9,24 @@ use crate::entities::role_permissions::{ActiveModel as RolePermissionActiveModel
 use crate::entities::roles::{ActiveModel, Column, Entity as Roles};
 use crate::roles::models::{RoleCreateRequest, RoleListResponse, RoleResponse};
 
+/// 获取角色列表
+#[utoipa::path(
+    get,
+    path = "/api/roles",
+    tag = "Roles",
+    params(
+        ("page" = Option<u32>, Query, description = "页码，默认为1"),
+        ("page_size" = Option<u32>, Query, description = "每页数量，默认为10")
+    ),
+    responses(
+        (status = 200, description = "成功获取角色列表", body = RoleListResponse),
+        (status = 401, description = "未授权"),
+        (status = 500, description = "服务器内部错误")
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn get_roles(
     db: web::Data<DatabaseConnection>,
     query: web::Query<std::collections::HashMap<String, String>>,
@@ -61,6 +79,22 @@ pub async fn get_roles(
     Ok(HttpResponse::Ok().json(response))
 }
 
+/// 创建角色
+#[utoipa::path(
+    post,
+    path = "/api/roles",
+    tag = "Roles",
+    request_body = RoleCreateRequest,
+    responses(
+        (status = 200, description = "成功创建角色", body = RoleResponse),
+        (status = 400, description = "请求参数错误"),
+        (status = 401, description = "未授权"),
+        (status = 500, description = "服务器内部错误")
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn create_role(
     db: web::Data<DatabaseConnection>,
     role: web::Json<RoleCreateRequest>,
@@ -135,6 +169,24 @@ pub async fn create_role(
     Ok(HttpResponse::Ok().json(response))
 }
 
+/// 获取角色详情
+#[utoipa::path(
+    get,
+    path = "/api/roles/{id}",
+    tag = "Roles",
+    params(
+        ("id" = String, Path, description = "角色ID")
+    ),
+    responses(
+        (status = 200, description = "成功获取角色详情", body = RoleResponse),
+        (status = 404, description = "角色不存在"),
+        (status = 401, description = "未授权"),
+        (status = 500, description = "服务器内部错误")
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn get_role(
     db: web::Data<DatabaseConnection>,
     path: web::Path<String>,
@@ -173,6 +225,26 @@ pub async fn get_role(
     }
 }
 
+/// 更新角色
+#[utoipa::path(
+    put,
+    path = "/api/roles/{id}",
+    tag = "Roles",
+    params(
+        ("id" = String, Path, description = "角色ID")
+    ),
+    request_body = RoleCreateRequest,
+    responses(
+        (status = 200, description = "成功更新角色", body = RoleResponse),
+        (status = 400, description = "请求参数错误"),
+        (status = 404, description = "角色不存在"),
+        (status = 401, description = "未授权"),
+        (status = 500, description = "服务器内部错误")
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn update_role(
     db: web::Data<DatabaseConnection>,
     path: web::Path<String>,
@@ -266,6 +338,24 @@ pub async fn update_role(
     Ok(HttpResponse::Ok().json(response))
 }
 
+/// 删除角色
+#[utoipa::path(
+    delete,
+    path = "/api/roles/{id}",
+    tag = "Roles",
+    params(
+        ("id" = String, Path, description = "角色ID")
+    ),
+    responses(
+        (status = 200, description = "成功删除角色"),
+        (status = 404, description = "角色不存在"),
+        (status = 401, description = "未授权"),
+        (status = 500, description = "服务器内部错误")
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn delete_role(
     db: web::Data<DatabaseConnection>,
     path: web::Path<String>,

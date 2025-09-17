@@ -34,6 +34,11 @@ use aione_monihub_server::{DatabaseManager, WsServer};
         aione_monihub_server::applications::handlers::get_application,
         aione_monihub_server::applications::handlers::update_application,
         aione_monihub_server::applications::handlers::delete_application,
+        aione_monihub_server::roles::handlers::get_roles,
+        aione_monihub_server::roles::handlers::create_role,
+        aione_monihub_server::roles::handlers::get_role,
+        aione_monihub_server::roles::handlers::update_role,
+        aione_monihub_server::roles::handlers::delete_role,
         aione_monihub_server::auth::handlers::login,
         aione_monihub_server::auth::handlers::forgot_password,
         aione_monihub_server::auth::handlers::reset_password,
@@ -79,7 +84,12 @@ use aione_monihub_server::{DatabaseManager, WsServer};
             aione_monihub_server::configs::models::ConfigResponse,
             aione_monihub_server::configs::models::ConfigCreateRequest,
             aione_monihub_server::configs::models::ConfigUpdateRequest,
-            aione_monihub_server::configs::models::ConfigListResponse
+            aione_monihub_server::configs::models::ConfigListResponse,
+            aione_monihub_server::roles::models::Role,
+            aione_monihub_server::roles::models::RoleResponse,
+            aione_monihub_server::roles::models::RoleCreateRequest,
+            aione_monihub_server::roles::models::RoleUpdateRequest,
+            aione_monihub_server::roles::models::RoleListResponse
         )
     ),
     info(
@@ -100,6 +110,7 @@ use aione_monihub_server::{DatabaseManager, WsServer};
         (name = "Users", description = "用户管理相关接口"),
         (name = "Projects", description = "项目管理相关接口"),
         (name = "Applications", description = "应用管理相关接口"),
+        (name = "Roles", description = "角色管理相关接口"),
         (name = "Authentication", description = "认证相关接口"),
         (name = "Configs", description = "配置管理相关接口")
     )

@@ -62,13 +62,20 @@
       content="https://shadcn-admin.netlify.app/images/shadcn-admin.png"
     />
 
-    <!-- font family -->
+    <!-- font family with fallback handling -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Manrope:wght@200..800&display=swap"
       rel="stylesheet"
+      onerror="this.onerror=null;this.href='data:text/css;base64,'"
     />
+    <style>
+      /* Fallback fonts in case Google Fonts fail to load */
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+      }
+    </style>
 
     <meta name="theme-color" content="#fff" />
   </head>
