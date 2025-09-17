@@ -46,3 +46,21 @@ pub struct RoleListResponse {
     pub timestamp: u64,
     pub trace_id: String,
 }
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct RolePermissionResponse {
+    pub id: String,
+    pub name: String,
+    pub description: Option<String>,
+    pub resource: String,
+    pub action: String,
+    pub permission_type: String,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct RolePermissionListResponse {
+    pub data: Vec<RolePermissionResponse>,
+    pub timestamp: u64,
+    pub trace_id: String,
+}

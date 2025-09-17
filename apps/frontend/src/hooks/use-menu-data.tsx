@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { menuApi, type MenuItemResponse } from '@/lib/api'
 import { type NavGroup, type NavItem } from '@/components/layout/types'
 import { useAuthStore } from '@/stores/auth-store'
-import { ElementType } from 'react'
+import { type ElementType } from 'react'
 import {
   LayoutDashboard,
   ListTodo,
@@ -16,6 +16,8 @@ import {
   Bell,
   Monitor,
   UserCog,
+  UsersRound,
+  Boxes,
 } from 'lucide-react'
 
 // 图标映射表
@@ -32,6 +34,8 @@ const iconMap: Record<string, ElementType> = {
   'Bell': Bell,
   'Monitor': Monitor,
   'UserCog': UserCog,
+  'UsersRound': UsersRound,
+  'Boxes': Boxes,
 }
 
 /**

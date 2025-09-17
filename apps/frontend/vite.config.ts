@@ -26,6 +26,8 @@ export default defineConfig({
   },
   // 开发环境代理配置，解决CORS问题
   server: {
+    port: 5173,
+    strictPort: true,
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:9080',

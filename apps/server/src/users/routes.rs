@@ -14,5 +14,8 @@ pub fn user_routes(cfg: &mut web::ServiceConfig) {
         .route(
             "/api/users/{id}/enable",
             web::post().to(handlers::enable_user),
-        );
+        )
+        .route("/api/users/{user_id}/roles", web::get().to(handlers::get_user_roles))
+        .route("/api/users/{user_id}/roles", web::post().to(handlers::assign_user_roles))
+        .route("/api/users/{user_id}/roles/{role_id}", web::delete().to(handlers::remove_user_role));
 }

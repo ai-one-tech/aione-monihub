@@ -22,7 +22,7 @@ pub struct Permission {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct PermissionResponse {
     pub id: String,
     pub name: String,
@@ -56,12 +56,30 @@ pub struct UserMenuResponse {
     pub trace_id: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct PermissionCreateRequest {
     pub name: String,
-    pub description: String,
+    pub description: Option<String>,
     pub resource: String,
     pub action: String,
+    pub permission_type: String, // menu, action, button, page
+    pub menu_path: Option<String>,
+    pub menu_icon: Option<String>,
+    pub parent_permission_id: Option<String>,
+    pub sort_order: Option<i32>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct PermissionUpdateRequest {
+    pub name: String,
+    pub description: Option<String>,
+    pub resource: String,
+    pub action: String,
+    pub permission_type: String,
+    pub menu_path: Option<String>,
+    pub menu_icon: Option<String>,
+    pub parent_permission_id: Option<String>,
+    pub sort_order: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -70,7 +88,7 @@ pub struct PermissionAssignRequest {
     pub permissions: Vec<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct PermissionListResponse {
     pub data: Vec<PermissionResponse>,
     pub timestamp: u64,

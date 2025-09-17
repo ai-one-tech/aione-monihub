@@ -1,16 +1,31 @@
 use crate::entities::permissions::{Entity as Permissions, Model as PermissionModel};
-use crate::entities::{Roles};
+use crate::entities::roles::Entity as Roles;
 use crate::permissions::models::{
-    MenuItemResponse, PermissionAssignRequest, PermissionListResponse, PermissionResponse,
-    UserMenuResponse,
+    MenuItemResponse, PermissionAssignRequest, PermissionCreateRequest, PermissionListResponse, 
+    PermissionResponse, PermissionUpdateRequest, UserMenuResponse,
 };
 use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
 use crate::auth::middleware::get_user_id_from_request;
 use actix_web::{web, HttpResponse, Result, HttpRequest};
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Set};
+use chrono::Utc;
 use std::collections::HashMap;
 
+/// 获取权限列表
+#[utoipa::path(
+    get,
+    path = "/api/permissions",
+    tag = "Permissions",
+    responses(
+        (status = 200, description = "成功获取权限列表", body = PermissionListResponse),
+        (status = 401, description = "未授权"),
+        (status = 500, description = "服务器内部错误")
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn get_permissions(
     db: web::Data<DatabaseConnection>,
 ) -> Result<HttpResponse, ApiError> {
@@ -53,6 +68,277 @@ pub async fn get_permissions(
     Ok(HttpResponse::Ok().json(response))
 }
 
+/// 创建权限
+#[utoipa::path(
+    post,
+    path = "/api/permissions",
+    tag = "Permissions",
+    request_body = PermissionCreateRequest,
+    responses(
+        (status = 200, description = "成功创建权限", body = PermissionResponse),
+        (status = 400, description = "请求参数错误"),
+        (status = 401, description = "未授权"),
+        (status = 500, description = "服务器内部错误")
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
+pub async fn create_permission(
+    db: web::Data<DatabaseConnection>,
+    permission: web::Json<PermissionCreateRequest>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiError> {
+    // 检查权限名是否已存在
+    let existing_permission = Permissions::find()
+        .filter(crate::entities::permissions::Column::Name.eq(&permission.name))
+        .filter(crate::entities::permissions::Column::DeletedAt.is_null())
+        .one(&**db)
+        .await?;
+
+    if existing_permission.is_some() {
+        return Err(ApiError::BadRequest("权限名已存在".to_string()));
+    }
+
+    // 获取当前用户ID
+    let current_user_id = get_user_id_from_request(&req)?;
+
+    // 生成雪花ID
+    let permission_id = generate_snowflake_id();
+
+    // 创建权限
+    let new_permission = crate::entities::permissions::ActiveModel {
+        id: Set(permission_id.clone()),
+        name: Set(permission.name.clone()),
+        description: Set(permission.description.clone()),
+        permission_resource: Set(permission.resource.clone()),
+        permission_action: Set(permission.action.clone()),
+        permission_type: Set(permission.permission_type.clone()),
+        menu_path: Set(permission.menu_path.clone()),
+        menu_icon: Set(permission.menu_icon.clone()),
+        parent_permission_id: Set(permission.parent_permission_id.clone()),
+        sort_order: Set(permission.sort_order),
+        created_by: Set(current_user_id.to_string()),
+        updated_by: Set(current_user_id.to_string()),
+        revision: Set(1),
+        deleted_at: Set(None),
+        created_at: Set(Utc::now().into()),
+        updated_at: Set(Utc::now().into()),
+    };
+
+    let saved_permission = new_permission.insert(&**db).await?;
+
+    let response = PermissionResponse {
+        id: saved_permission.id,
+        name: saved_permission.name,
+        description: saved_permission.description,
+        resource: saved_permission.permission_resource,
+        action: saved_permission.permission_action,
+        permission_type: saved_permission.permission_type,
+        menu_path: saved_permission.menu_path,
+        menu_icon: saved_permission.menu_icon,
+        parent_permission_id: saved_permission.parent_permission_id,
+        sort_order: saved_permission.sort_order,
+        created_at: saved_permission.created_at.to_rfc3339(),
+        updated_at: saved_permission.updated_at.to_rfc3339(),
+    };
+
+    Ok(HttpResponse::Ok().json(response))
+}
+
+/// 获取权限详情
+#[utoipa::path(
+    get,
+    path = "/api/permissions/{id}",
+    tag = "Permissions",
+    params(
+        ("id" = String, Path, description = "权限ID")
+    ),
+    responses(
+        (status = 200, description = "成功获取权限详情", body = PermissionResponse),
+        (status = 404, description = "权限不存在"),
+        (status = 401, description = "未授权"),
+        (status = 500, description = "服务器内部错误")
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
+pub async fn get_permission(
+    db: web::Data<DatabaseConnection>,
+    path: web::Path<String>,
+) -> Result<HttpResponse, ApiError> {
+    let permission_id = path.into_inner();
+
+    let permission = Permissions::find_by_id(&permission_id)
+        .filter(crate::entities::permissions::Column::DeletedAt.is_null())
+        .one(&**db)
+        .await?;
+
+    match permission {
+        Some(permission) => {
+            let response = PermissionResponse {
+                id: permission.id,
+                name: permission.name,
+                description: permission.description,
+                resource: permission.permission_resource,
+                action: permission.permission_action,
+                permission_type: permission.permission_type,
+                menu_path: permission.menu_path,
+                menu_icon: permission.menu_icon,
+                parent_permission_id: permission.parent_permission_id,
+                sort_order: permission.sort_order,
+                created_at: permission.created_at.to_rfc3339(),
+                updated_at: permission.updated_at.to_rfc3339(),
+            };
+            Ok(HttpResponse::Ok().json(response))
+        }
+        None => Err(ApiError::NotFound("权限不存在".to_string())),
+    }
+}
+
+/// 更新权限
+#[utoipa::path(
+    put,
+    path = "/api/permissions/{id}",
+    tag = "Permissions",
+    params(
+        ("id" = String, Path, description = "权限ID")
+    ),
+    request_body = PermissionUpdateRequest,
+    responses(
+        (status = 200, description = "成功更新权限", body = PermissionResponse),
+        (status = 400, description = "请求参数错误"),
+        (status = 404, description = "权限不存在"),
+        (status = 401, description = "未授权"),
+        (status = 500, description = "服务器内部错误")
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
+pub async fn update_permission(
+    db: web::Data<DatabaseConnection>,
+    path: web::Path<String>,
+    permission: web::Json<PermissionUpdateRequest>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiError> {
+    let permission_id = path.into_inner();
+
+    // 检查权限是否存在
+    let existing_permission = Permissions::find_by_id(&permission_id)
+        .filter(crate::entities::permissions::Column::DeletedAt.is_null())
+        .one(&**db)
+        .await?;
+
+    let existing_permission = match existing_permission {
+        Some(permission) => permission,
+        None => return Err(ApiError::NotFound("权限不存在".to_string())),
+    };
+
+    // 检查权限名是否已被其他权限使用
+    let name_conflict = Permissions::find()
+        .filter(crate::entities::permissions::Column::Name.eq(&permission.name))
+        .filter(crate::entities::permissions::Column::Id.ne(&permission_id))
+        .filter(crate::entities::permissions::Column::DeletedAt.is_null())
+        .one(&**db)
+        .await?;
+
+    if name_conflict.is_some() {
+        return Err(ApiError::BadRequest("权限名已存在".to_string()));
+    }
+
+    // 获取当前用户ID
+    let current_user_id = get_user_id_from_request(&req)?;
+
+    // 保存revision值
+    let current_revision = existing_permission.revision;
+
+    // 更新权限
+    let mut permission_active: crate::entities::permissions::ActiveModel = existing_permission.into();
+    permission_active.name = Set(permission.name.clone());
+    permission_active.description = Set(permission.description.clone());
+    permission_active.permission_resource = Set(permission.resource.clone());
+    permission_active.permission_action = Set(permission.action.clone());
+    permission_active.permission_type = Set(permission.permission_type.clone());
+    permission_active.menu_path = Set(permission.menu_path.clone());
+    permission_active.menu_icon = Set(permission.menu_icon.clone());
+    permission_active.parent_permission_id = Set(permission.parent_permission_id.clone());
+    permission_active.sort_order = Set(permission.sort_order);
+    permission_active.updated_by = Set(current_user_id.to_string());
+    permission_active.updated_at = Set(Utc::now().into());
+    permission_active.revision = Set(current_revision + 1);
+
+    let updated_permission = permission_active.update(&**db).await?;
+
+    let response = PermissionResponse {
+        id: updated_permission.id,
+        name: updated_permission.name,
+        description: updated_permission.description,
+        resource: updated_permission.permission_resource,
+        action: updated_permission.permission_action,
+        permission_type: updated_permission.permission_type,
+        menu_path: updated_permission.menu_path,
+        menu_icon: updated_permission.menu_icon,
+        parent_permission_id: updated_permission.parent_permission_id,
+        sort_order: updated_permission.sort_order,
+        created_at: updated_permission.created_at.to_rfc3339(),
+        updated_at: updated_permission.updated_at.to_rfc3339(),
+    };
+
+    Ok(HttpResponse::Ok().json(response))
+}
+
+/// 删除权限
+#[utoipa::path(
+    delete,
+    path = "/api/permissions/{id}",
+    tag = "Permissions",
+    params(
+        ("id" = String, Path, description = "权限ID")
+    ),
+    responses(
+        (status = 200, description = "成功删除权限"),
+        (status = 404, description = "权限不存在"),
+        (status = 401, description = "未授权"),
+        (status = 500, description = "服务器内部错误")
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
+pub async fn delete_permission(
+    db: web::Data<DatabaseConnection>,
+    path: web::Path<String>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiError> {
+    let permission_id = path.into_inner();
+
+    // 检查权限是否存在
+    let existing_permission = Permissions::find_by_id(&permission_id)
+        .filter(crate::entities::permissions::Column::DeletedAt.is_null())
+        .one(&**db)
+        .await?;
+
+    let existing_permission = match existing_permission {
+        Some(permission) => permission,
+        None => return Err(ApiError::NotFound("权限不存在".to_string())),
+    };
+
+    // 获取当前用户ID
+    let current_user_id = get_user_id_from_request(&req)?;
+
+    // 软删除权限
+    let mut permission_active: crate::entities::permissions::ActiveModel = existing_permission.into();
+    permission_active.deleted_at = Set(Some(Utc::now().into()));
+    permission_active.updated_by = Set(current_user_id.to_string());
+    permission_active.updated_at = Set(Utc::now().into());
+
+    permission_active.update(&**db).await?;
+
+    Ok(HttpResponse::Ok().json("权限删除成功"))
+}
+
 /// 获取当前用户的菜单权限
 #[utoipa::path(
     get,
@@ -72,20 +358,6 @@ pub async fn get_user_menu(
     
     // 根据当前用户的角色获取权限菜单
     let menu_permissions: Vec<PermissionModel> = get_user_permissions_by_type(&user_id.to_string(), "menu", &**db).await?;
-
-    // 如果没有菜单数据，返回默认菜单
-    if menu_permissions.is_empty() {
-        let default_menu_items = get_default_menu();
-        let response = UserMenuResponse {
-            data: default_menu_items,
-            timestamp: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_secs(),
-            trace_id: generate_snowflake_id(),
-        };
-        return Ok(HttpResponse::Ok().json(response));
-    }
 
     // 构建菜单树
     let menu_items = build_menu_tree(menu_permissions);
@@ -211,7 +483,7 @@ fn extract_menu_title(permission_name: &str) -> String {
         
         _ => permission_name
             .strip_prefix("menu.")
-            .unwrap_or(permission_name)
+            .unwrap_or(&permission_name)
             .replace('.', " ")
             .split_whitespace()
             .map(|word| {
@@ -229,8 +501,6 @@ fn extract_menu_title(permission_name: &str) -> String {
 
 // 更新权限分配功能
 use crate::entities::role_permissions::{ActiveModel as RolePermissionActiveModel, Entity as RolePermissions};
-use sea_orm::{ActiveModelTrait, Set};
-use chrono::Utc;
 
 pub async fn assign_permissions(
     db: web::Data<DatabaseConnection>,
@@ -295,67 +565,6 @@ pub async fn revoke_permissions(
     Ok(HttpResponse::Ok().json("权限撤销成功"))
 }
 
-/// 获取默认菜单
-fn get_default_menu() -> Vec<MenuItemResponse> {
-    vec![
-        MenuItemResponse {
-                    id: generate_snowflake_id(),
-            name: "menu.dashboard".to_string(),
-            title: "Dashboard".to_string(),
-            icon: Some("LayoutDashboard".to_string()),
-            path: "/".to_string(),
-            sort_order: 1,
-            children: vec![],
-        },
-        MenuItemResponse {
-                    id: generate_snowflake_id(),
-            name: "menu.tasks".to_string(),
-            title: "Tasks".to_string(),
-            icon: Some("ListTodo".to_string()),
-            path: "/tasks".to_string(),
-            sort_order: 2,
-            children: vec![],
-        },
-        MenuItemResponse {
-                    id: generate_snowflake_id(),
-            name: "menu.users".to_string(),
-            title: "Users".to_string(),
-            icon: Some("Users".to_string()),
-            path: "/users".to_string(),
-            sort_order: 3,
-            children: vec![],
-        },
-        MenuItemResponse {
-            id: generate_snowflake_id(),
-            name: "menu.settings".to_string(),
-            title: "Settings".to_string(),
-            icon: Some("Settings".to_string()),
-            path: "/settings".to_string(),
-            sort_order: 4,
-            children: vec![
-                MenuItemResponse {
-                    id: generate_snowflake_id(),
-                    name: "menu.settings.account".to_string(),
-                    title: "Account".to_string(),
-                    icon: Some("Wrench".to_string()),
-                    path: "/settings/account".to_string(),
-                    sort_order: 1,
-                    children: vec![],
-                },
-                MenuItemResponse {
-                    id: generate_snowflake_id(),
-                    name: "menu.settings.appearance".to_string(),
-                    title: "Appearance".to_string(),
-                    icon: Some("Palette".to_string()),
-                    path: "/settings/appearance".to_string(),
-                    sort_order: 2,
-                    children: vec![],
-                },
-            ],
-        },
-    ]
-}
-
 /// 构建菜单树结构
 fn build_menu_tree(permissions: Vec<PermissionModel>) -> Vec<MenuItemResponse> {
     let mut menu_map: HashMap<Option<String>, Vec<MenuItemResponse>> = HashMap::new();
@@ -365,7 +574,7 @@ fn build_menu_tree(permissions: Vec<PermissionModel>) -> Vec<MenuItemResponse> {
         let menu_item = MenuItemResponse {
             id: permission.id.clone(),
             name: permission.name.clone(),
-            title: extract_menu_title(&permission.name),
+            title: extract_menu_title(permission.clone()),
             icon: permission.menu_icon.clone(),
             path: permission.menu_path.unwrap_or_default(),
             sort_order: permission.sort_order.unwrap_or(0),
@@ -418,32 +627,23 @@ fn build_menu_tree(permissions: Vec<PermissionModel>) -> Vec<MenuItemResponse> {
 }
 
 /// 从权限名称中提取菜单标题
-fn extract_menu_title(permission_name: &str) -> String {
-    match permission_name {
-        "menu.dashboard" => "Dashboard".to_string(),
-        "menu.tasks" => "Tasks".to_string(),
-        "menu.apps" => "Apps".to_string(),
-        "menu.chats" => "Chats".to_string(),
-        "menu.users" => "Users".to_string(),
-        "menu.settings" => "Settings".to_string(),
-        "menu.help-center" => "Help Center".to_string(),
-        "menu.settings.account" => "Account".to_string(),
-        "menu.settings.appearance" => "Appearance".to_string(),
-        "menu.settings.notifications" => "Notifications".to_string(),
-        "menu.settings.display" => "Display".to_string(),
-        _ => permission_name
-            .strip_prefix("menu.")
-            .unwrap_or(permission_name)
-            .replace('.', " ")
-            .split_whitespace()
-            .map(|word| {
-                let mut chars = word.chars();
-                match chars.next() {
-                    None => String::new(),
-                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-                }
-            })
-            .collect::<Vec<_>>()
-            .join(" "),
-    }
+fn extract_menu_title(permission: PermissionModel) -> String {
+    return permission.description.unwrap_or_default();
+    // let permission_name = permission.name.clone();
+    // match permission_name {
+    //     _ => permission_name
+    //         .strip_prefix("menu.")
+    //         .unwrap_or(&permission_name)
+    //         .replace('.', " ")
+    //         .split_whitespace()
+    //         .map(|word| {
+    //             let mut chars = word.chars();
+    //             match chars.next() {
+    //                 None => String::new(),
+    //                 Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+    //             }
+    //         })
+    //         .collect::<Vec<_>>()
+    //         .join(" "),
+    // }
 }

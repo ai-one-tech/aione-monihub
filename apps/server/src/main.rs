@@ -39,6 +39,16 @@ use aione_monihub_server::{DatabaseManager, WsServer};
         aione_monihub_server::roles::handlers::get_role,
         aione_monihub_server::roles::handlers::update_role,
         aione_monihub_server::roles::handlers::delete_role,
+        aione_monihub_server::roles::handlers::get_role_permissions,
+        aione_monihub_server::permissions::handlers::get_permissions,
+        aione_monihub_server::permissions::handlers::create_permission,
+        aione_monihub_server::permissions::handlers::get_permission,
+        aione_monihub_server::permissions::handlers::update_permission,
+        aione_monihub_server::permissions::handlers::delete_permission,
+        aione_monihub_server::permissions::handlers::get_user_menu,
+        aione_monihub_server::users::handlers::assign_user_roles,
+        aione_monihub_server::users::handlers::remove_user_role,
+        aione_monihub_server::users::handlers::get_user_roles,
         aione_monihub_server::auth::handlers::login,
         aione_monihub_server::auth::handlers::forgot_password,
         aione_monihub_server::auth::handlers::reset_password,
@@ -89,7 +99,18 @@ use aione_monihub_server::{DatabaseManager, WsServer};
             aione_monihub_server::roles::models::RoleResponse,
             aione_monihub_server::roles::models::RoleCreateRequest,
             aione_monihub_server::roles::models::RoleUpdateRequest,
-            aione_monihub_server::roles::models::RoleListResponse
+            aione_monihub_server::roles::models::RoleListResponse,
+            aione_monihub_server::roles::models::RolePermissionResponse,
+            aione_monihub_server::roles::models::RolePermissionListResponse,
+            aione_monihub_server::permissions::models::PermissionResponse,
+            aione_monihub_server::permissions::models::PermissionListResponse,
+            aione_monihub_server::permissions::models::PermissionCreateRequest,
+            aione_monihub_server::permissions::models::PermissionUpdateRequest,
+            aione_monihub_server::permissions::models::MenuItemResponse,
+            aione_monihub_server::permissions::models::UserMenuResponse,
+            aione_monihub_server::users::models::UserRoleAssignRequest,
+            aione_monihub_server::users::models::UserRoleResponse,
+            aione_monihub_server::users::models::UserRoleListResponse
         )
     ),
     info(
@@ -111,6 +132,7 @@ use aione_monihub_server::{DatabaseManager, WsServer};
         (name = "Projects", description = "项目管理相关接口"),
         (name = "Applications", description = "应用管理相关接口"),
         (name = "Roles", description = "角色管理相关接口"),
+        (name = "Permissions", description = "权限管理相关接口"),
         (name = "Authentication", description = "认证相关接口"),
         (name = "Configs", description = "配置管理相关接口")
     )

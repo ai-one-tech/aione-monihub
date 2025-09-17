@@ -10,9 +10,12 @@ use actix_web::{web, HttpRequest, HttpResponse, Result, HttpMessage};
 use jsonwebtoken::{encode, EncodingKey, Header};
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::env;
 
-// JWT secret key (in production, this should be loaded from environment variables)
-const JWT_SECRET: &str = "aione_monihub_secret_key";
+// JWT secret key from environment variable
+fn get_jwt_secret() -> String {
+    env::var("JWT_SECRET").unwrap_or_else(|_| "aione_monihub_secret_key".to_string())
+}
 
 #[utoipa::path(
     post,
@@ -66,10 +69,11 @@ pub async fn login(
                     + 3600, // Token expires in 1 hour
             };
 
+            let jwt_secret = get_jwt_secret();
             let token = encode(
                 &Header::default(),
                 &claims,
-                &EncodingKey::from_secret(JWT_SECRET.as_ref()),
+                &EncodingKey::from_secret(jwt_secret.as_ref()),
             )
             .unwrap();
 

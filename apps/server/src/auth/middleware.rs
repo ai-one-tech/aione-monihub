@@ -6,12 +6,15 @@ use actix_web::{
 use futures_util::future::{ready, LocalBoxFuture, Ready};
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use std::rc::Rc;
+use std::env;
 
 use crate::auth::models::Claims;
 use crate::shared::error::ApiError;
 
-// JWT secret key (should match the one in handlers.rs)
-const JWT_SECRET: &str = "aione_monihub_secret_key";
+// JWT secret key from environment variable
+fn get_jwt_secret() -> String {
+    env::var("JWT_SECRET").unwrap_or_else(|_| "aione_monihub_secret_key".to_string())
+}
 
 pub struct AuthMiddleware;
 
@@ -84,9 +87,10 @@ where
 
                         // 验证token
                         let validation = Validation::new(Algorithm::HS256);
+                        let jwt_secret = get_jwt_secret();
                         match decode::<Claims>(
                             token,
-                            &DecodingKey::from_secret(JWT_SECRET.as_ref()),
+                            &DecodingKey::from_secret(jwt_secret.as_ref()),
                             &validation,
                         ) {
                             Ok(token_data) => {

@@ -51,6 +51,27 @@ pub struct UserListResponse {
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct UserRoleAssignRequest {
+    pub role_ids: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct UserRoleResponse {
+    pub id: String,
+    pub user_id: String,
+    pub role_id: String,
+    pub role_name: String,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct UserRoleListResponse {
+    pub data: Vec<UserRoleResponse>,
+    pub timestamp: u64,
+    pub trace_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Pagination {
     pub page: u32,
     pub limit: u32,

@@ -7,7 +7,7 @@ use chrono::Utc;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, Set};
 use crate::entities::role_permissions::{ActiveModel as RolePermissionActiveModel, Entity as RolePermissions};
 use crate::entities::roles::{ActiveModel, Column, Entity as Roles};
-use crate::roles::models::{RoleCreateRequest, RoleListResponse, RoleResponse};
+use crate::roles::models::{RoleCreateRequest, RoleListResponse, RoleResponse, RolePermissionResponse, RolePermissionListResponse};
 
 /// 获取角色列表
 #[utoipa::path(
@@ -390,4 +390,78 @@ pub async fn delete_role(
     deleted_role.update(&**db).await?;
 
     Ok(HttpResponse::Ok().json("角色删除成功"))
+}
+
+/// 获取角色权限列表
+#[utoipa::path(
+    get,
+    path = "/api/roles/{id}/permissions",
+    tag = "Roles",
+    params(
+        ("id" = String, Path, description = "角色ID")
+    ),
+    responses(
+        (status = 200, description = "成功获取角色权限列表", body = RolePermissionListResponse),
+        (status = 404, description = "角色不存在"),
+        (status = 401, description = "未授权"),
+        (status = 500, description = "服务器内部错误")
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
+pub async fn get_role_permissions(
+    db: web::Data<DatabaseConnection>,
+    path: web::Path<String>,
+) -> Result<HttpResponse, ApiError> {
+    let role_id = path.into_inner();
+
+    // 检查角色是否存在
+    let role_exists = Roles::find_by_id(&role_id)
+        .filter(crate::entities::roles::Column::DeletedAt.is_null())
+        .one(&**db)
+        .await?;
+
+    if role_exists.is_none() {
+        return Err(ApiError::NotFound("角色不存在".to_string()));
+    }
+
+    // 获取角色权限关联
+    let role_permissions = RolePermissions::find()
+        .filter(crate::entities::role_permissions::Column::RoleId.eq(&role_id))
+        .all(&**db)
+        .await?;
+
+    // 获取权限详情
+    let mut permission_responses = Vec::new();
+    for role_permission in role_permissions {
+        let permission = Permissions::find_by_id(&role_permission.permission_id)
+            .filter(crate::entities::permissions::Column::DeletedAt.is_null())
+            .one(&**db)
+            .await?;
+
+        if let Some(permission) = permission {
+            let permission_response = RolePermissionResponse {
+                id: permission.id,
+                name: permission.name,
+                description: permission.description,
+                resource: permission.permission_resource,
+                action: permission.permission_action,
+                permission_type: permission.permission_type,
+                created_at: permission.created_at.to_rfc3339(),
+            };
+            permission_responses.push(permission_response);
+        }
+    }
+
+    let response = RolePermissionListResponse {
+        data: permission_responses,
+        timestamp: std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs(),
+        trace_id: generate_snowflake_id(),
+    };
+
+    Ok(HttpResponse::Ok().json(response))
 }
