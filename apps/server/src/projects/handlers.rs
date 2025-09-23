@@ -1,4 +1,4 @@
-use crate::entities::projects::{ActiveModel, Entity as Projects, Model as ProjectModel};
+use crate::entities::projects::{ActiveModel, Entity as Projects};
 use crate::projects::models::{
     Pagination, ProjectCreateRequest, ProjectListQuery, ProjectListResponse, ProjectResponse,
 };
@@ -37,23 +37,35 @@ pub async fn get_projects(
     let limit = query.limit.unwrap_or(10);
     let offset = (page - 1) * limit;
 
+    // 构建查询
     let mut select = Projects::find();
 
-    // 搜索过滤
+    // 如果有搜索关键词，按项目名称搜索
     if let Some(search) = &query.search {
-        let search_pattern = format!("%{}%", search);
-        select = select.filter(
-            crate::entities::projects::Column::Name
-                .like(&search_pattern)
-        );
+        if !search.is_empty() {
+            select = select.filter(
+                crate::entities::projects::Column::Name.contains(search)
+            );
+        }
     }
 
-    // 排序
+    // 如果有状态筛选，按状态过滤
+    if let Some(status) = &query.status {
+        if !status.is_empty() {
+            select = select.filter(
+                crate::entities::projects::Column::Status.eq(status)
+            );
+        }
+    }
+
+    // 按创建时间倒序排列
     select = select.order_by_desc(crate::entities::projects::Column::CreatedAt);
 
-    // 获取总数和分页数据
+    // 获取总数
     let total = select.clone().count(&**db).await?;
-    let projects: Vec<ProjectModel> = select
+
+    // 分页查询
+    let projects = select
         .offset(offset as u64)
         .limit(limit as u64)
         .all(&**db)
@@ -65,6 +77,8 @@ pub async fn get_projects(
         .map(|project| ProjectResponse {
             id: project.id,
             name: project.name,
+            code: project.code,
+            status: project.status,
             description: project.description.unwrap_or_default(),
             created_at: project.created_at.to_rfc3339(),
             updated_at: project.updated_at.to_rfc3339(),
@@ -104,14 +118,14 @@ pub async fn create_project(
     project: web::Json<ProjectCreateRequest>,
     req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
-    // 检查项目名是否已存在
+    // 检查项目代码是否已存在
     let existing_project = Projects::find()
-        .filter(crate::entities::projects::Column::Name.eq(&project.name))
+        .filter(crate::entities::projects::Column::Code.eq(&project.code))
         .one(&**db)
         .await?;
 
     if existing_project.is_some() {
-        return Err(ApiError::BadRequest("项目名已存在".to_string()));
+        return Err(ApiError::BadRequest("项目代码已存在".to_string()));
     }
 
     // 从JWT中获取当前用户ID
@@ -124,10 +138,13 @@ pub async fn create_project(
     let new_project = ActiveModel {
         id: Set(project_id.clone()),
         name: Set(project.name.clone()),
+        code: Set(project.code.clone()),
+        status: Set(project.status.clone()),
         description: Set(Some(project.description.clone())),
-        repository_url: Set(project.repository_url.clone()),
-        owner_id: Set(current_user_id.to_string()),
-        is_active: Set(true),
+        created_by: Set(current_user_id.to_string()),
+        updated_by: Set(current_user_id.to_string()),
+        deleted_at: Set(None),
+        revision: Set(1),
         created_at: Set(Utc::now().into()),
         updated_at: Set(Utc::now().into()),
     };
@@ -137,6 +154,8 @@ pub async fn create_project(
     let response = ProjectResponse {
         id: saved_project.id,
         name: saved_project.name,
+        code: saved_project.code,
+        status: saved_project.status,
         description: saved_project.description.unwrap_or_default(),
         created_at: saved_project.created_at.to_rfc3339(),
         updated_at: saved_project.updated_at.to_rfc3339(),
@@ -173,6 +192,8 @@ pub async fn get_project(
             let response = ProjectResponse {
                 id: project.id,
                 name: project.name,
+                code: project.code,
+                status: project.status,
                 description: project.description.unwrap_or_default(),
                 created_at: project.created_at.to_rfc3339(),
                 updated_at: project.updated_at.to_rfc3339(),
@@ -202,6 +223,7 @@ pub async fn update_project(
     db: web::Data<DatabaseConnection>,
     path: web::Path<String>,
     project: web::Json<ProjectCreateRequest>,
+    req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
     let project_id = path.into_inner();
 
@@ -215,12 +237,17 @@ pub async fn update_project(
         None => return Err(ApiError::NotFound("项目不存在".to_string())),
     };
 
+    // 从JWT中获取当前用户ID
+    let current_user_id = get_user_id_from_request(&req)?;
+
     // 更新项目
     let updated_project = ActiveModel {
         id: Set(project_id),
         name: Set(project.name.clone()),
+        code: Set(project.code.clone()),
+        status: Set(project.status.clone()),
         description: Set(Some(project.description.clone())),
-        repository_url: Set(project.repository_url.clone()),
+        updated_by: Set(current_user_id.to_string()),
         updated_at: Set(Utc::now().into()),
         ..Default::default()
     };
@@ -230,6 +257,8 @@ pub async fn update_project(
     let response = ProjectResponse {
         id: saved_project.id,
         name: saved_project.name,
+        code: saved_project.code,
+        status: saved_project.status,
         description: saved_project.description.unwrap_or_default(),
         created_at: saved_project.created_at.to_rfc3339(),
         updated_at: saved_project.updated_at.to_rfc3339(),
@@ -267,15 +296,15 @@ pub async fn delete_project(
         None => return Err(ApiError::NotFound("项目不存在".to_string())),
     };
 
-    // 软删除项目（设置为不活跃状态）
-    let deleted_project = ActiveModel {
+    // 软删除项目（设置deleted_at时间戳）
+    let updated_project = ActiveModel {
         id: Set(project_id),
-        is_active: Set(false),
+        deleted_at: Set(Some(Utc::now().into())),
         updated_at: Set(Utc::now().into()),
         ..Default::default()
     };
 
-    deleted_project.update(&**db).await?;
+    updated_project.update(&**db).await?;
 
     Ok(HttpResponse::Ok().json("项目删除成功"))
 }

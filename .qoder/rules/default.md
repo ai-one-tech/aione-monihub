@@ -3,4 +3,6 @@ trigger: always_on
 alwaysApply: true
 ---
 
-不要执行任何运行的命令， 如果需要使用 类似 build check 的命令替代
+不要运行 npm run dev 等启动项目的命令
+不要执行 cargo run 等启动项目的命令
+

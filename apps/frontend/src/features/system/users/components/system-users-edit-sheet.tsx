@@ -4,7 +4,6 @@ import {
   Sheet,
   SheetContent,
   SheetDescription,
-  SheetFooter,
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
@@ -36,14 +35,21 @@ import { useUpdateUserMutation, useCreateUserMutation } from '../hooks/use-user-
 import { toast } from 'sonner'
 
 // 统一的用户表单schema，支持新增和编辑
-const userFormSchema = z.object({
+const createUserFormSchema = z.object({
   username: z.string().min(1, '用户名不能为空'),
   email: z.string().email('请输入有效的邮箱地址'),
   roles: z.array(z.string()).min(1, '请至少选择一个角色'),
-  password: z.string().min(6, '密码至少6位').optional(),
+  password: z.string().min(6, '密码至少6位'),
 })
 
-type UserFormData = z.infer<typeof userFormSchema>
+const editUserFormSchema = z.object({
+  username: z.string().min(1, '用户名不能为空'),
+  email: z.string().email('请输入有效的邮箱地址'),
+  roles: z.array(z.string()).min(1, '请至少选择一个角色'),
+  password: z.string().optional(),
+})
+
+type UserFormData = z.infer<typeof createUserFormSchema> | z.infer<typeof editUserFormSchema>
 
 
 
@@ -59,7 +65,7 @@ export function SystemUsersEditSheet() {
   const isEditMode = userSheetMode === 'edit'
 
   const form = useForm<UserFormData>({
-    resolver: zodResolver(userFormSchema),
+    resolver: zodResolver(isCreateMode ? createUserFormSchema : editUserFormSchema),
     defaultValues: {
       username: '',
       email: '',
@@ -142,7 +148,7 @@ export function SystemUsersEditSheet() {
 
   return (
     <Sheet open={isUserSheetOpen} onOpenChange={setIsUserSheetOpen}>
-      <SheetContent side='right' className='w-[400px] sm:w-[540px]'>
+      <SheetContent side='right' className='!w-[450px] !max-w-[450px]'>
         <SheetHeader>
           <SheetTitle>{isCreateMode ? '新增用户' : '编辑用户'}</SheetTitle>
           <SheetDescription>
@@ -151,12 +157,15 @@ export function SystemUsersEditSheet() {
         </SheetHeader>
         
         {(isEditMode && isLoadingUser) ? (
-          <div className='flex items-center justify-center h-64'>
-            <div className='text-sm text-muted-foreground'>加载用户信息中...</div>
+          <div className='px-6 py-4'>
+            <div className='flex items-center justify-center h-64'>
+              <div className='text-sm text-muted-foreground'>加载用户信息中...</div>
+            </div>
           </div>
         ) : (
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6 py-4'>
+          <div className='px-6 py-4'>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
               {/* 用户ID字段 - 仅编辑模式显示且不可编辑 */}
               {isEditMode && selectedUserId && (
                 <FormItem>
@@ -248,28 +257,27 @@ export function SystemUsersEditSheet() {
                 )}
               />
               
-              <SheetFooter className='flex flex-col gap-2 pt-6'>
+              <div className='flex justify-end space-x-3 pt-6 mt-8 border-t'>
                 <Button
                   type='button'
                   variant='outline'
                   onClick={() => setIsUserSheetOpen(false)}
-                  className='w-full'
                 >
                   取消
                 </Button>
                 <Button 
                   type='submit' 
-                  disabled={isCreateMode ? createUserMutation.isPending : updateUserMutation.isPending} 
-                  className='w-full'
+                  disabled={isCreateMode ? createUserMutation.isPending : updateUserMutation.isPending}
                 >
                   {isCreateMode 
                     ? (createUserMutation.isPending ? '创建中...' : '创建用户')
                     : (updateUserMutation.isPending ? '保存中...' : '保存更改')
                   }
                 </Button>
-              </SheetFooter>
+              </div>
             </form>
           </Form>
+          </div>
         )}
       </SheetContent>
     </Sheet>

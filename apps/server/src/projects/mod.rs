@@ -19,9 +19,10 @@ impl ProjectsModule {
     pub async fn create_project(
         &self,
         name: String,
+        code: String,
+        status: String,
         description: Option<String>,
-        repository_url: Option<String>,
-        owner_id: String,
+        created_by: String,
     ) -> Result<projects::Model, sea_orm::DbErr> {
         use sea_orm::ActiveModelTrait;
         
@@ -33,10 +34,13 @@ impl ProjectsModule {
         let project_data = projects::ActiveModel {
             id: ActiveValue::Set(id),
             name: ActiveValue::Set(name),
+            code: ActiveValue::Set(code),
+            status: ActiveValue::Set(status),
             description: ActiveValue::Set(description),
-            repository_url: ActiveValue::Set(repository_url),
-            owner_id: ActiveValue::Set(owner_id),
-            is_active: ActiveValue::Set(true),
+            created_by: ActiveValue::Set(created_by.clone()),
+            updated_by: ActiveValue::Set(created_by),
+            deleted_at: ActiveValue::Set(None),
+            revision: ActiveValue::Set(1),
             created_at: ActiveValue::Set(now),
             updated_at: ActiveValue::Set(now),
         };

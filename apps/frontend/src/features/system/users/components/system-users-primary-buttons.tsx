@@ -14,7 +14,7 @@ export function SystemUsersPrimaryButtons() {
   return (
     <div className='flex items-center space-x-2'>
       <Button onClick={handleCreateUser}>
-        <Plus className='mr-2 h-4 w-4' />
+        <Plus className='mr-1 h-4 w-4' />
         新增用户
       </Button>
     </div>
