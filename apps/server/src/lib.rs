@@ -6,7 +6,7 @@ pub mod deployments;
 pub mod entities;
 pub mod health;
 pub mod logs;
-pub mod machines;
+pub mod instances;
 // pub mod migrator; // 已使用SQL迁移文件
 pub mod permissions;
 pub mod projects;

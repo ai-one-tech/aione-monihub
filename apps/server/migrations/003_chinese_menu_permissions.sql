@@ -29,7 +29,7 @@ WHERE name = 'menu.apps';
 INSERT INTO permissions (id, name, permission_resource, permission_action, permission_type, menu_path, menu_icon, description, sort_order, created_by, updated_by) VALUES
 
 -- 新增的主菜单权限
-('1734095616123456404', 'menu.machines', 'menu', 'read', 'menu', '/machines', 'Monitor', '机器管理', 8, '1734095616123456001', '1734095616123456001'),
+('1734095616123456404', 'menu.instances', 'menu', 'read', 'menu', '/instances', 'Monitor', '实例管理', 8, '1734095616123456001', '1734095616123456001'),
 ('1734095616123456405', 'menu.deployments', 'menu', 'read', 'menu', '/deployments', 'ServerOff', '部署管理', 9, '1734095616123456001', '1734095616123456001'),
 
 -- 日志菜单（父菜单）
@@ -124,11 +124,11 @@ INSERT INTO permissions (id, name, permission_resource, permission_action, permi
 ('1734095616123456513', 'applications.delete', 'applications', 'delete', 'action', NULL, NULL, '删除应用', NULL, '1734095616123456001', '1734095616123456001'),
 ('1734095616123456514', 'applications.view', 'applications', 'read', 'action', NULL, NULL, '查看应用', NULL, '1734095616123456001', '1734095616123456001'),
 
--- 机器相关操作权限
-('1734095616123456521', 'machines.create', 'machines', 'create', 'action', NULL, NULL, '创建机器', NULL, '1734095616123456001', '1734095616123456001'),
-('1734095616123456522', 'machines.edit', 'machines', 'update', 'action', NULL, NULL, '编辑机器', NULL, '1734095616123456001', '1734095616123456001'),
-('1734095616123456523', 'machines.delete', 'machines', 'delete', 'action', NULL, NULL, '删除机器', NULL, '1734095616123456001', '1734095616123456001'),
-('1734095616123456524', 'machines.view', 'machines', 'read', 'action', NULL, NULL, '查看机器', NULL, '1734095616123456001', '1734095616123456001'),
+-- 实例相关操作权限
+('1734095616123456521', 'instances.create', 'instances', 'create', 'action', NULL, NULL, '创建实例', NULL, '1734095616123456001', '1734095616123456001'),
+('1734095616123456522', 'instances.edit', 'instances', 'update', 'action', NULL, NULL, '编辑实例', NULL, '1734095616123456001', '1734095616123456001'),
+('1734095616123456523', 'instances.delete', 'instances', 'delete', 'action', NULL, NULL, '删除实例', NULL, '1734095616123456001', '1734095616123456001'),
+('1734095616123456524', 'instances.view', 'instances', 'read', 'action', NULL, NULL, '查看实例', NULL, '1734095616123456001', '1734095616123456001'),
 
 -- 部署相关操作权限
 ('1734095616123456531', 'deployments.create', 'deployments', 'create', 'action', NULL, NULL, '创建部署', NULL, '1734095616123456001', '1734095616123456001'),

@@ -4,12 +4,12 @@ use serde_json::Value as JsonValue;
 use crate::shared::snowflake::generate_snowflake_id;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Machine {
+pub struct Instance {
     pub id: String,
     pub name: String,
     pub hostname: String,
     pub ip_address: String,
-    pub machine_type: String, // 映射到数据库的environment字段
+    pub instance_type: String, // 映射到数据库的environment字段
     pub status: String,
     pub deployment_id: String, // 从specifications JSON中读取
     pub application_id: String, // 从specifications JSON中读取
@@ -23,10 +23,10 @@ pub struct Machine {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct MachineResponse {
+pub struct InstanceResponse {
     pub id: String,
     pub name: String,
-    pub machine_type: String,
+    pub instance_type: String,
     pub status: String,
     pub deployment_id: String,
     pub application_id: String,
@@ -35,25 +35,25 @@ pub struct MachineResponse {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct MachineCreateRequest {
+pub struct InstanceCreateRequest {
     pub name: String,
-    pub machine_type: String,
+    pub instance_type: String,
     pub status: String,
     pub deployment_id: String,
     pub application_id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct MachineUpdateRequest {
+pub struct InstanceUpdateRequest {
     pub name: String,
-    pub machine_type: String,
+    pub instance_type: String,
     pub status: String,
     pub deployment_id: String,
     pub application_id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct MachineMonitoringDataResponse {
+pub struct InstanceMonitoringDataResponse {
     pub cpu_usage: f64,
     pub memory_usage: f64,
     pub disk_usage: f64,
@@ -68,8 +68,8 @@ pub struct NetworkTraffic {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct MachineListResponse {
-    pub data: Vec<MachineResponse>,
+pub struct InstanceListResponse {
+    pub data: Vec<InstanceResponse>,
     pub pagination: Pagination,
     pub timestamp: u64,
     pub trace_id: String,
@@ -82,9 +82,9 @@ pub struct Pagination {
     pub total: u32,
 }
 
-// Query parameters for machine list
+// Query parameters for instance list
 #[derive(Debug, Deserialize)]
-pub struct MachineListQuery {
+pub struct InstanceListQuery {
     pub page: Option<u32>,
     pub limit: Option<u32>,
     pub search: Option<String>,
@@ -96,8 +96,8 @@ pub struct MachineListQuery {
 }
 
 // 数据库实体与API模型转换函数
-impl MachineResponse {
-    pub fn from_entity(entity: crate::entities::machines::Model) -> Self {
+impl InstanceResponse {
+    pub fn from_entity(entity: crate::entities::instances::Model) -> Self {
         // 从specifications JSON中提取deployment_id和application_id
         let empty_map = serde_json::Map::new();
         let specs = entity.specifications.as_object().unwrap_or(&empty_map);
@@ -111,7 +111,7 @@ impl MachineResponse {
         Self {
             id: entity.id,
             name: entity.name,
-            machine_type: entity.environment, // environment映射到machine_type
+            instance_type: entity.environment, // environment映射到instance_type
             status: entity.status,
             deployment_id,
             application_id,
@@ -122,8 +122,8 @@ impl MachineResponse {
 }
 
 // 创建请求转换为数据库实体
-impl MachineCreateRequest {
-    pub fn to_active_model(&self, id: String, user_id: String) -> crate::entities::machines::ActiveModel {
+impl InstanceCreateRequest {
+    pub fn to_active_model(&self, id: String, user_id: String) -> crate::entities::instances::ActiveModel {
         use sea_orm::ActiveValue::Set;
         use chrono::Utc;
         use serde_json::json;
@@ -134,14 +134,14 @@ impl MachineCreateRequest {
             "application_id": self.application_id
         });
         
-        crate::entities::machines::ActiveModel {
+        crate::entities::instances::ActiveModel {
             id: Set(id),
             name: Set(self.name.clone()),
             hostname: Set(format!("host-{}", generate_snowflake_id())), // 生成临时hostname
             ip_address: Set("0.0.0.0".to_string()), // 默认IP，实际使用时需要修改
             status: Set(self.status.clone()),
             specifications: Set(specifications),
-            environment: Set(self.machine_type.clone()), // machine_type映射到environment
+            environment: Set(self.instance_type.clone()), // instance_type映射到environment
             created_by: Set(user_id.clone()),
             updated_by: Set(user_id),
             deleted_at: Set(None),

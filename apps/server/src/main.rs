@@ -160,7 +160,7 @@ use aione_monihub_server::configs::routes::config_routes;
 use aione_monihub_server::deployments::routes::deployment_routes;
 use aione_monihub_server::health::routes::health_routes;
 use aione_monihub_server::logs::routes::log_routes;
-use aione_monihub_server::machines::routes::machine_routes;
+use aione_monihub_server::instances::routes::instance_routes;
 use aione_monihub_server::permissions::routes::permission_routes;
 use aione_monihub_server::projects::routes::project_routes;
 use aione_monihub_server::roles::routes::role_routes;
@@ -226,7 +226,7 @@ async fn main() -> io::Result<()> {
             .configure(user_routes)
             .configure(role_routes)
             .configure(permission_routes)
-            .configure(machine_routes)
+            .configure(instance_routes)
             .configure(config_routes)
             .configure(websocket_routes)
             .configure(log_routes)

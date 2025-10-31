@@ -140,8 +140,8 @@ CREATE TABLE deployments (
     updated_at TIMESTAMPTZ(3) NOT NULL DEFAULT NOW()
 );
 
--- 机器表
-CREATE TABLE machines (
+-- 实例表
+CREATE TABLE instances (
     id VARCHAR(64) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     hostname VARCHAR(255) NOT NULL UNIQUE,
@@ -179,7 +179,7 @@ COMMENT ON TABLE user_roles IS '用户角色关联表，存储用户与角色的
 COMMENT ON TABLE permissions IS '权限表，存储系统权限信息，支持菜单和操作权限';
 COMMENT ON TABLE role_permissions IS '角色权限关联表，存储角色与权限的多对多关系';
 COMMENT ON TABLE deployments IS '部署表，存储应用部署记录';
-COMMENT ON TABLE machines IS '机器表，存储物理机或虚拟机信息';
+COMMENT ON TABLE instances IS '实例表，存储物理机或虚拟机信息';
 COMMENT ON TABLE logs IS '日志表，存储系统和应用日志';
 
 -- 字段注释
@@ -299,20 +299,20 @@ COMMENT ON COLUMN deployments.revision IS '数据版本号，用于乐观锁';
 COMMENT ON COLUMN deployments.created_at IS '记录创建时间';
 COMMENT ON COLUMN deployments.updated_at IS '记录更新时间';
 
--- 机器表字段注释
-COMMENT ON COLUMN machines.id IS '机器唯一标识';
-COMMENT ON COLUMN machines.name IS '机器名称';
-COMMENT ON COLUMN machines.hostname IS '机器主机名';
-COMMENT ON COLUMN machines.ip_address IS '机器IP地址';
-COMMENT ON COLUMN machines.status IS '机器状态：active(活跃), inactive(非活跃), maintenance(维护中)';
-COMMENT ON COLUMN machines.specifications IS '机器规格信息（JSON格式），包含CPU、内存、磁盘等信息';
-COMMENT ON COLUMN machines.environment IS '机器环境：dev(开发), test(测试), prod(生产)';
-COMMENT ON COLUMN machines.created_by IS '创建人ID';
-COMMENT ON COLUMN machines.updated_by IS '更新人ID';
-COMMENT ON COLUMN machines.deleted_at IS '软删除时间戳';
-COMMENT ON COLUMN machines.revision IS '数据版本号，用于乐观锁';
-COMMENT ON COLUMN machines.created_at IS '记录创建时间';
-COMMENT ON COLUMN machines.updated_at IS '记录更新时间';
+-- 实例表字段注释
+COMMENT ON COLUMN instances.id IS '实例唯一标识';
+COMMENT ON COLUMN instances.name IS '实例名称';
+COMMENT ON COLUMN instances.hostname IS '实例主机名';
+COMMENT ON COLUMN instances.ip_address IS '实例IP地址';
+COMMENT ON COLUMN instances.status IS '实例状态：active(活跃), inactive(非活跃), maintenance(维护中)';
+COMMENT ON COLUMN instances.specifications IS '实例规格信息（JSON格式），包含CPU、内存、磁盘等信息';
+COMMENT ON COLUMN instances.environment IS '实例环境：dev(开发), test(测试), prod(生产)';
+COMMENT ON COLUMN instances.created_by IS '创建人ID';
+COMMENT ON COLUMN instances.updated_by IS '更新人ID';
+COMMENT ON COLUMN instances.deleted_at IS '软删除时间戳';
+COMMENT ON COLUMN instances.revision IS '数据版本号，用于乐观锁';
+COMMENT ON COLUMN instances.created_at IS '记录创建时间';
+COMMENT ON COLUMN instances.updated_at IS '记录更新时间';
 
 -- 日志表字段注释
 COMMENT ON COLUMN logs.id IS '日志唯一标识';
@@ -347,10 +347,10 @@ CREATE INDEX idx_deployments_environment ON deployments(environment);
 CREATE INDEX idx_deployments_status ON deployments(status);
 CREATE INDEX idx_deployments_deployed_at ON deployments(deployed_at);
 
-CREATE INDEX idx_machines_hostname ON machines(hostname);
-CREATE INDEX idx_machines_ip_address ON machines(ip_address);
-CREATE INDEX idx_machines_status ON machines(status);
-CREATE INDEX idx_machines_environment ON machines(environment);
+CREATE INDEX idx_instances_hostname ON instances(hostname);
+CREATE INDEX idx_instances_ip_address ON instances(ip_address);
+CREATE INDEX idx_instances_status ON instances(status);
+CREATE INDEX idx_instances_environment ON instances(environment);
 
 CREATE INDEX idx_logs_application_id ON logs(application_id);
 CREATE INDEX idx_logs_level ON logs(log_level);
@@ -379,7 +379,7 @@ CREATE TRIGGER update_configs_updated_at BEFORE UPDATE ON configs FOR EACH ROW E
 CREATE TRIGGER update_roles_updated_at BEFORE UPDATE ON roles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_permissions_updated_at BEFORE UPDATE ON permissions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_deployments_updated_at BEFORE UPDATE ON deployments FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_machines_updated_at BEFORE UPDATE ON machines FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();-- 插入测试数据
+CREATE TRIGGER update_instances_updated_at BEFORE UPDATE ON instances FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();-- 插入测试数据
 -- 用于测试认证功能
 -- 密码说明：
 -- admin 用户：用户名=admin，密码=admin

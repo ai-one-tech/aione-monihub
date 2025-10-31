@@ -94,7 +94,7 @@ src/
 ├── deployments/         # 部署管理模块
 ├── roles/               # 角色管理模块
 ├── permissions/         # 权限管理模块
-├── machines/            # 机器管理模块
+├── instances/            # 实例管理模块
 ├── logs/                # 日志管理模块
 ├── websocket/           # WebSocket 服务
 └── health/              # 健康检查
@@ -115,7 +115,7 @@ scripts/                 # 工具脚本
 - `roles` - 角色表
 - `permissions` - 权限表
 - `user_roles` - 用户角色关联表
-- `machines` - 机器表
+- `instances` - 实例表
 - `logs` - 日志表
 
 详细的表结构请参考 `migrations/001_initial_schema.sql` 文件。

@@ -1,6 +1,8 @@
 # Created by https://www.toptal.com/developers/gitignore/api/rust,node,react,java,macos,vim,emacs,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=rust,node,react,java,macos,vim,emacs,visualstudiocode
 
+.tanstack
+
 ### Emacs ###
 # -*- mode: gitignore; -*-
 *~
