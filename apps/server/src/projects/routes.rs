@@ -10,6 +10,14 @@ pub fn project_routes(cfg: &mut web::ServiceConfig) {
             web::put().to(handlers::update_project),
         )
         .route(
+            "/api/projects/{id}/enable",
+            web::post().to(handlers::enable_project),
+        )
+        .route(
+            "/api/projects/{id}/disable",
+            web::post().to(handlers::disable_project),
+        )
+        .route(
             "/api/projects/{id}",
             web::delete().to(handlers::delete_project),
         );

@@ -283,7 +283,7 @@ pub async fn get_user(
     params(
         ("user_id" = String, Path, description = "User ID")
     ),
-    request_body = UserCreateRequest,
+    request_body = UserUpdateRequest,
     responses(
         (status = 200, description = "User updated successfully", body = UserResponse),
         (status = 400, description = "Bad request"),
@@ -369,6 +369,37 @@ pub async fn update_user(
     };
 
     let saved_user = updated_user.update(&**db).await?;
+
+    // 如果请求中包含角色名称，则更新用户角色（通过角色名称匹配）
+    if let Some(role_names) = &user.roles {
+        // 删除现有角色关联
+        UserRoles::delete_many()
+            .filter(crate::entities::user_roles::Column::UserId.eq(&saved_user.id))
+            .exec(&**db)
+            .await?;
+
+        // 根据角色名称查询角色ID并重新分配
+        for role_name in role_names {
+            // 查找角色
+            let role = Roles::find()
+                .filter(crate::entities::roles::Column::Name.eq(role_name))
+                .filter(crate::entities::roles::Column::DeletedAt.is_null())
+                .one(&**db)
+                .await?;
+
+            if let Some(role) = role {
+                let user_role_id = generate_snowflake_id();
+                let user_role = UserRoleActiveModel {
+                    id: Set(user_role_id),
+                    user_id: Set(saved_user.id.clone()),
+                    role_id: Set(role.id.clone()),
+                    created_by: Set(current_user_id.to_string()),
+                    created_at: Set(Utc::now().into()),
+                };
+                user_role.insert(&**db).await?;
+            }
+        }
+    }
 
     // 查询用户角色
     let user_roles = UserRoles::find()

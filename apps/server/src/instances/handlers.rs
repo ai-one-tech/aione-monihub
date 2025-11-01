@@ -3,9 +3,12 @@ use crate::instances::models::{
     InstanceResponse, NetworkTraffic, Pagination,
 };
 use crate::shared::error::ApiError;
+use crate::shared::status::is_valid_status;
 use crate::shared::generate_snowflake_id;
 use crate::entities::instances::{Entity as Instances, ActiveModel};
-use actix_web::{web, HttpResponse, Result};
+use actix_web::{web, HttpResponse, Result, HttpRequest};
+use crate::auth::middleware::get_user_id_from_request;
+use crate::permissions::handlers::get_user_permissions_by_type;
 use chrono::Utc;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, 
@@ -81,6 +84,11 @@ pub async fn create_instance(
     // 当前用户ID（从认证中间件获取，这里暂时使用系统用户）
     let current_user_id = "system".to_string();
 
+    // 校验状态
+    if !is_valid_status(instance.status.as_str()) {
+        return Err(ApiError::BadRequest("Invalid status; must be 'active' or 'disabled'".to_string()));
+    }
+
     // 转换为数据库实体
     let instance_data = instance.to_active_model(instance_id.clone(), current_user_id);
 
@@ -134,6 +142,11 @@ pub async fn update_instance(
 
     // 当前用户ID（从认证中间件获取，这里暂时使用系统用户）
     let current_user_id = "system".to_string();
+
+    // 校验状态
+    if !is_valid_status(instance.status.as_str()) {
+        return Err(ApiError::BadRequest("Invalid status; must be 'active' or 'disabled'".to_string()));
+    }
 
     // 更新实例信息
     use serde_json::json;
@@ -193,6 +206,60 @@ pub async fn delete_instance(
     deleted_instance.update(&**db).await?;
 
     Ok(HttpResponse::Ok().json("实例删除成功"))
+}
+
+pub async fn enable_instance(
+    db: web::Data<DatabaseConnection>,
+    path: web::Path<String>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiError> {
+    let instance_id = path.into_inner();
+    let user_id = get_user_id_from_request(&req)?;
+    // 权限检查：需要具有 instance_management.enable 权限
+    let permissions = get_user_permissions_by_type(&user_id.to_string(), "instance_management", &db).await?;
+    let has_permission = permissions.iter().any(|p| p.name == "instance_management.enable");
+    if !has_permission {
+        return Err(ApiError::Forbidden("没有权限启用实例".to_string()));
+    }
+    let existing = Instances::find_by_id(&instance_id)
+        .filter(crate::entities::instances::Column::DeletedAt.is_null())
+        .one(&**db)
+        .await?;
+    let instance = match existing { Some(i) => i, None => return Err(ApiError::NotFound("实例不存在".to_string())) };
+    let mut active: ActiveModel = instance.into();
+    active.status = Set("active".to_string());
+    active.updated_by = Set(user_id.to_string());
+    active.updated_at = Set(Utc::now().into());
+    let saved = active.update(&**db).await?;
+    let response = InstanceResponse::from_entity(saved);
+    Ok(HttpResponse::Ok().json(response))
+}
+
+pub async fn disable_instance(
+    db: web::Data<DatabaseConnection>,
+    path: web::Path<String>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiError> {
+    let instance_id = path.into_inner();
+    let user_id = get_user_id_from_request(&req)?;
+    // 权限检查：需要具有 instance_management.disable 权限
+    let permissions = get_user_permissions_by_type(&user_id.to_string(), "instance_management", &db).await?;
+    let has_permission = permissions.iter().any(|p| p.name == "instance_management.disable");
+    if !has_permission {
+        return Err(ApiError::Forbidden("没有权限禁用实例".to_string()));
+    }
+    let existing = Instances::find_by_id(&instance_id)
+        .filter(crate::entities::instances::Column::DeletedAt.is_null())
+        .one(&**db)
+        .await?;
+    let instance = match existing { Some(i) => i, None => return Err(ApiError::NotFound("实例不存在".to_string())) };
+    let mut active: ActiveModel = instance.into();
+    active.status = Set("disabled".to_string());
+    active.updated_by = Set(user_id.to_string());
+    active.updated_at = Set(Utc::now().into());
+    let saved = active.update(&**db).await?;
+    let response = InstanceResponse::from_entity(saved);
+    Ok(HttpResponse::Ok().json(response))
 }
 
 pub async fn get_instance_monitoring_data(

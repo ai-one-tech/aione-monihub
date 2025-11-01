@@ -55,7 +55,7 @@ export function DataTableToolbar<TData>({
     } else {
       table.setGlobalFilter(value)
     }
-  }, 300)
+  })
 
   return (
     <div className='flex items-center justify-between'>

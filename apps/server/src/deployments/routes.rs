@@ -16,6 +16,14 @@ pub fn deployment_routes(cfg: &mut web::ServiceConfig) {
             web::put().to(handlers::update_deployment),
         )
         .route(
+            "/api/deployments/{id}/enable",
+            web::post().to(handlers::enable_deployment),
+        )
+        .route(
+            "/api/deployments/{id}/disable",
+            web::post().to(handlers::disable_deployment),
+        )
+        .route(
             "/api/deployments/{id}",
             web::delete().to(handlers::delete_deployment),
         )

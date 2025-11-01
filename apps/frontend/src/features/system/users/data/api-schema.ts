@@ -13,6 +13,7 @@ export const apiUserResponseSchema = z.object({
   id: z.string(),
   username: z.string(),
   email: z.string(),
+  status: z.string(),
   roles: z.array(roleInfoSchema),
 })
 
@@ -23,6 +24,7 @@ export const userDetailResponseSchema = z.object({
   id: z.string(),
   username: z.string(),
   email: z.string(),
+  status: z.string(),
   roles: z.array(z.string()),
 })
 
@@ -33,6 +35,7 @@ export const createUserRequestSchema = z.object({
   username: z.string().min(1, '用户名不能为空'),
   email: z.string().email('请输入有效的邮箱地址'),
   password: z.string().min(6, '密码至少6位'),
+  status: z.string(),
   roles: z.array(z.string()).min(1, '请至少选择一个角色'),
 })
 
@@ -42,6 +45,7 @@ export type CreateUserRequest = z.infer<typeof createUserRequestSchema>
 export const updateUserRequestSchema = z.object({
   username: z.string().optional(),
   email: z.string().email().optional(),
+  status: z.string().optional(),
   roles: z.array(z.string()).optional(),
 })
 

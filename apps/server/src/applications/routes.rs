@@ -19,6 +19,14 @@ pub fn application_routes(cfg: &mut web::ServiceConfig) {
         web::put().to(handlers::update_application),
     )
     .route(
+        "/api/applications/{id}/enable",
+        web::post().to(handlers::enable_application),
+    )
+    .route(
+        "/api/applications/{id}/disable",
+        web::post().to(handlers::disable_application),
+    )
+    .route(
         "/api/applications/{id}",
         web::delete().to(handlers::delete_application),
     );

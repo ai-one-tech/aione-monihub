@@ -1,8 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Eye, Calendar, Clock, Plus, X } from 'lucide-react'
-import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons'
 import {
   Sheet,
   SheetContent,
@@ -30,11 +28,15 @@ import {
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
-import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command'
 import { useApplicationsProvider } from './applications-provider'
 import { useCreateApplication, useUpdateApplication } from '../hooks/use-applications-query'
-import { createApplicationRequestSchema, type CreateApplicationRequest, APPLICATION_STATUS_LABELS, APPLICATION_STATUS_OPTIONS } from '../data/api-schema'
+import {
+  createApplicationRequestSchema,
+  type CreateApplicationRequest,
+  APPLICATION_STATUS_LABELS,
+  APPLICATION_STATUS_OPTIONS,
+} from '../data/api-schema'
+import { toast } from 'sonner'
 import { useDebounce } from '@/hooks/use-debounce'
 import { useProjectsQuery, useProjectQuery } from '@/features/projects/hooks/use-projects-query'
 import { cn } from '@/lib/utils'
@@ -48,16 +50,13 @@ export function ApplicationsEditSheet() {
     isViewDialogOpen,
     setIsViewDialogOpen,
     editingApplication,
+    setEditingApplication,
     viewingApplication,
+    setViewingApplication,
   } = useApplicationsProvider()
 
   const createApplicationMutation = useCreateApplication()
   const updateApplicationMutation = useUpdateApplication()
-
-  const [authorizedUsers, setAuthorizedUsers] = useState<string[]>([])
-  const [newUser, setNewUser] = useState('')
-  const [projectSearch, setProjectSearch] = useState('')
-  const [projectPopoverOpen, setProjectPopoverOpen] = useState(false)
 
   const form = useForm<CreateApplicationRequest>({
     resolver: zodResolver(createApplicationRequestSchema),
@@ -69,15 +68,16 @@ export function ApplicationsEditSheet() {
       status: 'active',
       authorization: {
         users: [],
-        expiry_date: null,
       },
     },
+    mode: 'onChange',
+    reValidateMode: 'onBlur',
   })
 
-  const isCreateMode = isCreateSheetOpen
-  const isEditMode = isEditSheetOpen
-
-  // 项目搜索相关
+  const [newUser, setNewUser] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [projectSearch, setProjectSearch] = useState('')
+  const [projectPopoverOpen, setProjectPopoverOpen] = useState(false)
   const debouncedProjectSearch = useDebounce(projectSearch)
   const selectedProjectId = form.watch('project_id')
   const { data: selectedProject } = useProjectQuery(selectedProjectId || '')
@@ -85,98 +85,104 @@ export function ApplicationsEditSheet() {
 
   // 当编辑应用时，填充表单数据
   useEffect(() => {
-    if (editingApplication && isEditMode) {
+    if (editingApplication && isEditSheetOpen) {
       form.reset({
         project_id: editingApplication.project_id,
         name: editingApplication.name,
         code: editingApplication.code,
         description: editingApplication.description,
         status: editingApplication.status,
-        authorization: editingApplication.authorization,
+        authorization: {
+          users: editingApplication.authorization?.users || [],
+        },
       })
-      setAuthorizedUsers(editingApplication.authorization.users)
-    } else if (isCreateMode) {
+    } else if (isCreateSheetOpen) {
       form.reset({
         project_id: '',
         name: '',
         code: '',
         description: '',
         status: 'active',
-        authorization: {
-          users: [],
-          expiry_date: null,
-        },
+        authorization: { users: [] },
       })
-      setAuthorizedUsers([])
     }
-  }, [editingApplication, isEditMode, isCreateMode, form])
-
-  // 添加授权用户
-  const handleAddUser = () => {
-    if (newUser.trim() && !authorizedUsers.includes(newUser.trim())) {
-      const updatedUsers = [...authorizedUsers, newUser.trim()]
-      setAuthorizedUsers(updatedUsers)
-      form.setValue('authorization.users', updatedUsers)
-      setNewUser('')
-    }
-  }
-
-  // 移除授权用户
-  const handleRemoveUser = (userToRemove: string) => {
-    const updatedUsers = authorizedUsers.filter(user => user !== userToRemove)
-    setAuthorizedUsers(updatedUsers)
-    form.setValue('authorization.users', updatedUsers)
-  }
+  }, [editingApplication, isEditSheetOpen, isCreateSheetOpen, form])
 
   const onSubmit = async (data: CreateApplicationRequest) => {
     try {
-      const submitData = {
-        ...data,
-        authorization: {
-          ...data.authorization,
-          users: authorizedUsers,
-        },
+      const valid = await form.trigger()
+      if (!valid) {
+        toast.error('请完善必填项')
+        return
       }
 
-      if (isCreateMode) {
-        await createApplicationMutation.mutateAsync(submitData)
-      } else if (editingApplication) {
-        await updateApplicationMutation.mutateAsync({
-          applicationId: editingApplication.id,
-          data: submitData,
-        })
+      const mergedUsers = Array.from(
+        new Set((data.authorization?.users || []).map(u => u.trim()).filter(u => u))
+      )
+      const payload: CreateApplicationRequest = {
+        ...data,
+        authorization: { users: mergedUsers },
       }
+
+      if (isCreateSheetOpen) {
+        await createApplicationMutation.mutateAsync(payload)
+        toast.success('应用创建成功')
+      } else if (editingApplication) {
+        await updateApplicationMutation.mutateAsync({ applicationId: editingApplication.id, data: payload })
+        toast.success('应用更新成功')
+      }
+
       handleClose()
     } catch (error) {
+      console.error('保存应用失败:', error)
       // 错误处理已在mutation中完成
     }
   }
 
+  const isLoading = createApplicationMutation.isPending || updateApplicationMutation.isPending
+
   const handleClose = () => {
     setIsEditSheetOpen(false)
     setIsCreateSheetOpen(false)
+    setIsViewDialogOpen(false)
+    setEditingApplication(null)
+    setViewingApplication(null)
     form.reset()
-    setAuthorizedUsers([])
-    setNewUser('')
   }
 
-  const isLoading = createApplicationMutation.isPending || updateApplicationMutation.isPending
+  const handleAddUser = () => {
+    const value = (newUser || '').trim()
+    if (!value) return
+
+    const current = form.getValues('authorization.users') || []
+    const next = Array.from(new Set([...current, value]))
+    form.setValue('authorization.users', next, { shouldDirty: true, shouldValidate: true })
+    setNewUser('')
+    inputRef.current?.focus()
+  }
+
+  const handleRemoveUser = (user: string) => {
+    const current = form.getValues('authorization.users') || []
+    const next = current.filter(u => u !== user)
+    form.setValue('authorization.users', next, { shouldDirty: true, shouldValidate: true })
+  }
+
+  const isOpen = isCreateSheetOpen || isEditSheetOpen
 
   return (
     <>
-      {/* 编辑/新增应用抽屉 */}
-      <Sheet open={isCreateMode || isEditMode} onOpenChange={handleClose}>
-        <SheetContent side='right' className='!w-[500px] !max-w-[500px]'>
+      <Sheet open={isOpen} onOpenChange={handleClose}>
+        <SheetContent side='right'>
           <SheetHeader>
-            <SheetTitle>{isCreateMode ? '新增应用' : '编辑应用'}</SheetTitle>
+            <SheetTitle>{isCreateSheetOpen ? '新增应用' : '编辑应用'}</SheetTitle>
             <SheetDescription>
-              {isCreateMode ? '填写应用信息以创建新的应用' : '修改应用信息'}
+              {isCreateSheetOpen ? '填写应用信息以创建新的应用' : '修改应用信息'}
             </SheetDescription>
           </SheetHeader>
 
           <div className='px-6 py-4'>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
+              <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
                 <FormField
                   control={form.control}
                   name='project_id'
@@ -299,7 +305,7 @@ export function ApplicationsEditSheet() {
                       <FormControl>
                         <Textarea
                           placeholder='请输入应用描述'
-                          className='min-h-[80px]'
+                          className='min-h-[100px]'
                           {...field}
                         />
                       </FormControl>
@@ -308,75 +314,32 @@ export function ApplicationsEditSheet() {
                   )}
                 />
 
-                {/* 授权用户管理 */}
-                <div className='space-y-3'>
+                <div>
                   <FormLabel>授权用户</FormLabel>
-                  
-                  {/* 添加用户输入框 */}
-                  <div className='flex gap-2'>
+                  <div className='flex gap-2 mt-2'>
                     <Input
-                      placeholder='输入用户名'
+                      ref={inputRef}
                       value={newUser}
                       onChange={(e) => setNewUser(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          handleAddUser()
-                        }
-                      }}
+                      placeholder='输入用户邮箱并点击添加'
                     />
-                    <Button type='button' onClick={handleAddUser} size='sm'>
-                      <Plus className='h-4 w-4' />
-                    </Button>
+                    <Button type='button' onClick={handleAddUser} variant='secondary'>添加</Button>
                   </div>
-
-                  {/* 已添加的用户列表 */}
-                  {authorizedUsers.length > 0 && (
-                    <div className='space-y-2'>
-                      <p className='text-sm text-muted-foreground'>已添加用户：</p>
-                      <div className='flex flex-wrap gap-2'>
-                        {authorizedUsers.map((user, index) => (
-                          <Badge key={index} variant='secondary' className='gap-1'>
-                            {user}
-                            <Button
-                              type='button'
-                              variant='ghost'
-                              size='sm'
-                              className='h-auto p-0 text-muted-foreground hover:text-destructive'
-                              onClick={() => handleRemoveUser(user)}
-                            >
-                              <X className='h-3 w-3' />
-                            </Button>
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  <div className='mt-2 flex flex-wrap gap-2'>
+                    {(form.watch('authorization.users') || []).map(user => (
+                      <Badge key={user} variant='secondary' className='flex items-center gap-2'>
+                        <span>{user}</span>
+                        <Button type='button' variant='ghost' size='sm' onClick={() => handleRemoveUser(user)}>移除</Button>
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-
-                <FormField
-                  control={form.control}
-                  name='authorization.expiry_date'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>授权过期时间</FormLabel>
-                      <FormControl>
-                        <Input
-                          type='datetime-local'
-                          value={field.value || ''}
-                          onChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
                 <div className='flex justify-end space-x-3 pt-6 mt-8 border-t'>
                   <Button type='button' variant='outline' onClick={handleClose}>
                     取消
                   </Button>
-                  <Button type='submit' disabled={isLoading}>
+                  <Button type='submit' disabled={isLoading || !form.formState.isValid}>
                     {isLoading ? '保存中...' : '保存'}
                   </Button>
                 </div>
@@ -386,17 +349,11 @@ export function ApplicationsEditSheet() {
         </SheetContent>
       </Sheet>
 
-      {/* 应用详情抽屉 */}
       <Sheet open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <SheetContent side='right' className='!w-[450px] !max-w-[450px]'>
           <SheetHeader>
-            <SheetTitle className='flex items-center gap-2'>
-              <Eye className='h-5 w-5' />
-              应用详情
-            </SheetTitle>
-            <SheetDescription>
-              查看应用的详细信息
-            </SheetDescription>
+            <SheetTitle>应用详情</SheetTitle>
+            <SheetDescription>查看应用的详细信息</SheetDescription>
           </SheetHeader>
 
           {viewingApplication && (
@@ -405,13 +362,6 @@ export function ApplicationsEditSheet() {
                 <label className='text-sm font-medium text-muted-foreground'>应用ID</label>
                 <p className='mt-1 text-sm font-mono bg-muted px-2 py-1 rounded'>
                   {viewingApplication.id}
-                </p>
-              </div>
-
-              <div>
-                <label className='text-sm font-medium text-muted-foreground'>所属项目</label>
-                <p className='mt-1 text-sm font-mono bg-muted px-2 py-1 rounded'>
-                  {viewingApplication.project_id}
                 </p>
               </div>
 
@@ -428,13 +378,6 @@ export function ApplicationsEditSheet() {
               </div>
 
               <div>
-                <label className='text-sm font-medium text-muted-foreground'>应用描述</label>
-                <p className='mt-1 text-sm text-muted-foreground whitespace-pre-wrap'>
-                  {viewingApplication.description || '暂无描述'}
-                </p>
-              </div>
-
-              <div>
                 <label className='text-sm font-medium text-muted-foreground'>应用状态</label>
                 <div className='mt-1'>
                   <Badge variant={viewingApplication.status === 'active' ? 'default' : 'secondary'}>
@@ -443,42 +386,20 @@ export function ApplicationsEditSheet() {
                 </div>
               </div>
 
-              <div>
-                <label className='text-sm font-medium text-muted-foreground'>授权用户</label>
-                <div className='mt-1'>
-                  {viewingApplication.authorization.users.length > 0 ? (
-                    <div className='flex flex-wrap gap-1'>
-                      {viewingApplication.authorization.users.map((user, index) => (
-                        <Badge key={index} variant='outline'>
-                          {user}
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className='text-sm text-muted-foreground'>无授权用户</p>
-                  )}
-                </div>
-              </div>
-
-              {viewingApplication.authorization.expiry_date && (
-                <div>
-                  <label className='text-sm font-medium text-muted-foreground'>授权过期时间</label>
-                  <p className='mt-1 text-sm text-muted-foreground'>
-                    {new Date(viewingApplication.authorization.expiry_date).toLocaleString('zh-CN')}
-                  </p>
-                </div>
-              )}
-
               <Separator />
 
-              <div className='grid grid-cols-1 gap-4'>
-                <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                  <Calendar className='h-4 w-4' />
-                  <span>创建时间：{new Date(viewingApplication.created_at).toLocaleString('zh-CN')}</span>
+              <div className='grid grid-cols-2 gap-4'>
+                <div>
+                  <label className='text-sm font-medium text-muted-foreground'>创建时间</label>
+                  <p className='mt-1 text-sm'>
+                    {new Date(viewingApplication.created_at).toLocaleString('zh-CN')}
+                  </p>
                 </div>
-                <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                  <Clock className='h-4 w-4' />
-                  <span>更新时间：{new Date(viewingApplication.updated_at).toLocaleString('zh-CN')}</span>
+                <div>
+                  <label className='text-sm font-medium text-muted-foreground'>更新时间</label>
+                  <p className='mt-1 text-sm'>
+                    {new Date(viewingApplication.updated_at).toLocaleString('zh-CN')}
+                  </p>
                 </div>
               </div>
             </div>

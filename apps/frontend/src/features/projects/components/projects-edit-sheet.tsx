@@ -32,6 +32,7 @@ import { Separator } from '@/components/ui/separator'
 import { useProjectsContext } from './projects-provider'
 import { useCreateProjectMutation, useUpdateProjectMutation } from '../hooks/use-projects-query'
 import { createProjectRequestSchema, type CreateProjectRequest, PROJECT_STATUS_LABELS, PROJECT_STATUS_OPTIONS } from '../data/api-schema'
+import { toast } from 'sonner'
 
 export function ProjectsEditSheet() {
   const {
@@ -56,6 +57,8 @@ export function ProjectsEditSheet() {
       description: '',
       status: 'active',
     },
+    mode: 'onChange',
+    reValidateMode: 'onBlur',
   })
 
   // 当编辑项目时，填充表单数据
@@ -79,6 +82,12 @@ export function ProjectsEditSheet() {
 
   const onSubmit = async (data: CreateProjectRequest) => {
     try {
+      const valid = await form.trigger()
+      if (!valid) {
+        toast.error('请完善必填项')
+        return
+      }
+
       if (isCreateMode) {
         await createProjectMutation.mutateAsync(data)
       } else if (editingProject) {
@@ -90,6 +99,7 @@ export function ProjectsEditSheet() {
       closeAllSheets()
       form.reset()
     } catch (error) {
+      console.error('保存项目失败:', error)
       // 错误处理已在mutation中完成
     }
   }
@@ -191,7 +201,7 @@ export function ProjectsEditSheet() {
                   <Button type='button' variant='outline' onClick={handleCancel}>
                     取消
                   </Button>
-                  <Button type='submit' disabled={isLoading}>
+                  <Button type='submit' disabled={isLoading || !form.formState.isValid}>
                     {isLoading ? '保存中...' : '保存'}
                   </Button>
                 </div>
@@ -236,13 +246,6 @@ export function ProjectsEditSheet() {
               </div>
 
               <div>
-                <label className='text-sm font-medium text-muted-foreground'>项目描述</label>
-                <p className='mt-1 text-sm text-muted-foreground whitespace-pre-wrap'>
-                  {viewingProject.description || '暂无描述'}
-                </p>
-              </div>
-
-              <div>
                 <label className='text-sm font-medium text-muted-foreground'>项目状态</label>
                 <div className='mt-1'>
                   <Badge variant={viewingProject.status === 'active' ? 'default' : 'secondary'}>
@@ -253,14 +256,24 @@ export function ProjectsEditSheet() {
 
               <Separator />
 
-              <div className='grid grid-cols-1 gap-4'>
-                <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                  <Calendar className='h-4 w-4' />
-                  <span>创建时间：{new Date(viewingProject.created_at).toLocaleString('zh-CN')}</span>
+              <div className='grid grid-cols-2 gap-4'>
+                <div>
+                  <label className='text-sm font-medium text-muted-foreground'>创建时间</label>
+                  <p className='mt-1 text-sm'>
+                    <span className='inline-flex items-center gap-1'>
+                      <Calendar className='h-4 w-4' />
+                      {new Date(viewingProject.created_at).toLocaleString('zh-CN')}
+                    </span>
+                  </p>
                 </div>
-                <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                  <Clock className='h-4 w-4' />
-                  <span>更新时间：{new Date(viewingProject.updated_at).toLocaleString('zh-CN')}</span>
+                <div>
+                  <label className='text-sm font-medium text-muted-foreground'>更新时间</label>
+                  <p className='mt-1 text-sm'>
+                    <span className='inline-flex items-center gap-1'>
+                      <Clock className='h-4 w-4' />
+                      {new Date(viewingProject.updated_at).toLocaleString('zh-CN')}
+                    </span>
+                  </p>
                 </div>
               </div>
             </div>

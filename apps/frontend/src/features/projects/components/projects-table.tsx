@@ -263,7 +263,7 @@ export function ProjectsTable({ data, search, navigate }: ProjectsTableProps) {
     navigate({
       search: (prev) => ({ ...prev, search: value || undefined, page: 1 }),
     })
-  }, 1000)
+  })
   
   // Immediate handler for search input - updates local state and triggers debounced search
   const handleSearchChange = (value: string) => {
@@ -280,7 +280,7 @@ export function ProjectsTable({ data, search, navigate }: ProjectsTableProps) {
         page: 1 
       }),
     })
-  }, 2000)
+  })
   
   // Handler for status change
   const handleStatusChange = (value: string) => {

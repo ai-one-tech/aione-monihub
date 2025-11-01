@@ -1,11 +1,13 @@
 use crate::applications::models::{ApplicationCreateRequest, ApplicationListQuery, ApplicationListResponse, ApplicationResponse, AuthorizationResponse, Pagination};
 use crate::applications::ApplicationsModule;
 use crate::auth::middleware::get_user_id_from_request;
+use crate::permissions::handlers::get_user_permissions_by_type;
 use crate::entities::applications::Entity as Applications;
 use crate::shared::error::ApiError;
+use crate::shared::status::{STATUS_ACTIVE, STATUS_DISABLED, is_valid_status};
 use crate::shared::snowflake::generate_snowflake_id;
 use actix_web::{web, HttpRequest, HttpResponse};
-use sea_orm::{ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect};
+use sea_orm::{ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect};
 use chrono::Utc;
 
 #[utoipa::path(
@@ -124,6 +126,9 @@ pub async fn create_application(
     // 验证请求数据
     if app.name.is_empty() || app.code.is_empty() {
         return Err(ApiError::BadRequest("Name and code are required".to_string()));
+    }
+    if !is_valid_status(app.status.as_str()) {
+        return Err(ApiError::BadRequest("Invalid status; must be 'active' or 'disabled'".to_string()));
     }
 
     // 创建ApplicationsModule实例
@@ -271,6 +276,9 @@ pub async fn update_application(
     if app.name.is_empty() || app.code.is_empty() {
         return Err(ApiError::BadRequest("Name and code are required".to_string()));
     }
+    if !is_valid_status(app.status.as_str()) {
+        return Err(ApiError::BadRequest("Invalid status; must be 'active' or 'disabled'".to_string()));
+    }
 
     // 查询数据库获取应用信息
     if let Some(mut application) = applications_module.find_application_by_id(&app_id).await? {
@@ -361,6 +369,96 @@ pub async fn delete_application(
         applications_module.delete_application(&app_id).await?;
 
         Ok(HttpResponse::Ok().json("Application deleted successfully"))
+    } else {
+        Err(ApiError::NotFound("Application not found".to_string()))
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/applications/{id}/enable",
+    params(("id" = String, Path, description = "Application ID")),
+    responses((status = 200, description = "Application enabled successfully", body = ApplicationResponse), (status = 404, description = "Application not found")),
+    tag = "Applications"
+)]
+pub async fn enable_application(
+    db: web::Data<DatabaseConnection>,
+    path: web::Path<String>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiError> {
+    let user_id = get_user_id_from_request(&req)?;
+    // 权限检查：需要具有 application_management.enable 权限
+    let permissions = get_user_permissions_by_type(&user_id.to_string(), "application_management", &db).await?;
+    let has_permission = permissions.iter().any(|p| p.name == "application_management.enable");
+    if !has_permission {
+        return Err(ApiError::Forbidden("没有权限启用应用".to_string()));
+    }
+    let app_id = path.into_inner();
+    let module = ApplicationsModule::new(db.get_ref().clone());
+
+    if let Some(app) = module.find_application_by_id(&app_id).await? {
+        let mut active: crate::entities::applications::ActiveModel = app.into();
+        active.status = ActiveValue::Set(STATUS_ACTIVE.to_string());
+        active.updated_by = ActiveValue::Set(user_id.to_string());
+        active.updated_at = ActiveValue::Set(Utc::now().into());
+        let saved = active.update(db.get_ref()).await?;
+        let response = ApplicationResponse {
+            id: saved.id,
+            project_id: saved.project_id,
+            name: saved.name,
+            code: saved.code,
+            status: saved.status,
+            description: saved.description.unwrap_or_default(),
+            authorization: AuthorizationResponse { users: vec![saved.created_by.clone()], expiry_date: None },
+            created_at: saved.created_at.to_rfc3339(),
+            updated_at: saved.updated_at.to_rfc3339(),
+        };
+        Ok(HttpResponse::Ok().json(response))
+    } else {
+        Err(ApiError::NotFound("Application not found".to_string()))
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/applications/{id}/disable",
+    params(("id" = String, Path, description = "Application ID")),
+    responses((status = 200, description = "Application disabled successfully", body = ApplicationResponse), (status = 404, description = "Application not found")),
+    tag = "Applications"
+)]
+pub async fn disable_application(
+    db: web::Data<DatabaseConnection>,
+    path: web::Path<String>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiError> {
+    let user_id = get_user_id_from_request(&req)?;
+    // 权限检查：需要具有 application_management.disable 权限
+    let permissions = get_user_permissions_by_type(&user_id.to_string(), "application_management", &db).await?;
+    let has_permission = permissions.iter().any(|p| p.name == "application_management.disable");
+    if !has_permission {
+        return Err(ApiError::Forbidden("没有权限禁用应用".to_string()));
+    }
+    let app_id = path.into_inner();
+    let module = ApplicationsModule::new(db.get_ref().clone());
+
+    if let Some(app) = module.find_application_by_id(&app_id).await? {
+        let mut active: crate::entities::applications::ActiveModel = app.into();
+        active.status = ActiveValue::Set(STATUS_DISABLED.to_string());
+        active.updated_by = ActiveValue::Set(user_id.to_string());
+        active.updated_at = ActiveValue::Set(Utc::now().into());
+        let saved = active.update(db.get_ref()).await?;
+        let response = ApplicationResponse {
+            id: saved.id,
+            project_id: saved.project_id,
+            name: saved.name,
+            code: saved.code,
+            status: saved.status,
+            description: saved.description.unwrap_or_default(),
+            authorization: AuthorizationResponse { users: vec![saved.created_by.clone()], expiry_date: None },
+            created_at: saved.created_at.to_rfc3339(),
+            updated_at: saved.updated_at.to_rfc3339(),
+        };
+        Ok(HttpResponse::Ok().json(response))
     } else {
         Err(ApiError::NotFound("Application not found".to_string()))
     }

@@ -24,7 +24,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { SelectDropdown } from '@/components/select-dropdown'
-import { roles } from '../data/data'
+import { useRolesQuery } from '@/features/system/roles/hooks/use-roles-query'
 
 const formSchema = z.object({
   email: z.email({
@@ -50,6 +50,8 @@ export function UsersInviteDialog({
     resolver: zodResolver(formSchema),
     defaultValues: { email: '', role: '', desc: '' },
   })
+
+  const { data: rolesData, isLoading: rolesLoading } = useRolesQuery({})
 
   const onSubmit = (values: UserInviteForm) => {
     form.reset()
@@ -108,10 +110,14 @@ export function UsersInviteDialog({
                     defaultValue={field.value}
                     onValueChange={field.onChange}
                     placeholder='Select a role'
-                    items={roles.map(({ label, value }) => ({
-                      label,
-                      value,
-                    }))}
+                    items={
+                      rolesLoading
+                        ? []
+                        : (rolesData?.data ?? []).map((role) => ({
+                            label: role.name,
+                            value: role.name,
+                          }))
+                    }
                   />
                   <FormMessage />
                 </FormItem>

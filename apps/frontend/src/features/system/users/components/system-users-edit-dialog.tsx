@@ -199,7 +199,7 @@ export function SystemUsersEditDialog() {
                           </SelectItem>
                         ) : (
                           rolesData?.data?.map((role) => (
-                            <SelectItem key={role.id} value={role.id}>
+                            <SelectItem key={role.name} value={role.name}>
                               {role.name}
                             </SelectItem>
                           ))

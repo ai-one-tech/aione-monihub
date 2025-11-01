@@ -30,7 +30,7 @@ export function useDebounce<T>(value: T, delay: number = 500): T {
  */
 export function useDebouncedCallback<T extends (...args: any[]) => any>(
   callback: T,
-  delay: number
+  delay: number = 500
 ): T {
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null)
 

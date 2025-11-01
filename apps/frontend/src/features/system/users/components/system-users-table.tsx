@@ -25,6 +25,7 @@ import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
 import { type ApiUserResponse } from '../data/api-schema'
 import { SystemUsersDataTableBulkActions } from './system-users-data-table-bulk-actions'
 import { systemUsersColumns as columns } from './system-users-columns'
+import { useRolesQuery } from '@/features/system/roles/hooks/use-roles-query'
 
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -61,6 +62,7 @@ export function SystemUsersTable({ data = [], search, navigate }: DataTableProps
       // username per-column text filter
       { columnId: 'username', searchKey: 'username', type: 'string' },
       { columnId: 'roles', searchKey: 'roles', type: 'array' },
+      { columnId: 'status', searchKey: 'status', type: 'array' },
     ],
   })
 
@@ -92,6 +94,9 @@ export function SystemUsersTable({ data = [], search, navigate }: DataTableProps
     ensurePageInRange(table.getPageCount())
   }, [table, ensurePageInRange])
 
+  // 动态加载角色列表用于筛选（统一使用角色名称）
+  const { data: rolesData, isLoading: rolesLoading } = useRolesQuery({})
+
   return (
     <div className='space-y-4 max-sm:has-[div[role="toolbar"]]:mb-16'>
       <DataTableToolbar
@@ -100,14 +105,24 @@ export function SystemUsersTable({ data = [], search, navigate }: DataTableProps
         searchKey='username'
         filters={[
           {
+            columnId: 'status',
+            title: '状态',
+            options: [
+              { label: '活跃', value: 'active' },
+              { label: '禁用', value: 'inactive' },
+              { label: '已邀请', value: 'invited' },
+              { label: '已暂停', value: 'suspended' },
+            ],
+          },
+          {
             columnId: 'roles',
             title: '角色',
-            options: [
-              { label: '管理员', value: 'admin' },
-              { label: '用户', value: 'user' },
-              { label: '编辑者', value: 'editor' },
-              { label: '查看者', value: 'viewer' },
-            ],
+            options: rolesLoading
+              ? []
+              : (rolesData?.data ?? []).map((role) => ({
+                  label: role.name,
+                  value: role.name,
+                })),
           },
         ]}
       />

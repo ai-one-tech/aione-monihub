@@ -69,6 +69,34 @@ export const systemUsersColumns: ColumnDef<ApiUserResponse>[] = [
     ),
   },
   {
+    accessorKey: 'status',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='状态' />
+    ),
+    cell: ({ row }) => {
+      const status = row.getValue('status') as string
+      return (
+        <div className='w-fit'>
+          <span
+            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+              status === 'active'
+                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+            }`}
+          >
+            {status === 'active' ? '活跃' : '禁用'}
+          </span>
+        </div>
+      )
+    },
+    filterFn: (row, id, value) => {
+      const status = row.getValue(id) as string
+      return value.includes(status)
+    },
+    enableSorting: true,
+    enableHiding: false,
+  },
+  {
     accessorKey: 'roles',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='角色' />

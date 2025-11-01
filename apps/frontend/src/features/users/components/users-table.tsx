@@ -22,7 +22,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import { roles } from '../data/data'
+import { useRolesQuery } from '@/features/system/roles/hooks/use-roles-query'
 import { type User } from '../data/schema'
 import { DataTableBulkActions } from './data-table-bulk-actions'
 import { usersColumns as columns } from './users-columns'
@@ -98,6 +98,9 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
     ensurePageInRange(table.getPageCount())
   }, [table, ensurePageInRange])
 
+  // 动态加载角色列表用于筛选（统一使用角色名称）
+  const { data: rolesData, isLoading: rolesLoading } = useRolesQuery({})
+
   return (
     <div className='space-y-4 max-sm:has-[div[role="toolbar"]]:mb-16'>
       <DataTableToolbar
@@ -118,7 +121,12 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
           {
             columnId: 'role',
             title: 'Role',
-            options: roles.map((role) => ({ ...role })),
+            options: rolesLoading
+              ? []
+              : (rolesData?.data ?? []).map((role) => ({
+                  label: role.name,
+                  value: role.name,
+                })),
           },
         ]}
       />

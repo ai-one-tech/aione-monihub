@@ -4,7 +4,9 @@ use crate::deployments::models::{
 };
 use crate::entities::deployments::{ActiveModel, Entity as Deployments, Model as DeploymentModel};
 use crate::auth::middleware::get_user_id_from_request;
+use crate::permissions::handlers::get_user_permissions_by_type;
 use crate::shared::error::ApiError;
+use crate::shared::status::is_valid_status;
 use crate::shared::snowflake::generate_snowflake_id;
 use actix_web::{web, HttpRequest, HttpResponse, Result};
 use chrono::Utc;
@@ -119,6 +121,9 @@ pub async fn create_deployment(
     if deployment.status.is_empty() {
         return Err(ApiError::BadRequest("状态不能为空".to_string()));
     }
+    if !is_valid_status(deployment.status.as_str()) {
+        return Err(ApiError::BadRequest("Invalid status; must be 'active' or 'disabled'".to_string()));
+    }
     
     // 生成雪花ID
     let deployment_id = generate_snowflake_id();
@@ -210,6 +215,88 @@ pub async fn get_deployment(
     Ok(HttpResponse::Ok().json(response))
 }
 
+pub async fn enable_deployment(
+    db: web::Data<DatabaseConnection>,
+    path: web::Path<String>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiError> {
+    let user_id = get_user_id_from_request(&req)?;
+    // 权限检查：需要具有 deployment_management.enable 权限
+    let permissions = get_user_permissions_by_type(&user_id.to_string(), "deployment_management", &db).await?;
+    let has_permission = permissions.iter().any(|p| p.name == "deployment_management.enable");
+    if !has_permission {
+        return Err(ApiError::Forbidden("没有权限启用部署".to_string()));
+    }
+    let deployment_id = path.into_inner();
+    let existing = Deployments::find_by_id(&deployment_id)
+        .filter(crate::entities::deployments::Column::DeletedAt.is_null())
+        .one(&**db)
+        .await?;
+    let deployment = match existing { Some(d) => d, None => return Err(ApiError::NotFound("部署不存在".to_string())) };
+    let mut active: ActiveModel = deployment.into();
+    active.status = Set("active".to_string());
+    active.updated_by = Set(user_id.to_string());
+    active.updated_at = Set(Utc::now().into());
+    let saved = active.update(&**db).await?;
+    let config = saved.config.unwrap_or_else(|| json!({}));
+    let response = DeploymentResponse {
+        id: saved.id,
+        application_id: saved.application_id,
+        private_ip: config.get("private_ip").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        public_ip: config.get("public_ip").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        network_interface: config.get("network_interface").and_then(|v| v.as_str()).unwrap_or("eth0").to_string(),
+        hostname: config.get("hostname").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        environment_vars: config.get("environment_vars").and_then(|v| v.as_object()).map(|obj| obj.iter().map(|(k, v)| (k.clone(), v.as_str().unwrap_or("").to_string())).collect()).unwrap_or_default(),
+        service_port: config.get("service_port").and_then(|v| v.as_u64()).unwrap_or(8080) as u16,
+        process_name: config.get("process_name").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        status: saved.status,
+        created_at: saved.created_at.to_rfc3339(),
+        updated_at: saved.updated_at.to_rfc3339(),
+    };
+    Ok(HttpResponse::Ok().json(response))
+}
+
+pub async fn disable_deployment(
+    db: web::Data<DatabaseConnection>,
+    path: web::Path<String>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiError> {
+    let user_id = get_user_id_from_request(&req)?;
+    // 权限检查：需要具有 deployment_management.disable 权限
+    let permissions = get_user_permissions_by_type(&user_id.to_string(), "deployment_management", &db).await?;
+    let has_permission = permissions.iter().any(|p| p.name == "deployment_management.disable");
+    if !has_permission {
+        return Err(ApiError::Forbidden("没有权限禁用部署".to_string()));
+    }
+    let deployment_id = path.into_inner();
+    let existing = Deployments::find_by_id(&deployment_id)
+        .filter(crate::entities::deployments::Column::DeletedAt.is_null())
+        .one(&**db)
+        .await?;
+    let deployment = match existing { Some(d) => d, None => return Err(ApiError::NotFound("部署不存在".to_string())) };
+    let mut active: ActiveModel = deployment.into();
+    active.status = Set("disabled".to_string());
+    active.updated_by = Set(user_id.to_string());
+    active.updated_at = Set(Utc::now().into());
+    let saved = active.update(&**db).await?;
+    let config = saved.config.unwrap_or_else(|| json!({}));
+    let response = DeploymentResponse {
+        id: saved.id,
+        application_id: saved.application_id,
+        private_ip: config.get("private_ip").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        public_ip: config.get("public_ip").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        network_interface: config.get("network_interface").and_then(|v| v.as_str()).unwrap_or("eth0").to_string(),
+        hostname: config.get("hostname").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        environment_vars: config.get("environment_vars").and_then(|v| v.as_object()).map(|obj| obj.iter().map(|(k, v)| (k.clone(), v.as_str().unwrap_or("").to_string())).collect()).unwrap_or_default(),
+        service_port: config.get("service_port").and_then(|v| v.as_u64()).unwrap_or(8080) as u16,
+        process_name: config.get("process_name").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        status: saved.status,
+        created_at: saved.created_at.to_rfc3339(),
+        updated_at: saved.updated_at.to_rfc3339(),
+    };
+    Ok(HttpResponse::Ok().json(response))
+}
+
 pub async fn update_deployment(
     db: web::Data<DatabaseConnection>,
     path: web::Path<String>,
@@ -228,6 +315,9 @@ pub async fn update_deployment(
     
     if deployment.status.is_empty() {
         return Err(ApiError::BadRequest("状态不能为空".to_string()));
+    }
+    if !is_valid_status(deployment.status.as_str()) {
+        return Err(ApiError::BadRequest("Invalid status; must be 'active' or 'disabled'".to_string()));
     }
     
     // 查找存在的部署

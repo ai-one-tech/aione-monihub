@@ -10,6 +10,14 @@ pub fn instance_routes(cfg: &mut web::ServiceConfig) {
             web::put().to(handlers::update_instance),
         )
         .route(
+            "/api/instances/{id}/enable",
+            web::post().to(handlers::enable_instance),
+        )
+        .route(
+            "/api/instances/{id}/disable",
+            web::post().to(handlers::disable_instance),
+        )
+        .route(
             "/api/instances/{id}",
             web::delete().to(handlers::delete_instance),
         )
