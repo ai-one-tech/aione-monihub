@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, type ReactNode } from 'react'
-import { type ProjectResponse } from '../data/api-schema'
+import { createContext, useContext, useState, type ReactNode } from 'react'
+import { type ProjectResponse } from '@/features/projects/data/api-schema'
 
 interface ProjectsContextType {
   // 项目编辑抽屉状态

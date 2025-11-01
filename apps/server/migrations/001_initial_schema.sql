@@ -188,7 +188,7 @@ COMMENT ON COLUMN users.id IS '用户唯一标识';
 COMMENT ON COLUMN users.username IS '用户名，用于登录';
 COMMENT ON COLUMN users.email IS '用户邮箱地址';
 COMMENT ON COLUMN users.password_hash IS '用户密码哈希值';
-COMMENT ON COLUMN users.status IS '用户状态：active(活跃), inactive(非活跃), disabled(禁用)';
+COMMENT ON COLUMN users.status IS '用户状态：active(激活), disabled(禁用)';
 COMMENT ON COLUMN users.created_by IS '创建人ID';
 COMMENT ON COLUMN users.updated_by IS '更新人ID';
 COMMENT ON COLUMN users.deleted_at IS '软删除时间戳';
@@ -200,7 +200,7 @@ COMMENT ON COLUMN users.updated_at IS '记录更新时间';
 COMMENT ON COLUMN projects.id IS '项目唯一标识';
 COMMENT ON COLUMN projects.name IS '项目名称';
 COMMENT ON COLUMN projects.code IS '项目代码，用于标识';
-COMMENT ON COLUMN projects.status IS '项目状态：active(活跃), inactive(非活跃), archived(已归档)';
+COMMENT ON COLUMN projects.status IS '项目状态：active(激活), disabled(禁用)';
 COMMENT ON COLUMN projects.description IS '项目描述信息';
 COMMENT ON COLUMN projects.created_by IS '创建人ID';
 COMMENT ON COLUMN projects.updated_by IS '更新人ID';
@@ -214,7 +214,7 @@ COMMENT ON COLUMN applications.id IS '应用唯一标识';
 COMMENT ON COLUMN applications.project_id IS '所属项目ID';
 COMMENT ON COLUMN applications.name IS '应用名称';
 COMMENT ON COLUMN applications.code IS '应用代码，项目内唯一';
-COMMENT ON COLUMN applications.status IS '应用状态：active(活跃), inactive(非活跃), maintenance(维护中)';
+COMMENT ON COLUMN applications.status IS '应用状态：active(激活), disabled(禁用)';
 COMMENT ON COLUMN applications.description IS '应用描述信息';
 COMMENT ON COLUMN applications.auth_config IS '应用授权配置信息，包含用户列表和过期时间';
 COMMENT ON COLUMN applications.created_by IS '创建人ID';
@@ -304,7 +304,7 @@ COMMENT ON COLUMN instances.id IS '实例唯一标识';
 COMMENT ON COLUMN instances.name IS '实例名称';
 COMMENT ON COLUMN instances.hostname IS '实例主机名';
 COMMENT ON COLUMN instances.ip_address IS '实例IP地址';
-COMMENT ON COLUMN instances.status IS '实例状态：active(活跃), inactive(非活跃), maintenance(维护中)';
+COMMENT ON COLUMN instances.status IS '实例状态：active(激活), disabled(禁用)';
 COMMENT ON COLUMN instances.specifications IS '实例规格信息（JSON格式），包含CPU、内存、磁盘等信息';
 COMMENT ON COLUMN instances.environment IS '实例环境：dev(开发), test(测试), prod(生产)';
 COMMENT ON COLUMN instances.created_by IS '创建人ID';
@@ -384,7 +384,7 @@ CREATE TRIGGER update_instances_updated_at BEFORE UPDATE ON instances FOR EACH R
 -- 密码说明：
 -- admin 用户：用户名=admin，密码=admin
 -- testuser 用户：用户名=testuser，密码=password  
--- inactive_user 用户：用户名=inactive_user，密码=password（但状态为inactive）
+-- disabled_user 用户：用户名=disabled_user，密码=password（但状态为disabled）
 
 -- 插入测试用户（使用示例雪花ID）
 INSERT INTO users (id, username, email, password_hash, status, created_by, updated_by, revision, created_at, updated_at) 
@@ -402,7 +402,7 @@ WHERE id = '1734095616123456001';
 INSERT INTO users (id, username, email, password_hash, status, created_by, updated_by, revision, created_at, updated_at) 
 VALUES 
     ('1734095616123456002', 'testuser', 'test@example.com', '$2b$12$zL.vTZsmzp5uQBVbwyzgXO3TCiF1YbB14zCminf4rN4V7dynZq5kG', 'active', '1734095616123456001', '1734095616123456001', 1, NOW(), NOW()),
-    ('1734095616123456003', 'inactive_user', 'inactive@example.com', '$2b$12$zL.vTZsmzp5uQBVbwyzgXO3TCiF1YbB14zCminf4rN4V7dynZq5kG', 'inactive', '1734095616123456001', '1734095616123456001', 1, NOW(), NOW())
+    ('1734095616123456003', 'disabled_user', 'disabled@example.com', '$2b$12$zL.vTZsmzp5uQBVbwyzgXO3TCiF1YbB14zCminf4rN4V7dynZq5kG', 'disabled', '1734095616123456001', '1734095616123456001', 1, NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- 插入测试角色

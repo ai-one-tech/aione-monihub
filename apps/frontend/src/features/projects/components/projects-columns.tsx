@@ -3,10 +3,10 @@ import { cn } from '@/lib/utils'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
-import { type ApiUserResponse, type RoleInfo } from '../data/api-schema'
-import { SystemUsersDataTableRowActions } from './system-users-data-table-row-actions'
+import { type ProjectResponse, PROJECT_STATUS_LABELS } from '../data/api-schema'
+import { ProjectsDataTableRowActions } from './projects-data-table-row-actions'
 
-export const systemUsersColumns: ColumnDef<ApiUserResponse>[] = [
+export const projectsColumns: ColumnDef<ProjectResponse>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -37,7 +37,7 @@ export const systemUsersColumns: ColumnDef<ApiUserResponse>[] = [
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='用户ID' />
+      <DataTableColumnHeader column={column} title='项目ID' />
     ),
     cell: ({ row }) => (
       <LongText className='max-w-24 ps-3 font-mono text-xs'>{row.getValue('id')}</LongText>
@@ -51,22 +51,36 @@ export const systemUsersColumns: ColumnDef<ApiUserResponse>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: 'username',
+    accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='用户名' />
+      <DataTableColumnHeader column={column} title='项目名称' />
     ),
     cell: ({ row }) => (
-      <LongText className='max-w-36'>{row.getValue('username')}</LongText>
+      <LongText className='max-w-36 font-medium'>{row.getValue('name')}</LongText>
     ),
   },
   {
-    accessorKey: 'email',
+    accessorKey: 'code',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='邮箱' />
+      <DataTableColumnHeader column={column} title='项目代码' />
     ),
     cell: ({ row }) => (
-      <div className='w-fit text-nowrap'>{row.getValue('email')}</div>
+      <div className='w-fit text-nowrap font-mono text-sm'>{row.getValue('code')}</div>
     ),
+  },
+  {
+    accessorKey: 'description',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='项目描述' />
+    ),
+    cell: ({ row }) => {
+      const description = row.getValue('description') as string
+      return (
+        <LongText className='max-w-[200px] text-muted-foreground'>
+          {description || '暂无描述'}
+        </LongText>
+      )
+    },
   },
   {
     accessorKey: 'status',
@@ -84,7 +98,7 @@ export const systemUsersColumns: ColumnDef<ApiUserResponse>[] = [
                 : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
             }`}
           >
-            {status === 'active' ? '激活' : '禁用'}
+            {PROJECT_STATUS_LABELS[status as keyof typeof PROJECT_STATUS_LABELS]}
           </span>
         </div>
       )
@@ -97,34 +111,29 @@ export const systemUsersColumns: ColumnDef<ApiUserResponse>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: 'roles',
+    accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='角色' />
+      <DataTableColumnHeader column={column} title='创建时间' />
     ),
-    cell: ({ row }) => {
-      const roles = row.getValue('roles') as RoleInfo[] | undefined
-      if (!roles || !Array.isArray(roles) || roles.length === 0) {
-        return <span className='text-muted-foreground text-xs'>暂无角色</span>
-      }
-      return (
-        <div className='w-fit text-nowrap'>
-          {roles.map((role, index) => {
-            const displayText = role.name;
-            return displayText
-          }).join(' , ')}
-        </div>
-      )
-    },
-    filterFn: (row, id, value) => {
-      const roles = row.getValue(id) as RoleInfo[] | undefined
-      if (!roles || !Array.isArray(roles)) return false
-      return value.some((v: string) => roles.some(role => role.name.includes(v)))
-    },
-    enableSorting: false,
-    enableHiding: false,
+    cell: ({ row }) => (
+      <div className='w-fit text-nowrap text-sm text-muted-foreground'>
+        {new Date(row.getValue('created_at')).toLocaleDateString('zh-CN')}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'updated_at',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='更新时间' />
+    ),
+    cell: ({ row }) => (
+      <div className='w-fit text-nowrap text-sm text-muted-foreground'>
+        {new Date(row.getValue('updated_at')).toLocaleDateString('zh-CN')}
+      </div>
+    ),
   },
   {
     id: 'actions',
-    cell: SystemUsersDataTableRowActions,
+    cell: ProjectsDataTableRowActions,
   },
 ]

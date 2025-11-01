@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 // 项目状态枚举
-export const projectStatusSchema = z.enum(['active', 'inactive', 'archived'])
+export const projectStatusSchema = z.enum(['active', 'disabled'])
 export type ProjectStatus = z.infer<typeof projectStatusSchema>
 
 // 分页信息
@@ -67,14 +67,12 @@ export type GetProjectsParams = z.infer<typeof getProjectsParamsSchema>
 // 项目状态选项
 export const PROJECT_STATUS_OPTIONS = [
   { value: 'all', label: '全部状态' },
-  { value: 'active', label: '活跃' },
-  { value: 'inactive', label: '非活跃' },
-  { value: 'archived', label: '已归档' },
+  { value: 'active', label: '激活' },
+  { value: 'disabled', label: '禁用' },
 ] as const
 
 // 项目状态标签映射
 export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
-  active: '活跃',
-  inactive: '非活跃',
-  archived: '已归档',
+  active: '激活',
+  disabled: '禁用',
 }

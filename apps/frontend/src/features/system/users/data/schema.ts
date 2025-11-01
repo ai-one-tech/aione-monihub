@@ -2,9 +2,7 @@ import { z } from 'zod'
 
 const systemUserStatusSchema = z.union([
   z.literal('active'),
-  z.literal('inactive'),
-  z.literal('invited'),
-  z.literal('suspended'),
+  z.literal('disabled'),
 ])
 export type SystemUserStatus = z.infer<typeof systemUserStatusSchema>
 

@@ -248,10 +248,8 @@ export function SystemUsersEditDialog() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value='active'>活跃</SelectItem>
-                      <SelectItem value='inactive'>非活跃</SelectItem>
-                      <SelectItem value='invited'>已邀请</SelectItem>
-                      <SelectItem value='suspended'>已暂停</SelectItem>
+                      <SelectItem value='active'>激活</SelectItem>
+                      <SelectItem value='disabled'>禁用</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

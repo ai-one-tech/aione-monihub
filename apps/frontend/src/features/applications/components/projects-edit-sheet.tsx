@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, Calendar, Clock } from 'lucide-react'
+import { useEffect } from 'react'
 import {
   Sheet,
   SheetContent,
@@ -31,7 +32,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { useProjectsContext } from './projects-provider'
 import { useCreateProjectMutation, useUpdateProjectMutation } from '../hooks/use-projects-query'
-import { createProjectRequestSchema, type CreateProjectRequest, PROJECT_STATUS_LABELS, PROJECT_STATUS_OPTIONS } from '../data/api-schema'
+import { createProjectRequestSchema, type CreateProjectRequest, PROJECT_STATUS_LABELS, PROJECT_STATUS_OPTIONS } from '@/features/projects/data/api-schema'
 
 export function ProjectsEditSheet() {
   const {

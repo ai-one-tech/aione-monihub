@@ -1,4 +1,4 @@
-import { type GetProjectsParams, type ProjectListResponse, type ProjectDetailResponse, type UpdateProjectRequest, type CreateProjectRequest } from '../data/api-schema'
+import { type GetProjectsParams, type ProjectListResponse, type ProjectDetailResponse, type UpdateProjectRequest, type CreateProjectRequest } from '@/features/projects/data/api-schema'
 import { apiClient } from '@/lib/api-client'
 
 class ProjectsApi {

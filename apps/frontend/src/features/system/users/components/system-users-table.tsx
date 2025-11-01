@@ -108,10 +108,8 @@ export function SystemUsersTable({ data = [], search, navigate }: DataTableProps
             columnId: 'status',
             title: '状态',
             options: [
-              { label: '活跃', value: 'active' },
-              { label: '禁用', value: 'inactive' },
-              { label: '已邀请', value: 'invited' },
-              { label: '已暂停', value: 'suspended' },
+              { label: '激活', value: 'active' },
+              { label: '禁用', value: 'disabled' },
             ],
           },
           {

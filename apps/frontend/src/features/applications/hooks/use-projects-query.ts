@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { projectsApi } from '../api/projects-api'
-import { type GetProjectsParams, type CreateProjectRequest, type UpdateProjectRequest } from '../data/api-schema'
+import { type GetProjectsParams, type CreateProjectRequest, type UpdateProjectRequest } from '@/features/projects/data/api-schema'
 import { toast } from 'sonner'
 
 // 查询键

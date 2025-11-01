@@ -30,9 +30,7 @@ export const systemRoles = [
 
 export const systemCallTypes = new Map([
   ['active', 'text-green-600 bg-green-50 border-green-200'],
-  ['inactive', 'text-gray-600 bg-gray-50 border-gray-200'],
-  ['invited', 'text-blue-600 bg-blue-50 border-blue-200'],
-  ['suspended', 'text-red-600 bg-red-50 border-red-200'],
+  ['disabled', 'text-gray-600 bg-gray-50 border-gray-200'],
 ])
 
 export const departments = [

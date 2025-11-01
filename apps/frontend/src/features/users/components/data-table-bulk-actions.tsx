@@ -95,7 +95,7 @@ export function DataTableBulkActions<TData>({
             <Button
               variant='outline'
               size='icon'
-              onClick={() => handleBulkStatusChange('inactive')}
+              onClick={() => handleBulkStatusChange('disabled')}
               className='size-8'
               aria-label='Deactivate selected users'
               title='Deactivate selected users'

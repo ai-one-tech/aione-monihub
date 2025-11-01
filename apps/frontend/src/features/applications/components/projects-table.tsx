@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { type NavigateOptions } from '@tanstack/react-router'
 import {
   type ColumnDef,
@@ -38,11 +39,14 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useProjectsContext } from './projects-provider'
-import { type ProjectResponse, PROJECT_STATUS_OPTIONS, PROJECT_STATUS_LABELS } from '../data/api-schema'
+import { type ProjectResponse, PROJECT_STATUS_OPTIONS, PROJECT_STATUS_LABELS } from '@/features/projects/data/api-schema'
 import { useDebouncedCallback } from '@/hooks/use-debounce'
+import { useProjectsQuery } from '../hooks/use-projects-query'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AlertCircle } from 'lucide-react'
 
 interface ProjectsTableProps {
-  data: ProjectResponse[]
   search: {
     page?: number
     pageSize?: number
@@ -52,7 +56,18 @@ interface ProjectsTableProps {
   navigate: (options: NavigateOptions) => void
 }
 
-export function ProjectsTable({ data, search, navigate }: ProjectsTableProps) {
+export function ProjectsTable({ search, navigate }: ProjectsTableProps) {
+  // 构建API查询参数
+  const apiParams = {
+    page: search.page || 1,
+    limit: search.pageSize || 10,
+    search: search.search || undefined,
+    status: (search.status && search.status !== 'all') ? search.status as 'active' | 'disabled' : undefined,
+  }
+
+  // 调用后端API获取数据
+  const { data: apiData, isLoading, error, refetch } = useProjectsQuery(apiParams)
+  const data = apiData?.data || []
   const {
     openEditProject,
     openProjectDetail,
@@ -285,6 +300,35 @@ export function ProjectsTable({ data, search, navigate }: ProjectsTableProps) {
   // Handler for status change
   const handleStatusChange = (value: string) => {
     debouncedStatusChange(value)
+  }
+
+  // 加载状态
+  if (isLoading) {
+    return (
+      <div className='space-y-4'>
+        <Skeleton className='h-10 w-full' />
+        <Skeleton className='h-64 w-full' />
+        <Skeleton className='h-10 w-full' />
+      </div>
+    )
+  }
+
+  // 错误状态
+  if (error) {
+    return (
+      <Alert variant='destructive'>
+        <AlertCircle className='h-4 w-4' />
+        <AlertDescription>
+          加载项目数据失败：{error.message}
+          <button 
+            onClick={() => refetch()} 
+            className='ml-2 underline'
+          >
+            重试
+          </button>
+        </AlertDescription>
+      </Alert>
+    )
   }
 
   return (
