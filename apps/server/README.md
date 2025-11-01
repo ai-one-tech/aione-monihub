@@ -70,6 +70,7 @@ cargo build
 
 ```bash
 cargo run
+cargo watch -w src -x 'run'
 ```
 
 服务器将在 `http://127.0.0.1:9080` 启动。

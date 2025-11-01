@@ -42,6 +42,18 @@ impl ApplicationsModule {
             .await
     }
 
+    // 新增：按编码查找应用
+    pub async fn find_application_by_code(
+        &self,
+        code: &str,
+    ) -> Result<Option<applications::Model>, sea_orm::DbErr> {
+        use sea_orm::EntityTrait;
+        Applications::find()
+            .filter(applications::Column::Code.eq(code))
+            .one(&self.database)
+            .await
+    }
+
     pub async fn find_all_applications(&self) -> Result<Vec<applications::Model>, sea_orm::DbErr> {
         use sea_orm::EntityTrait;
         Applications::find().all(&self.database).await

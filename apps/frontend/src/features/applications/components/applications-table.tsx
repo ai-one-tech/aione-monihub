@@ -306,7 +306,7 @@ export function ApplicationsTable({ data, search, navigate }: ApplicationsTableP
   })
 
   // Debounced search function with 2 second delay
-  const debouncedSearch = useDebounce(localSearchValue, 2000)
+  const debouncedSearch = useDebounce(localSearchValue)
   
   // Effect to trigger search when debounced value changes
   useEffect(() => {
@@ -322,9 +322,6 @@ export function ApplicationsTable({ data, search, navigate }: ApplicationsTableP
     setLocalSearchValue(value)
   }
 
-  // Debounced status change function with 2 second delay
-  const debouncedStatusChange = useDebounce(search.status, 2000)
-  
   // Handler for status change
   const handleStatusChange = (value: string) => {
     navigate({

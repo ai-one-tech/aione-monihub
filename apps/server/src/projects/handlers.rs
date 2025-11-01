@@ -1,4 +1,5 @@
 use crate::entities::projects::{ActiveModel, Entity as Projects};
+use crate::entities::applications::Entity as Applications;
 use crate::projects::models::{
     Pagination, ProjectCreateRequest, ProjectListQuery, ProjectListResponse, ProjectResponse,
 };
@@ -7,6 +8,7 @@ use crate::shared::snowflake::generate_snowflake_id;
 use crate::auth::middleware::get_user_id_from_request;
 use actix_web::{web, HttpRequest, HttpResponse, Result};
 use chrono::Utc;
+use serde_json::json;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter,
     QueryOrder, QuerySelect, Set,
@@ -40,11 +42,15 @@ pub async fn get_projects(
     // 构建查询
     let mut select = Projects::find();
 
-    // 如果有搜索关键词，按项目名称搜索
+    // 如果有搜索关键词，按名称、编码、描述搜索（任意匹配）
     if let Some(search) = &query.search {
         if !search.is_empty() {
+            let search_pattern = format!("%{}%", search);
             select = select.filter(
-                crate::entities::projects::Column::Name.contains(search)
+                crate::entities::projects::Column::Name
+                    .like(&search_pattern)
+                    .or(crate::entities::projects::Column::Code.like(&search_pattern))
+                    .or(crate::entities::projects::Column::Description.like(&search_pattern)),
             );
         }
     }
@@ -124,8 +130,8 @@ pub async fn create_project(
         .one(&**db)
         .await?;
 
-    if existing_project.is_some() {
-        return Err(ApiError::BadRequest("项目代码已存在".to_string()));
+    if let Some(p) = existing_project {
+        return Err(ApiError::BadRequest(format!("项目代码已存在：{}", p.name)));
     }
 
     // 从JWT中获取当前用户ID
@@ -237,6 +243,15 @@ pub async fn update_project(
         None => return Err(ApiError::NotFound("项目不存在".to_string())),
     };
 
+    // 新增：检查编码是否被其他项目使用（排除当前记录）
+    if let Some(p) = Projects::find()
+        .filter(crate::entities::projects::Column::Code.eq(&project.code))
+        .filter(crate::entities::projects::Column::Id.ne(&project_id))
+        .one(&**db)
+        .await? {
+        return Err(ApiError::BadRequest(format!("项目代码已存在：{}", p.name)));
+    }
+
     // 从JWT中获取当前用户ID
     let current_user_id = get_user_id_from_request(&req)?;
 
@@ -275,6 +290,7 @@ pub async fn update_project(
     ),
     responses(
         (status = 200, description = "Project deleted successfully"),
+        (status = 400, description = "Project has linked applications"),
         (status = 404, description = "Project not found"),
         (status = 500, description = "Internal server error")
     ),
@@ -295,6 +311,22 @@ pub async fn delete_project(
         Some(project) => project,
         None => return Err(ApiError::NotFound("项目不存在".to_string())),
     };
+
+    // 检查是否存在未删除的关联应用
+    let linked_apps = Applications::find()
+        .filter(crate::entities::applications::Column::ProjectId.eq(&project_id))
+        .filter(crate::entities::applications::Column::DeletedAt.is_null())
+        .all(&**db)
+        .await?;
+
+    if !linked_apps.is_empty() {
+        let app_names: Vec<String> = linked_apps.into_iter().map(|app| app.name).collect();
+        let joined_names = app_names.join(", ");
+        return Ok(HttpResponse::BadRequest().json(json!({
+            "message": format!("该项目已被以下应用关联 {}", joined_names),
+            "applications": app_names
+        })));
+    }
 
     // 软删除项目（设置deleted_at时间戳）
     let updated_project = ActiveModel {

@@ -42,8 +42,23 @@ export function useCreateProjectMutation() {
       queryClient.invalidateQueries({ queryKey: projectsQueryKeys.lists() })
       toast.success('项目创建成功')
     },
-    onError: (error: any) => {
-      toast.error(error?.message || '创建项目失败')
+    onError: async (error: any) => {
+      let message = error?.message || '创建项目失败'
+      let raw = ''
+      if (error?.response && typeof error.response?.text === 'function') {
+        try {
+          raw = await error.response.text()
+        } catch {}
+      }
+      const combined = `${message} ${raw}`
+
+      if (combined.includes('代码已存在')) {
+        toast.error('项目代码已存在，请修改后重试')
+      } else if (combined.includes('名称已存在')) {
+        toast.error('项目名称已存在，请修改后重试')
+      } else {
+        toast.error(message)
+      }
     },
   })
 }
@@ -61,8 +76,23 @@ export function useUpdateProjectMutation() {
       queryClient.invalidateQueries({ queryKey: projectsQueryKeys.detail(variables.id) })
       toast.success('项目更新成功')
     },
-    onError: (error: any) => {
-      toast.error(error?.message || '更新项目失败')
+    onError: async (error: any) => {
+      let message = error?.message || '更新项目失败'
+      let raw = ''
+      if (error?.response && typeof error.response?.text === 'function') {
+        try {
+          raw = await error.response.text()
+        } catch {}
+      }
+      const combined = `${message} ${raw}`
+
+      if (combined.includes('代码已存在')) {
+        toast.error('项目代码已存在，请修改后重试')
+      } else if (combined.includes('名称已存在')) {
+        toast.error('项目名称已存在，请修改后重试')
+      } else {
+        toast.error(message)
+      }
     },
   })
 }

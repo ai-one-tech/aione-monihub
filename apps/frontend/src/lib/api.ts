@@ -10,7 +10,7 @@ const API_BASE_URL = import.meta.env.DEV
 // 创建 axios 实例
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -156,5 +156,3 @@ export const menuApi = {
     return apiClient.get('/api/user/menu')
   }
 }
-
-export default apiClient

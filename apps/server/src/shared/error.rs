@@ -1,5 +1,16 @@
 use actix_web::{HttpResponse, ResponseError};
 use derive_more::Display;
+use serde::Serialize;
+use rand::{distributions::Alphanumeric, Rng};
+use chrono::Utc;
+
+// Error response struct for consistent JSON error formatting
+#[derive(Serialize)]
+pub struct ErrorResponse {
+    pub message: String,
+    pub status: u16,
+    pub trace_id: String,
+}
 
 // Custom error type for our application
 #[derive(Debug, Display)]
@@ -31,23 +42,123 @@ impl ResponseError for ApiError {
     fn error_response(&self) -> HttpResponse {
         match self {
             ApiError::InternalServerError(msg) => {
-                HttpResponse::InternalServerError().json(format!("Internal server error: {}", msg))
+                let trace_id: String = format!(
+                    "{}-{}",
+                    Utc::now().timestamp_millis(),
+                    rand::thread_rng()
+                        .sample_iter(&Alphanumeric)
+                        .take(8)
+                        .map(char::from)
+                        .collect::<String>()
+                );
+                let body = ErrorResponse {
+                    message: msg.clone(),
+                    status: 500,
+                    trace_id,
+                };
+                HttpResponse::InternalServerError().json(body)
             }
             ApiError::BadRequest(msg) => {
-                HttpResponse::BadRequest().json(format!("Bad request: {}", msg))
+                let trace_id: String = format!(
+                    "{}-{}",
+                    Utc::now().timestamp_millis(),
+                    rand::thread_rng()
+                        .sample_iter(&Alphanumeric)
+                        .take(8)
+                        .map(char::from)
+                        .collect::<String>()
+                );
+                let body = ErrorResponse {
+                    message: msg.clone(),
+                    status: 400,
+                    trace_id,
+                };
+                HttpResponse::BadRequest().json(body)
             }
             ApiError::Unauthorized(msg) => {
-                HttpResponse::Unauthorized().json(format!("Unauthorized: {}", msg))
+                let trace_id: String = format!(
+                    "{}-{}",
+                    Utc::now().timestamp_millis(),
+                    rand::thread_rng()
+                        .sample_iter(&Alphanumeric)
+                        .take(8)
+                        .map(char::from)
+                        .collect::<String>()
+                );
+                let body = ErrorResponse {
+                    message: msg.clone(),
+                    status: 401,
+                    trace_id,
+                };
+                HttpResponse::Unauthorized().json(body)
             }
             ApiError::Forbidden(msg) => {
-                HttpResponse::Forbidden().json(format!("Forbidden: {}", msg))
+                let trace_id: String = format!(
+                    "{}-{}",
+                    Utc::now().timestamp_millis(),
+                    rand::thread_rng()
+                        .sample_iter(&Alphanumeric)
+                        .take(8)
+                        .map(char::from)
+                        .collect::<String>()
+                );
+                let body = ErrorResponse {
+                    message: msg.clone(),
+                    status: 403,
+                    trace_id,
+                };
+                HttpResponse::Forbidden().json(body)
             }
-            ApiError::NotFound(msg) => HttpResponse::NotFound().json(format!("Not found: {}", msg)),
+            ApiError::NotFound(msg) => {
+                let trace_id: String = format!(
+                    "{}-{}",
+                    Utc::now().timestamp_millis(),
+                    rand::thread_rng()
+                        .sample_iter(&Alphanumeric)
+                        .take(8)
+                        .map(char::from)
+                        .collect::<String>()
+                );
+                let body = ErrorResponse {
+                    message: msg.clone(),
+                    status: 404,
+                    trace_id,
+                };
+                HttpResponse::NotFound().json(body)
+            }
             ApiError::DatabaseError(msg) => {
-                HttpResponse::InternalServerError().json(format!("Database error: {}", msg))
+                let trace_id: String = format!(
+                    "{}-{}",
+                    Utc::now().timestamp_millis(),
+                    rand::thread_rng()
+                        .sample_iter(&Alphanumeric)
+                        .take(8)
+                        .map(char::from)
+                        .collect::<String>()
+                );
+                let body = ErrorResponse {
+                    message: msg.clone(),
+                    status: 500,
+                    trace_id,
+                };
+                HttpResponse::InternalServerError().json(body)
             }
             ApiError::ValidationError(msg) => {
-                HttpResponse::BadRequest().json(format!("Validation error: {}", msg))
+                let trace_id: String = format!(
+                    "{}-{}",
+                    Utc::now().timestamp_millis(),
+                    rand::thread_rng()
+                        .sample_iter(&Alphanumeric)
+                        .take(8)
+                        .map(char::from)
+                        .collect::<String>()
+                );
+                let body = ErrorResponse {
+                    message: msg.clone(),
+                    status: 400,
+                    trace_id,
+                };
+                HttpResponse::BadRequest().json(body)
             }
         }
     }

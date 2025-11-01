@@ -79,17 +79,42 @@ class ApiClient {
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`
 
+      // 优先尝试解析为结构化JSON对象
       try {
-        const errorData = await response.json()
-        errorMessage = errorData.message || errorData.error || errorMessage
+        const errorData = await response.clone().json()
+        if (errorData && typeof errorData === 'object') {
+          // 新格式优先取 message 字段；兼容旧格式的 error 字段
+          if (typeof errorData.message === 'string' && errorData.message.length > 0) {
+            errorMessage = errorData.message
+          } else if (typeof errorData.error === 'string' && errorData.error.length > 0) {
+            errorMessage = errorData.error
+          }
+        }
       } catch {
-        // 如果响应不是JSON格式，使用默认错误消息
+        // 如果JSON解析失败，尝试读取文本作为错误信息
+        try {
+          const text = await response.text()
+          if (text && text.length > 0) {
+            errorMessage = text
+          }
+        } catch {
+          // 保留默认错误消息
+        }
       }
 
       throw new ApiError(errorMessage, response.status, response)
     }
 
-    const data = await response.json()
+    // 成功分支：尽量解析为JSON对象；若失败回退为空对象
+    let data: T
+    try {
+      data = await response.json()
+    } catch {
+      // 非JSON响应容错处理：返回空值或原始文本（按需）
+      // 这里返回 undefined 以保持类型兼容
+      data = undefined as unknown as T
+    }
+
     return {
       data,
       status: response.status,

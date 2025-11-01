@@ -78,7 +78,7 @@ export function ApplicationsEditSheet() {
   const isEditMode = isEditSheetOpen
 
   // 项目搜索相关
-  const debouncedProjectSearch = useDebounce(projectSearch, 300)
+  const debouncedProjectSearch = useDebounce(projectSearch)
   const selectedProjectId = form.watch('project_id')
   const { data: selectedProject } = useProjectQuery(selectedProjectId || '')
   const { data: projectsList } = useProjectsQuery({ page: 1, limit: 10, search: debouncedProjectSearch })

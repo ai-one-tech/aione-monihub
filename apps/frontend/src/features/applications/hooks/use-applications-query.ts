@@ -2,13 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { applicationsApi } from '../api/applications-api'
 import { type GetApplicationsParams } from '../data/api-schema'
 import { useDebounce } from '@/hooks/use-debounce'
+import { toast } from 'sonner'
 
 /**
  * 应用列表查询 Hook
  */
 export function useApplicationsQuery(params: GetApplicationsParams = {}) {
   // 对搜索参数进行防抖处理
-  const debouncedSearch = useDebounce(params.search, 2000)
+  const debouncedSearch = useDebounce(params.search)
   
   const debouncedParams = {
     ...params,
@@ -45,6 +46,19 @@ export function useCreateApplication() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] })
     },
+    onError: async (error: any) => {
+      let message = '创建应用失败'
+      if (error?.message) message = error.message
+
+      let raw = ''
+      if (error?.response && typeof error.response?.text === 'function') {
+        try {
+          raw = await error.response.text()
+        } catch {}
+      }
+
+      toast.error(message)
+    },
   })
 }
 
@@ -60,6 +74,26 @@ export function useUpdateApplication() {
     onSuccess: (_, { applicationId }) => {
       queryClient.invalidateQueries({ queryKey: ['applications'] })
       queryClient.invalidateQueries({ queryKey: ['application', applicationId] })
+    },
+    onError: async (error: any) => {
+      let message = '更新应用失败'
+      if (error?.message) message = error.message
+
+      let raw = ''
+      if (error?.response && typeof error.response?.text === 'function') {
+        try {
+          raw = await error.response.text()
+        } catch {}
+      }
+
+      const combined = `${message} ${raw}`
+      if (combined.includes('代码已存在')) {
+        toast.error('应用代码已存在，请修改后重试')
+      } else if (combined.includes('名称已存在')) {
+        toast.error('应用名称已存在，请修改后重试')
+      } else {
+        toast.error(message)
+      }
     },
   })
 }

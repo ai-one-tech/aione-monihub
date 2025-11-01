@@ -38,13 +38,14 @@ pub async fn get_applications(
 
     let mut select = Applications::find().filter(crate::entities::applications::Column::DeletedAt.is_null());
 
-    // 搜索过滤
+    // 搜索过滤：名称、编码、描述（任意匹配）
     if let Some(search) = &query.search {
         let search_pattern = format!("%{}%", search);
         select = select.filter(
             crate::entities::applications::Column::Name
                 .like(&search_pattern)
-                .or(crate::entities::applications::Column::Code.like(&search_pattern)),
+                .or(crate::entities::applications::Column::Code.like(&search_pattern))
+                .or(crate::entities::applications::Column::Description.like(&search_pattern)),
         );
     }
 
@@ -129,8 +130,13 @@ pub async fn create_application(
     let applications_module = ApplicationsModule::new(db.get_ref().clone());
 
     // 检查应用名称是否已存在
-    if let Some(_existing_app) = applications_module.find_application_by_name(&app.name).await? {
-        return Err(ApiError::BadRequest("Application name already exists".to_string()));
+    if let Some(existing_app) = applications_module.find_application_by_name(&app.name).await? {
+        return Err(ApiError::BadRequest(format!("应用名称已存在：{}", existing_app.name)));
+    }
+
+    // 新增：检查应用编码是否已存在
+    if let Some(existing_app) = applications_module.find_application_by_code(&app.code).await? {
+        return Err(ApiError::BadRequest(format!("应用代码已存在：{}", existing_app.name)));
     }
 
     // 创建应用
@@ -271,6 +277,13 @@ pub async fn update_application(
         // 检查用户是否有更新权限
         if application.created_by != user_id.to_string() {
             return Err(ApiError::Unauthorized("You do not have permission to update this application".to_string()));
+        }
+
+        // 新增：检查编码是否被其他应用使用（排除当前记录）
+        if let Some(existing_app) = applications_module.find_application_by_code(&app.code).await? {
+            if existing_app.id != app_id {
+                return Err(ApiError::BadRequest(format!("应用代码已存在：{}", existing_app.name)));
+            }
         }
 
         // 更新应用信息
