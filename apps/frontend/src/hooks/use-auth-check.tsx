@@ -89,6 +89,7 @@ export function useAuthCheck(): UseAuthCheckResult {
     } catch (err: any) {
       console.error('身份验证检查失败:', err)
       
+      // 只有在明确收到 401 响应时才进行登出
       if (err.response?.status === 401) {
         // Token无效或过期
         setIsAuthenticated(false)
@@ -109,8 +110,10 @@ export function useAuthCheck(): UseAuthCheckResult {
           setShowLoginDialog(true)
         }
       } else {
-        // 其他错误
+        // 网络错误、超时等其他错误 - 不进行登出，只记录错误
+        console.warn('非认证错误，保持用户登录状态:', err.message)
         setError(err.message || '身份验证检查失败')
+        // 保持原有的认证状态
       }
     } finally {
       setIsLoading(false)

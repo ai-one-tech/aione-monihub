@@ -1,16 +1,19 @@
 import React, { createContext, useContext, useState } from 'react'
-import { type ApiRoleResponse } from '../data/api-schema'
+
+type DialogMode = 'create' | 'edit'
 
 interface SystemRolesContextType {
-  // 创建角色对话框
-  isCreateDialogOpen: boolean
-  setIsCreateDialogOpen: (open: boolean) => void
+  // 对话框状态
+  isDialogOpen: boolean
+  setIsDialogOpen: (open: boolean) => void
+  dialogMode: DialogMode
+  setDialogMode: (mode: DialogMode) => void
+  selectedRoleId: string | null
+  setSelectedRoleId: (id: string | null) => void
   
-  // 编辑角色对话框
-  editingRole: ApiRoleResponse | null
-  setEditingRole: (role: ApiRoleResponse | null) => void
-  
-  // 删除角色对话框
+  // 删除对话框状态
+  isDeleteDialogOpen: boolean
+  setIsDeleteDialogOpen: (open: boolean) => void
   deleteRoleId: string | null
   setDeleteRoleId: (id: string | null) => void
 }
@@ -30,15 +33,27 @@ interface SystemRolesProviderProps {
 }
 
 export function SystemRolesProvider({ children }: SystemRolesProviderProps) {
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [editingRole, setEditingRole] = useState<ApiRoleResponse | null>(null)
+  // 对话框状态
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [dialogMode, setDialogMode] = useState<DialogMode>('create')
+  const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null)
+  
+  // 删除对话框状态
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [deleteRoleId, setDeleteRoleId] = useState<string | null>(null)
 
   const value: SystemRolesContextType = {
-    isCreateDialogOpen,
-    setIsCreateDialogOpen,
-    editingRole,
-    setEditingRole,
+    // 对话框状态
+    isDialogOpen,
+    setIsDialogOpen,
+    dialogMode,
+    setDialogMode,
+    selectedRoleId,
+    setSelectedRoleId,
+    
+    // 删除对话框状态
+    isDeleteDialogOpen,
+    setIsDeleteDialogOpen,
     deleteRoleId,
     setDeleteRoleId,
   }

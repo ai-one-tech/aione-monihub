@@ -75,9 +75,12 @@ export class AuthUtils {
       
       const response = await authApi.validateToken()
       return response.status === 200
-    } catch (error) {
+    } catch (error: any) {
       console.error('Token验证失败:', error)
-      this.logout()
+      // 只有401错误才需要登出。其他错误（如网络错误）不转变为登出
+      if (error.response?.status === 401) {
+        this.logout()
+      }
       return false
     }
   }
@@ -104,9 +107,12 @@ export class AuthUtils {
         return true
       }
       return false
-    } catch (error) {
+    } catch (error: any) {
       console.error('刷新用户信息失败:', error)
-      this.logout()
+      // 只有401错误才需要登出。其他错误（如网络错误）不转变为登出
+      if (error.response?.status === 401) {
+        this.logout()
+      }
       return false
     }
   }

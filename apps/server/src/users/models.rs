@@ -52,6 +52,13 @@ pub struct UserUpdateRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct Pagination {
+    pub page: u32,
+    pub limit: u32,
+    pub total: u32,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct UserListResponse {
     pub data: Vec<UserResponse>,
     pub total: u64,

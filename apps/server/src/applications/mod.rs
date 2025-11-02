@@ -42,7 +42,7 @@ impl ApplicationsModule {
             .await
     }
 
-    // 新增：按编码查找应用
+    // 新增：按编码查找应用（不区分大小写）
     pub async fn find_application_by_code(
         &self,
         code: &str,
@@ -50,6 +50,7 @@ impl ApplicationsModule {
         use sea_orm::EntityTrait;
         Applications::find()
             .filter(applications::Column::Code.eq(code))
+            .filter(applications::Column::DeletedAt.is_null())
             .one(&self.database)
             .await
     }

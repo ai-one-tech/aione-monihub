@@ -13,14 +13,6 @@ export const paginationSchema = z.object({
 
 export type Pagination = z.infer<typeof paginationSchema>
 
-// 授权信息
-export const authorizationSchema = z.object({
-  users: z.array(z.string()),
-  expiry_date: z.string().nullable(),
-})
-
-export type Authorization = z.infer<typeof authorizationSchema>
-
 // 应用响应数据
 export const applicationResponseSchema = z.object({
   id: z.string(),
@@ -29,7 +21,6 @@ export const applicationResponseSchema = z.object({
   code: z.string(),
   status: applicationStatusSchema,
   description: z.string(),
-  authorization: authorizationSchema,
   created_at: z.string(),
   updated_at: z.string(),
 })
@@ -56,11 +47,7 @@ export const createApplicationRequestSchema = z.object({
   name: z.string().min(1, '应用名称不能为空'),
   code: z.string().min(1, '应用代码不能为空'),
   description: z.string().min(1, '应用描述不能为空'),
-  status: applicationStatusSchema,
-  authorization: z.object({
-    users: z.array(z.string()),
-    expiry_date: z.string().nullable(),
-  }),
+  status: applicationStatusSchema
 })
 
 export type CreateApplicationRequest = z.infer<typeof createApplicationRequestSchema>

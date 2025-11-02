@@ -31,24 +31,25 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { useProjectsContext } from './projects-provider'
-import { useCreateProjectMutation, useUpdateProjectMutation } from '../hooks/use-projects-query'
+import { useCreateProjectMutation, useUpdateProjectMutation, useProjectQuery } from '../hooks/use-projects-query'
 import { createProjectRequestSchema, type CreateProjectRequest, PROJECT_STATUS_LABELS, PROJECT_STATUS_OPTIONS } from '../data/api-schema'
 import { toast } from 'sonner'
 
 export function ProjectsEditSheet() {
   const {
-    isProjectSheetOpen,
-    setIsProjectSheetOpen,
-    isProjectDetailSheetOpen,
-    setIsProjectDetailSheetOpen,
-    editingProject,
-    viewingProject,
-    isCreateMode,
-    closeAllSheets,
+    isSheetOpen,
+    setIsSheetOpen,
+    sheetMode,
+    selectedProjectId,
   } = useProjectsContext()
 
+  const { data: projectDetail, isLoading: isLoadingProject } = useProjectQuery(selectedProjectId || '')
   const createProjectMutation = useCreateProjectMutation()
   const updateProjectMutation = useUpdateProjectMutation()
+
+  const isCreateMode = sheetMode === 'create'
+  const isEditMode = sheetMode === 'edit'
+  const isViewMode = sheetMode === 'view'
 
   const form = useForm<CreateProjectRequest>({
     resolver: zodResolver(createProjectRequestSchema),
@@ -62,14 +63,14 @@ export function ProjectsEditSheet() {
     reValidateMode: 'onBlur',
   })
 
-  // 当编辑项目时，填充表单数据
+  // 当项目数据加载完成时，更新表单
   useEffect(() => {
-    if (editingProject && !isCreateMode) {
+    if ((isEditMode || isViewMode) && projectDetail) {
       form.reset({
-        name: editingProject.name,
-        code: editingProject.code,
-        description: editingProject.description,
-        status: editingProject.status,
+        name: projectDetail.name,
+        code: projectDetail.code,
+        description: projectDetail.description,
+        status: projectDetail.status,
       })
     } else if (isCreateMode) {
       form.reset({
@@ -79,7 +80,7 @@ export function ProjectsEditSheet() {
         status: 'active',
       })
     }
-  }, [editingProject, isCreateMode, form])
+  }, [projectDetail, form, isEditMode, isCreateMode, isViewMode])
 
   const onSubmit = async (data: CreateProjectRequest) => {
     try {
@@ -91,13 +92,13 @@ export function ProjectsEditSheet() {
 
       if (isCreateMode) {
         await createProjectMutation.mutateAsync(data)
-      } else if (editingProject) {
+      } else if (isEditMode && selectedProjectId) {
         await updateProjectMutation.mutateAsync({
-          id: editingProject.id,
+          id: selectedProjectId,
           data,
         })
       }
-      closeAllSheets()
+      handleClose()
       form.reset()
     } catch (error) {
       console.error('保存项目失败:', error)
@@ -105,25 +106,42 @@ export function ProjectsEditSheet() {
     }
   }
 
-  const handleCancel = () => {
-    closeAllSheets()
+  const handleClose = () => {
+    setIsSheetOpen(false)
     form.reset()
+  }
+
+  const getSheetTitle = () => {
+    if (isCreateMode) return '新增项目'
+    if (isEditMode) return '编辑项目'
+    return '查看项目'
+  }
+
+  const getSheetDescription = () => {
+    if (isCreateMode) return '填写项目信息以创建新的项目'
+    if (isEditMode) return '修改项目信息'
+    return '查看项目详细信息'
   }
 
   const isLoading = createProjectMutation.isPending || updateProjectMutation.isPending
 
   return (
     <>
-      {/* 编辑/新增项目抽屉 */}
-      <Sheet open={isProjectSheetOpen} onOpenChange={setIsProjectSheetOpen}>
+      {/* 编辑/新增/查看项目抽屉 */}
+      <Sheet open={isSheetOpen} onOpenChange={handleClose}>
         <SheetContent side='right'>
           <SheetHeader>
-            <SheetTitle>{isCreateMode ? '新增项目' : '编辑项目'}</SheetTitle>
+            <SheetTitle>{getSheetTitle()}</SheetTitle>
             <SheetDescription>
-              {isCreateMode ? '填写项目信息以创建新的项目' : '修改项目信息'}
+              {getSheetDescription()}
             </SheetDescription>
           </SheetHeader>
 
+          {((isEditMode || isViewMode) && isLoadingProject) ? (
+            <div className='flex-1 flex items-center justify-center'>
+              <div className='text-sm text-muted-foreground'>加载项目信息中...</div>
+            </div>
+          ) : (
           <div className='flex-1 overflow-y-auto px-6 py-4'>
             <Form {...form}>
               <form id='project-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
@@ -200,89 +218,20 @@ export function ProjectsEditSheet() {
               </form>
             </Form>
           </div>
+          )}
 
           <SheetFooter>
             <div className='flex justify-end space-x-3 w-full'>
-              <Button type='button' variant='outline' onClick={handleCancel}>
+              <Button type='button' variant='outline' onClick={handleClose}>
                 取消
               </Button>
-              <Button type='submit' form='project-form' disabled={isLoading || !form.formState.isValid}>
-                {isLoading ? '保存中...' : '保存'}
-              </Button>
+              {!isViewMode && (
+                <Button type='submit' form='project-form' disabled={isLoading || !form.formState.isValid}>
+                  {isLoading ? '保存中...' : '保存'}
+                </Button>
+              )}
             </div>
           </SheetFooter>
-        </SheetContent>
-      </Sheet>
-
-      {/* 项目详情抽屉 */}
-      <Sheet open={isProjectDetailSheetOpen} onOpenChange={setIsProjectDetailSheetOpen}>
-        <SheetContent side='right' className='!w-[450px] !max-w-[450px]'>
-          <SheetHeader>
-            <SheetTitle className='flex items-center gap-2'>
-              <Eye className='h-5 w-5' />
-              项目详情
-            </SheetTitle>
-            <SheetDescription>
-              查看项目的详细信息
-            </SheetDescription>
-          </SheetHeader>
-
-          <div className='flex-1 overflow-y-auto px-6 py-4'>
-            {viewingProject && (
-            <div className='space-y-6'>
-              <div>
-                <label className='text-sm font-medium text-muted-foreground'>项目ID</label>
-                <p className='mt-1 text-sm font-mono bg-muted px-2 py-1 rounded'>
-                  {viewingProject.id}
-                </p>
-              </div>
-
-              <div>
-                <label className='text-sm font-medium text-muted-foreground'>项目名称</label>
-                <p className='mt-1 text-base font-medium'>{viewingProject.name}</p>
-              </div>
-
-              <div>
-                <label className='text-sm font-medium text-muted-foreground'>项目代码</label>
-                <p className='mt-1 text-sm font-mono bg-muted px-2 py-1 rounded'>
-                  {viewingProject.code}
-                </p>
-              </div>
-
-              <div>
-                <label className='text-sm font-medium text-muted-foreground'>项目状态</label>
-                <div className='mt-1'>
-                  <Badge variant={viewingProject.status === 'active' ? 'default' : 'secondary'}>
-                    {PROJECT_STATUS_LABELS[viewingProject.status]}
-                  </Badge>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className='grid grid-cols-2 gap-4'>
-                <div>
-                  <label className='text-sm font-medium text-muted-foreground'>创建时间</label>
-                  <p className='mt-1 text-sm'>
-                    <span className='inline-flex items-center gap-1'>
-                      <Calendar className='h-4 w-4' />
-                      {new Date(viewingProject.created_at).toLocaleString('zh-CN')}
-                    </span>
-                  </p>
-                </div>
-                <div>
-                  <label className='text-sm font-medium text-muted-foreground'>更新时间</label>
-                  <p className='mt-1 text-sm'>
-                    <span className='inline-flex items-center gap-1'>
-                      <Clock className='h-4 w-4' />
-                      {new Date(viewingProject.updated_at).toLocaleString('zh-CN')}
-                    </span>
-                  </p>
-                </div>
-              </div>
-            </div>
-            )}
-          </div>
         </SheetContent>
       </Sheet>
     </>

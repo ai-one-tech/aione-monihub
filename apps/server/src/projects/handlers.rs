@@ -126,9 +126,10 @@ pub async fn create_project(
     project: web::Json<ProjectCreateRequest>,
     req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
-    // 检查项目代码是否已存在
+    // 检查项目代码是否已存在（排除已删除的记录）
     let existing_project = Projects::find()
         .filter(crate::entities::projects::Column::Code.eq(&project.code))
+        .filter(crate::entities::projects::Column::DeletedAt.is_null())
         .one(&**db)
         .await?;
 
@@ -250,10 +251,11 @@ pub async fn update_project(
         None => return Err(ApiError::NotFound("项目不存在".to_string())),
     };
 
-    // 新增：检查编码是否被其他项目使用（排除当前记录）
+    // 检查编码是否被其他项目使用（排除当前记录和已删除的记录）
     if let Some(p) = Projects::find()
         .filter(crate::entities::projects::Column::Code.eq(&project.code))
         .filter(crate::entities::projects::Column::Id.ne(&project_id))
+        .filter(crate::entities::projects::Column::DeletedAt.is_null())
         .one(&**db)
         .await? {
         return Err(ApiError::BadRequest(format!("项目代码已存在：{}", p.name)));

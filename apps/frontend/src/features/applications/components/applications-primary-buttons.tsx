@@ -3,10 +3,11 @@ import { Button } from '@/components/ui/button'
 import { useApplicationsProvider } from './applications-provider'
 
 export function ApplicationsPrimaryButtons() {
-  const { setIsCreateSheetOpen } = useApplicationsProvider()
+  const { setIsSheetOpen, setSheetMode } = useApplicationsProvider()
 
   const handleCreateApplication = () => {
-    setIsCreateSheetOpen(true)
+    setSheetMode('create')
+    setIsSheetOpen(true)
   }
 
   return (

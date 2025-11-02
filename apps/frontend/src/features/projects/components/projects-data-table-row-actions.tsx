@@ -12,15 +12,32 @@ interface ProjectsDataTableRowActionsProps {
 export function ProjectsDataTableRowActions({
   row,
 }: ProjectsDataTableRowActionsProps) {
-  const { openEditProject, openProjectDetail, openDeleteDialog } = useProjectsContext()
+  const { setIsSheetOpen, setSheetMode, setSelectedProjectId, setIsDeleteDialogOpen, setDeletingProjectId } = useProjectsContext()
   const project = row.original
+
+  const handleView = () => {
+    setSelectedProjectId(project.id)
+    setSheetMode('view')
+    setIsSheetOpen(true)
+  }
+
+  const handleEdit = () => {
+    setSelectedProjectId(project.id)
+    setSheetMode('edit')
+    setIsSheetOpen(true)
+  }
+
+  const handleDelete = () => {
+    setDeletingProjectId(project.id)
+    setIsDeleteDialogOpen(true)
+  }
 
   return (
     <div className='flex items-center space-x-1'>
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant='ghost' size='sm' onClick={() => openProjectDetail(project)}>
+            <Button variant='ghost' size='sm' onClick={handleView}>
               <Eye className='h-4 w-4' />
             </Button>
           </TooltipTrigger>
@@ -33,7 +50,7 @@ export function ProjectsDataTableRowActions({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant='ghost' size='sm' onClick={() => openEditProject(project)}>
+            <Button variant='ghost' size='sm' onClick={handleEdit}>
               <Edit className='h-4 w-4' />
             </Button>
           </TooltipTrigger>
@@ -46,12 +63,7 @@ export function ProjectsDataTableRowActions({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
-              variant='ghost'
-              size='sm'
-              onClick={() => openDeleteDialog(project)}
-              className='text-destructive hover:text-destructive'
-            >
+            <Button variant='ghost' size='sm' onClick={handleDelete}>
               <Trash2 className='h-4 w-4' />
             </Button>
           </TooltipTrigger>

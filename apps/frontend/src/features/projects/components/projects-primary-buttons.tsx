@@ -3,11 +3,17 @@ import { Button } from '@/components/ui/button'
 import { useProjectsContext } from './projects-provider'
 
 export function ProjectsPrimaryButtons() {
-  const { openCreateProject } = useProjectsContext()
+  const { setIsSheetOpen, setSheetMode, setSelectedProjectId } = useProjectsContext()
+
+  const handleCreateProject = () => {
+    setSelectedProjectId(null)
+    setSheetMode('create')
+    setIsSheetOpen(true)
+  }
 
   return (
     <div className='flex items-center space-x-2'>
-      <Button onClick={openCreateProject} size='sm'>
+      <Button onClick={handleCreateProject} size='sm'>
         <Plus className='mr-1 h-4 w-4' />
         新增项目
       </Button>

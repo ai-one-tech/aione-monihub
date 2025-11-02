@@ -13,28 +13,29 @@ export function ApplicationsDataTableRowActions({
   row,
 }: ApplicationsDataTableRowActionsProps) {
   const {
-    setIsEditSheetOpen,
-    setEditingApplication,
-    setIsViewDialogOpen,
-    setViewingApplication,
+    setIsSheetOpen,
+    setSheetMode,
+    setSelectedApplicationId,
     setIsDeleteDialogOpen,
-    setDeletingApplication,
+    setDeletingApplicationId,
   } = useApplicationsProvider()
   
   const application = row.original
 
   const handleView = () => {
-    setViewingApplication(application)
-    setIsViewDialogOpen(true)
+    setSelectedApplicationId(application.id)
+    setSheetMode('view')
+    setIsSheetOpen(true)
   }
 
   const handleEdit = () => {
-    setEditingApplication(application)
-    setIsEditSheetOpen(true)
+    setSelectedApplicationId(application.id)
+    setSheetMode('edit')
+    setIsSheetOpen(true)
   }
 
   const handleDelete = () => {
-    setDeletingApplication(application)
+    setDeletingApplicationId(application.id)
     setIsDeleteDialogOpen(true)
   }
 

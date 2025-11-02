@@ -50,15 +50,8 @@ export function useCreateProjectMutation() {
           raw = await error.response.text()
         } catch {}
       }
-      const combined = `${message} ${raw}`
 
-      if (combined.includes('代码已存在')) {
-        toast.error('项目代码已存在，请修改后重试')
-      } else if (combined.includes('名称已存在')) {
-        toast.error('项目名称已存在，请修改后重试')
-      } else {
-        toast.error(message)
-      }
+      toast.error(message)
     },
   })
 }
@@ -84,15 +77,7 @@ export function useUpdateProjectMutation() {
           raw = await error.response.text()
         } catch {}
       }
-      const combined = `${message} ${raw}`
-
-      if (combined.includes('代码已存在')) {
-        toast.error('项目代码已存在，请修改后重试')
-      } else if (combined.includes('名称已存在')) {
-        toast.error('项目名称已存在，请修改后重试')
-      } else {
-        toast.error(message)
-      }
+      toast.error(message)
     },
   })
 }

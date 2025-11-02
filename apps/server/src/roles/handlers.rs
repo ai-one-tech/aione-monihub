@@ -36,7 +36,7 @@ pub async fn get_roles(
     let offset = (page - 1) * limit;
 
     // 构建查询
-    let mut query_builder = Roles::find()
+    let query_builder = Roles::find()
         .filter(Column::DeletedAt.is_null());
 
     // 获取总数

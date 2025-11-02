@@ -86,14 +86,7 @@ export function useUpdateApplication() {
         } catch {}
       }
 
-      const combined = `${message} ${raw}`
-      if (combined.includes('代码已存在')) {
-        toast.error('应用代码已存在，请修改后重试')
-      } else if (combined.includes('名称已存在')) {
-        toast.error('应用名称已存在，请修改后重试')
-      } else {
-        toast.error(message)
-      }
+      toast.error(message)
     },
   })
 }

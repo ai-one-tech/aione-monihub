@@ -10,25 +10,26 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useApplicationsProvider } from './applications-provider'
-import { useDeleteApplication } from '../hooks/use-applications-query'
+import { useDeleteApplication, useApplicationQuery } from '../hooks/use-applications-query'
 
 export function ApplicationsDialogs() {
   const {
     isDeleteDialogOpen,
     setIsDeleteDialogOpen,
-    deletingApplication,
-    setDeletingApplication,
+    deletingApplicationId,
+    setDeletingApplicationId,
   } = useApplicationsProvider()
 
+  const { data: deletingApplication } = useApplicationQuery(deletingApplicationId || '')
   const deleteApplicationMutation = useDeleteApplication()
 
   const handleDeleteConfirm = async () => {
-    if (!deletingApplication) return
+    if (!deletingApplicationId) return
 
     try {
-      await deleteApplicationMutation.mutateAsync(deletingApplication.id)
+      await deleteApplicationMutation.mutateAsync(deletingApplicationId)
       setIsDeleteDialogOpen(false)
-      setDeletingApplication(null)
+      setDeletingApplicationId(null)
     } catch (error) {
       // 错误处理已在mutation中完成
     }
@@ -36,7 +37,7 @@ export function ApplicationsDialogs() {
 
   const handleCancel = () => {
     setIsDeleteDialogOpen(false)
-    setDeletingApplication(null)
+    setDeletingApplicationId(null)
   }
 
   return (

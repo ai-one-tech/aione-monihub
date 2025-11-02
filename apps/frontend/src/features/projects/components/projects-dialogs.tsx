@@ -10,32 +10,40 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useProjectsContext } from './projects-provider'
-import { useDeleteProjectMutation } from '../hooks/use-projects-query'
+import { useDeleteProjectMutation, useProjectQuery } from '../hooks/use-projects-query'
 
 export function ProjectsDialogs() {
   const {
     isDeleteDialogOpen,
-    closeDeleteDialog,
-    deletingProject,
+    setIsDeleteDialogOpen,
+    deletingProjectId,
+    setDeletingProjectId,
   } = useProjectsContext()
 
+  const { data: deletingProject } = useProjectQuery(deletingProjectId || '')
   const deleteProjectMutation = useDeleteProjectMutation()
 
   const handleDeleteConfirm = async () => {
-    if (!deletingProject) return
+    if (!deletingProjectId) return
 
     try {
-      await deleteProjectMutation.mutateAsync(deletingProject.id)
-      closeDeleteDialog()
+      await deleteProjectMutation.mutateAsync(deletingProjectId)
+      setIsDeleteDialogOpen(false)
+      setDeletingProjectId(null)
     } catch (error) {
       // 错误处理已在mutation中完成
     }
   }
 
+  const handleCancel = () => {
+    setIsDeleteDialogOpen(false)
+    setDeletingProjectId(null)
+  }
+
   return (
     <>
       {/* 删除确认对话框 */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={closeDeleteDialog}>
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={handleCancel}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2'>
@@ -51,7 +59,7 @@ export function ProjectsDialogs() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={closeDeleteDialog}>
+            <AlertDialogCancel onClick={handleCancel}>
               取消
             </AlertDialogCancel>
             <AlertDialogAction

@@ -122,24 +122,6 @@ export const applicationsColumns: ColumnDef<ApplicationResponse>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: 'authorization',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='授权用户' />
-    ),
-    cell: ({ row }) => {
-      const authorization = row.getValue('authorization') as { users: string[]; expiry_date: string | null }
-      return (
-        <div className='w-fit text-nowrap text-sm text-muted-foreground'>
-          {authorization.users.length > 0 ? (
-            <span>{authorization.users.length} 个用户</span>
-          ) : (
-            <span>无授权用户</span>
-          )}
-        </div>
-      )
-    },
-  },
-  {
     accessorKey: 'created_at',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='创建时间' />

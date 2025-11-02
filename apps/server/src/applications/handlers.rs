@@ -1,4 +1,4 @@
-use crate::applications::models::{ApplicationCreateRequest, ApplicationListQuery, ApplicationListResponse, ApplicationResponse, AuthorizationResponse, Pagination};
+use crate::applications::models::{ApplicationCreateRequest, ApplicationListQuery, ApplicationListResponse, ApplicationResponse, Pagination};
 use crate::applications::ApplicationsModule;
 use crate::auth::middleware::get_user_id_from_request;
 use crate::permissions::handlers::get_user_permissions_by_type;
@@ -78,10 +78,6 @@ pub async fn get_applications(
             code: app.code,
             status: app.status,
             description: app.description.unwrap_or_default(),
-            authorization: AuthorizationResponse {
-                users: vec![app.created_by],
-                expiry_date: None,
-            },
             created_at: app.created_at.to_rfc3339(),
             updated_at: app.updated_at.to_rfc3339(),
         })
@@ -171,10 +167,6 @@ pub async fn create_application(
         code: created_app.code,
         status: created_app.status,
         description: created_app.description.unwrap_or_default(),
-        authorization: AuthorizationResponse {
-            users: vec![created_app.created_by],
-            expiry_date: None,
-        },
         created_at: created_app.created_at.to_rfc3339(),
         updated_at: created_app.updated_at.to_rfc3339(),
     };
@@ -226,10 +218,6 @@ pub async fn get_application(
             code: application.code,
             status: application.status,
             description: application.description.unwrap_or_default(),
-            authorization: AuthorizationResponse {
-                users: vec![application.created_by],
-                expiry_date: None,
-            },
             created_at: application.created_at.to_rfc3339(),
             updated_at: application.updated_at.to_rfc3339(),
         };
@@ -281,7 +269,7 @@ pub async fn update_application(
     }
 
     // 查询数据库获取应用信息
-    if let Some(mut application) = applications_module.find_application_by_id(&app_id).await? {
+    if let Some(application) = applications_module.find_application_by_id(&app_id).await? {
         // 检查用户是否有更新权限
         if application.created_by != user_id.to_string() {
             return Err(ApiError::Unauthorized("You do not have permission to update this application".to_string()));
@@ -294,18 +282,18 @@ pub async fn update_application(
             }
         }
 
-        // 更新应用信息
-        application.name = app.name.clone();
-        application.project_id = app.project_id.clone();
-        application.code = app.code.clone();
-        application.status = app.status.clone();
-        application.description = Some(app.description.clone());
-        application.updated_by = user_id.to_string();
-        application.revision = application.revision + 1;
-        application.updated_at = Utc::now().into();
+        // 转换为 ActiveModel 并更新字段
+        let mut active_app: crate::entities::applications::ActiveModel = application.into();
+        active_app.name = ActiveValue::Set(app.name.clone());
+        active_app.project_id = ActiveValue::Set(app.project_id.clone());
+        active_app.code = ActiveValue::Set(app.code.clone());
+        active_app.status = ActiveValue::Set(app.status.clone());
+        active_app.description = ActiveValue::Set(Some(app.description.clone()));
+        active_app.updated_by = ActiveValue::Set(user_id.to_string());
+        active_app.updated_at = ActiveValue::Set(Utc::now().into());
 
         // 保存更新
-        let updated_app = applications_module.update_application(application.into()).await?;
+        let updated_app = applications_module.update_application(active_app).await?;
 
         // 转换为响应格式
         let response = ApplicationResponse {
@@ -315,10 +303,6 @@ pub async fn update_application(
             code: updated_app.code,
             status: updated_app.status,
             description: updated_app.description.unwrap_or_default(),
-            authorization: AuthorizationResponse {
-                users: vec![updated_app.created_by],
-                expiry_date: None,
-            },
             created_at: updated_app.created_at.to_rfc3339(),
             updated_at: updated_app.updated_at.to_rfc3339(),
         };
@@ -409,7 +393,6 @@ pub async fn enable_application(
             code: saved.code,
             status: saved.status,
             description: saved.description.unwrap_or_default(),
-            authorization: AuthorizationResponse { users: vec![saved.created_by.clone()], expiry_date: None },
             created_at: saved.created_at.to_rfc3339(),
             updated_at: saved.updated_at.to_rfc3339(),
         };
@@ -454,7 +437,6 @@ pub async fn disable_application(
             code: saved.code,
             status: saved.status,
             description: saved.description.unwrap_or_default(),
-            authorization: AuthorizationResponse { users: vec![saved.created_by.clone()], expiry_date: None },
             created_at: saved.created_at.to_rfc3339(),
             updated_at: saved.updated_at.to_rfc3339(),
         };

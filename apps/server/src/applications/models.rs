@@ -10,19 +10,12 @@ pub struct Application {
     pub code: String,
     pub status: String,
     pub description: String,
-    pub authorization: Authorization,
     pub created_by: String,
     pub updated_by: String,
     pub deleted_at: Option<DateTime<Utc>>,
     pub revision: i32,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
-}
-
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct Authorization {
-    pub users: Vec<String>,
-    pub expiry_date: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -33,15 +26,8 @@ pub struct ApplicationResponse {
     pub code: String,
     pub status: String,
     pub description: String,
-    pub authorization: AuthorizationResponse,
     pub created_at: String,
     pub updated_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct AuthorizationResponse {
-    pub users: Vec<String>,
-    pub expiry_date: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -51,7 +37,6 @@ pub struct ApplicationCreateRequest {
     pub code: String,
     pub status: String,
     pub description: String,
-    pub authorization: AuthorizationCreateRequest,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -61,13 +46,6 @@ pub struct ApplicationUpdateRequest {
     pub code: String,
     pub status: String,
     pub description: String,
-    pub authorization: AuthorizationCreateRequest,
-}
-
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct AuthorizationCreateRequest {
-    pub users: Vec<String>,
-    pub expiry_date: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -103,7 +81,6 @@ pub struct ApplicationDetail {
     pub code: String,
     pub status: String,
     pub description: String,
-    pub authorization: AuthorizationResponse,
     pub created_by: String,
     pub updated_by: String,
     pub deleted_at: Option<DateTime<Utc>>,
