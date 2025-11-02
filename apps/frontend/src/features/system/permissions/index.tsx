@@ -22,14 +22,24 @@ export function SystemPermissions() {
   const navigate = route.useNavigate()
 
   // 构建API查询参数
-  // 使用序列化的 search 作为 key，确保 URL 变化时触发新查询
-  const searchKey = JSON.stringify(search)
-  const apiParams = useMemo(() => ({
-    page: search.page,
-    limit: search.pageSize,
-    search: search.name || undefined,
-    permission_type: search.permission_type || undefined,
-  }), [searchKey])
+  const apiParams = useMemo(() => {
+    // permission_type 可能是串行(API直接传入)或数组(来自表格筛选)
+    let permission_type_value = (search.permission_type as string | string[]) || undefined
+    
+    // 如果是数组，仅使用第一个值
+    if (Array.isArray(permission_type_value) && permission_type_value.length > 0) {
+      permission_type_value = permission_type_value[0]
+    } else if (Array.isArray(permission_type_value)) {
+      permission_type_value = undefined
+    }
+    
+    return {
+      page: search.page || 1,
+      limit: search.pageSize || 10,
+      search: search.name || undefined,
+      permission_type: permission_type_value,
+    }
+  }, [search.page, search.pageSize, search.name, search.permission_type])
 
   const { data, isLoading, error, refetch } = usePermissionsQuery(apiParams)
 
@@ -79,7 +89,7 @@ export function SystemPermissions() {
               data={data?.data || []} 
               totalPages={data?.total_pages || 0}
               search={search} 
-              navigate={navigate} 
+              navigate={navigate as any} 
             />
           )}
         </div>

@@ -14,6 +14,7 @@ impl DatabaseManager {
         // 建立数据库连接
         let connection = Database::connect(database_url).await?;
 
+
         println!("Database connection established successfully");
 
         Ok(DatabaseManager { connection })

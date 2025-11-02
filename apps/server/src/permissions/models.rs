@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use sea_orm::{DeriveRelation, EnumIter};
+use sea_orm::{EnumIter};
 use strum_macros::{EnumString, Display};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;

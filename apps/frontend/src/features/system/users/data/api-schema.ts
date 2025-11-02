@@ -56,6 +56,7 @@ export const paginationSchema = z.object({
   page: z.number(),
   limit: z.number(),
   total: z.number(),
+  total_pages: z.number().optional(),
 })
 
 export type Pagination = z.infer<typeof paginationSchema>

@@ -3,12 +3,15 @@ import { Button } from '@/components/ui/button'
 import { useSystemRolesContext } from './system-roles-provider'
 
 export function SystemRolesPrimaryButtons() {
-  const { setIsCreateDialogOpen } = useSystemRolesContext()
+  const { setIsDialogOpen, setDialogMode } = useSystemRolesContext()
 
   return (
     <div className='flex items-center space-x-2'>
       <Button
-        onClick={() => setIsCreateDialogOpen(true)}
+        onClick={() => {
+          setDialogMode('create')
+          setIsDialogOpen(true)
+        }}
         size='sm'
         className='h-8'
       >

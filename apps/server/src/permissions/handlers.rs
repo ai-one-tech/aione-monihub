@@ -1,14 +1,21 @@
+use crate::auth::middleware::get_user_id_from_request;
+use crate::entities::permissions;
 use crate::entities::permissions::{Entity as Permissions, Model as PermissionModel};
 use crate::entities::roles::Entity as Roles;
-use crate::permissions::models::{MenuItemResponse, PermissionAssignRequest, PermissionCreateRequest, PermissionListResponse, PermissionResponse, PermissionType, PermissionUpdateRequest, UserMenuResponse};
+use crate::permissions::models::{
+    MenuItemResponse, PermissionAssignRequest, PermissionCreateRequest, PermissionListResponse,
+    PermissionResponse, PermissionType, PermissionUpdateRequest, UserMenuResponse,
+};
 use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
-use crate::auth::middleware::get_user_id_from_request;
-use actix_web::{web, HttpResponse, Result, HttpRequest};
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, PaginatorTrait, Set};
+use actix_web::{web, HttpRequest, HttpResponse, Result};
 use chrono::Utc;
-use std::collections::HashMap;
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter,
+    QueryOrder, QuerySelect, Set,
+};
 use serde::Deserialize;
+use std::collections::HashMap;
 
 #[derive(Debug, Deserialize)]
 pub struct PermissionQueryParams {
@@ -47,14 +54,16 @@ pub async fn get_permissions(
     let offset = (page - 1) * limit;
 
     // 构建查询条件
-    let mut query_builder = Permissions::find()
-        .filter(crate::entities::permissions::Column::DeletedAt.is_null());
+    let mut query_builder = Permissions::find().filter(permissions::Column::DeletedAt.is_null());
 
     // 添加搜索条件
     if let Some(search) = &query.search {
         if !search.is_empty() {
+            let search_pattern = format!("%{}%", search.trim());
             query_builder = query_builder.filter(
-                crate::entities::permissions::Column::Name.contains(search)
+                permissions::Column::Name
+                    .like(&search_pattern)
+                    .or(permissions::Column::Description.like(&search_pattern)),
             );
         }
     }
@@ -62,9 +71,8 @@ pub async fn get_permissions(
     // 添加权限类型筛选
     if let Some(permission_type) = &query.permission_type {
         if !permission_type.is_empty() {
-            query_builder = query_builder.filter(
-                crate::entities::permissions::Column::PermissionType.eq(permission_type)
-            );
+            query_builder =
+                query_builder.filter(permissions::Column::PermissionType.eq(permission_type));
         }
     }
 
@@ -75,8 +83,8 @@ pub async fn get_permissions(
 
     // 获取分页数据
     let permissions: Vec<PermissionModel> = query_builder
-        .order_by_asc(crate::entities::permissions::Column::SortOrder)
-        .order_by_asc(crate::entities::permissions::Column::Name)
+        .order_by_asc(permissions::Column::SortOrder)
+        .order_by_asc(permissions::Column::Name)
         .offset(offset)
         .limit(limit)
         .all(&**db)
@@ -304,7 +312,8 @@ pub async fn update_permission(
     let current_revision = existing_permission.revision;
 
     // 更新权限
-    let mut permission_active: crate::entities::permissions::ActiveModel = existing_permission.into();
+    let mut permission_active: crate::entities::permissions::ActiveModel =
+        existing_permission.into();
     permission_active.name = Set(permission.name.clone());
     permission_active.description = Set(permission.description.clone());
     permission_active.permission_action = Set(permission.action.clone());
@@ -380,7 +389,8 @@ pub async fn delete_permission(
     let current_user_id = get_user_id_from_request(&req)?;
 
     // 软删除权限
-    let mut permission_active: crate::entities::permissions::ActiveModel = existing_permission.into();
+    let mut permission_active: crate::entities::permissions::ActiveModel =
+        existing_permission.into();
     permission_active.deleted_at = Set(Some(Utc::now().into()));
     permission_active.updated_by = Set(current_user_id.to_string());
     permission_active.updated_at = Set(Utc::now().into());
@@ -406,9 +416,10 @@ pub async fn get_user_menu(
 ) -> Result<HttpResponse, ApiError> {
     // 获取当前用户ID
     let user_id = get_user_id_from_request(&req)?;
-    
+
     // 根据当前用户的角色获取权限菜单
-    let menu_permissions: Vec<PermissionModel> = get_user_permissions_by_type(&user_id.to_string(), PermissionType::Menu, &**db).await?;
+    let menu_permissions: Vec<PermissionModel> =
+        get_user_permissions_by_type(&user_id.to_string(), PermissionType::Menu, &**db).await?;
 
     // 构建菜单树
     let menu_items = build_menu_tree(menu_permissions);
@@ -434,7 +445,9 @@ pub async fn get_user_permissions_by_type(
     // 简化的实现：暂时返回所有指定类型的权限
     let permissions = Permissions::find()
         .filter(crate::entities::permissions::Column::DeletedAt.is_null())
-        .filter(crate::entities::permissions::Column::PermissionType.eq(permission_type.to_string()))
+        .filter(
+            crate::entities::permissions::Column::PermissionType.eq(permission_type.to_string()),
+        )
         .order_by_asc(crate::entities::permissions::Column::SortOrder)
         .order_by_asc(crate::entities::permissions::Column::Name)
         .all(db)
@@ -451,7 +464,10 @@ pub async fn get_user_permission_by_name(
     // 简化的实现：暂时返回所有指定类型的权限
     let permission = Permissions::find()
         .filter(crate::entities::permissions::Column::DeletedAt.is_null())
-        .filter(crate::entities::permissions::Column::PermissionType.eq(PermissionType::Action.to_string()))
+        .filter(
+            crate::entities::permissions::Column::PermissionType
+                .eq(PermissionType::Action.to_string()),
+        )
         .filter(crate::entities::permissions::Column::Name.eq(name))
         .order_by_asc(crate::entities::permissions::Column::SortOrder)
         .order_by_asc(crate::entities::permissions::Column::Name)
@@ -462,7 +478,9 @@ pub async fn get_user_permission_by_name(
 }
 
 // 更新权限分配功能
-use crate::entities::role_permissions::{ActiveModel as RolePermissionActiveModel, Entity as RolePermissions};
+use crate::entities::role_permissions::{
+    ActiveModel as RolePermissionActiveModel, Entity as RolePermissions,
+};
 
 pub async fn assign_permissions(
     db: web::Data<DatabaseConnection>,
@@ -473,40 +491,40 @@ pub async fn assign_permissions(
         .filter(crate::entities::roles::Column::DeletedAt.is_null())
         .one(&**db)
         .await?;
-    
+
     if role_exists.is_none() {
         return Err(ApiError::NotFound("角色不存在".to_string()));
     }
-    
+
     // 检查权限是否存在
     for permission_id in &assign_req.permissions {
         let permission_exists = Permissions::find_by_id(permission_id)
             .filter(crate::entities::permissions::Column::DeletedAt.is_null())
             .one(&**db)
             .await?;
-        
+
         if permission_exists.is_none() {
             return Err(ApiError::NotFound(format!("权限 {} 不存在", permission_id)));
         }
     }
-    
+
     // 先删除该角色的所有权限
     RolePermissions::delete_many()
         .filter(crate::entities::role_permissions::Column::RoleId.eq(&assign_req.role_id))
         .exec(&**db)
         .await?;
-    
+
     // 添加新的权限关联
     for permission_id in &assign_req.permissions {
         let role_permission_id = generate_snowflake_id();
-        
+
         let role_permission = RolePermissionActiveModel {
             id: Set(role_permission_id),
             role_id: Set(assign_req.role_id.clone()),
             permission_id: Set(permission_id.clone()),
             created_at: Set(Utc::now().into()),
         };
-        
+
         role_permission.insert(&**db).await?;
     }
 
@@ -520,7 +538,9 @@ pub async fn revoke_permissions(
     // 删除指定的权限关联
     RolePermissions::delete_many()
         .filter(crate::entities::role_permissions::Column::RoleId.eq(&assign_req.role_id))
-        .filter(crate::entities::role_permissions::Column::PermissionId.is_in(&assign_req.permissions))
+        .filter(
+            crate::entities::role_permissions::Column::PermissionId.is_in(&assign_req.permissions),
+        )
         .exec(&**db)
         .await?;
 
@@ -533,7 +553,6 @@ fn build_menu_tree(permissions: Vec<PermissionModel>) -> Vec<MenuItemResponse> {
 
     // 先将所有权限转换为菜单项，过滤掉隐藏的菜单
     for permission in permissions {
-        
         let menu_item = MenuItemResponse {
             id: permission.id.clone(),
             name: permission.name.clone(),
@@ -573,7 +592,7 @@ fn build_menu_tree(permissions: Vec<PermissionModel>) -> Vec<MenuItemResponse> {
                     }
                 })
                 .collect();
-            
+
             // 按sort_order排序
             result.sort_by_key(|item| item.sort_order);
             result

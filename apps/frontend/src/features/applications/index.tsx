@@ -26,7 +26,7 @@ export function Applications() {
     page: search.page || 1,
     limit: search.pageSize || 10,
     search: search.search || undefined,
-    status: (search.status && search.status !== 'all') ? search.status as 'active' | 'inactive' | 'archived' : undefined,
+    status: (search.status && search.status !== 'all') ? search.status as 'active' | 'disabled' : undefined,
     project_id: search.project_id || undefined,
   }
 
@@ -76,8 +76,9 @@ export function Applications() {
           ) : (
             <ApplicationsTable 
               data={data?.data || []} 
+              totalPages={data?.pagination?.total_pages || 0}
               search={search} 
-              navigate={navigate} 
+              navigate={navigate as any} 
             />
           )}
         </div>

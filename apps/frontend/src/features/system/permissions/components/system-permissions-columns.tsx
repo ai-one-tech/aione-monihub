@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
 import { type ApiPermissionResponse } from '../data/api-schema'
+import { ACTION_MAP, PERMISSION_TYPE_MAP } from '../data/permission-enums'
 import { SystemPermissionsDataTableRowActions } from './system-permissions-data-table-row-actions'
 
 export const systemPermissionsColumns: ColumnDef<ApiPermissionResponse>[] = [
@@ -81,11 +82,15 @@ export const systemPermissionsColumns: ColumnDef<ApiPermissionResponse>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='操作' />
     ),
-    cell: ({ row }) => (
-      <Badge variant='outline' className='text-xs'>
-        {row.getValue('action')}
-      </Badge>
-    ),
+    cell: ({ row }) => {
+      const action = row.getValue('action') as string
+      const actionInfo = ACTION_MAP[action] || { label: action, variant: 'outline' as const }
+      return (
+        <Badge variant={actionInfo.variant} className='text-xs'>
+          {actionInfo.label}
+        </Badge>
+      )
+    },
   },
   {
     accessorKey: 'permission_type',
@@ -94,13 +99,7 @@ export const systemPermissionsColumns: ColumnDef<ApiPermissionResponse>[] = [
     ),
     cell: ({ row }) => {
       const type = row.getValue('permission_type') as string
-      const typeMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-        menu: { label: '菜单', variant: 'default' },
-        action: { label: '操作', variant: 'secondary' },
-        button: { label: '按钮', variant: 'outline' },
-        page: { label: '页面', variant: 'secondary' },
-      }
-      const typeInfo = typeMap[type] || { label: type, variant: 'outline' as const }
+      const typeInfo = PERMISSION_TYPE_MAP[type] || { label: type, variant: 'outline' as const }
       return (
         <Badge variant={typeInfo.variant} className='text-xs'>
           {typeInfo.label}

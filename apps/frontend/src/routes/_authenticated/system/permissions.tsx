@@ -7,10 +7,12 @@ const systemPermissionsSearchSchema = z.object({
   pageSize: z.coerce.number().catch(10),
   // API 支持的查询参数
   name: z.string().optional().catch(''),
-  permission_type: z.string().optional().catch(''),
   // 权限类型筛选 - 支持多选
-  permission_types: z
-    .array(z.string())
+  permission_type: z
+    .union([
+      z.string(),
+      z.array(z.string())
+    ])
     .optional()
     .catch([]),
 })

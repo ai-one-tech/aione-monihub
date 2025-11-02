@@ -26,7 +26,7 @@ export function Projects() {
     page: search.page || 1,
     limit: search.pageSize || 10,
     search: search.search || undefined,
-    status: search.status || undefined,
+    status: (search.status && search.status !== 'all') ? search.status as 'active' | 'disabled' : undefined,
   }
 
   const { data, isLoading, error, refetch } = useProjectsQuery(apiParams)
@@ -75,8 +75,9 @@ export function Projects() {
           ) : (
             <ProjectsTable 
               data={data?.data || []} 
+              totalPages={data?.pagination?.total_pages || 0}
               search={search} 
-              navigate={navigate} 
+              navigate={navigate as any} 
             />
           )}
         </div>

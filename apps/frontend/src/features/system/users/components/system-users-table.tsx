@@ -6,8 +6,6 @@ import {
   getCoreRowModel,
   getFacetedRowModel,
   getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
@@ -36,11 +34,12 @@ declare module '@tanstack/react-table' {
 
 type DataTableProps = {
   data: ApiUserResponse[]
+  totalPages: number
   search: Record<string, unknown>
   navigate: NavigateFn
 }
 
-export function SystemUsersTable({ data = [], search, navigate }: DataTableProps) {
+export function SystemUsersTable({ data = [], totalPages, search, navigate }: DataTableProps) {
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -72,9 +71,9 @@ export function SystemUsersTable({ data = [], search, navigate }: DataTableProps
     state: {
       sorting,
       pagination,
+      columnVisibility,
       rowSelection,
       columnFilters,
-      columnVisibility,
     },
     enableRowSelection: true,
     onPaginationChange,
@@ -82,17 +81,17 @@ export function SystemUsersTable({ data = [], search, navigate }: DataTableProps
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
-    getPaginationRowModel: getPaginationRowModel(),
+    manualPagination: true,
+    pageCount: totalPages,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
   })
 
   useEffect(() => {
-    ensurePageInRange(table.getPageCount())
-  }, [table, ensurePageInRange])
+    ensurePageInRange(totalPages)
+  }, [totalPages, ensurePageInRange])
 
   // 动态加载角色列表用于筛选（统一使用角色名称）
   const { data: rolesData, isLoading: rolesLoading } = useRolesQuery({})

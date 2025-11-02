@@ -69,7 +69,6 @@ export function SystemRolesTable({ data, totalPages, search, navigate }: SystemR
     manualPagination: true,
     pageCount: totalPages,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),

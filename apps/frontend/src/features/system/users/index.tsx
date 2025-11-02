@@ -25,6 +25,7 @@ export function SystemUsers() {
     page: search.page || 1,
     limit: search.pageSize || 10,
     search: search.username || undefined,
+    status: (search.status && search.status !== 'all') ? search.status as string : undefined,
   }
 
   const { data, isLoading, error, refetch } = useUsersQuery(apiParams)
@@ -73,8 +74,9 @@ export function SystemUsers() {
           ) : (
             <SystemUsersTable 
               data={data?.data || []} 
+              totalPages={data?.pagination?.total_pages || 0}
               search={search} 
-              navigate={navigate} 
+              navigate={navigate as any} 
             />
           )}
         </div>

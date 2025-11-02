@@ -8,7 +8,7 @@ use crate::shared::generate_snowflake_id;
 use crate::entities::instances::{Entity as Instances, ActiveModel};
 use actix_web::{web, HttpResponse, Result, HttpRequest};
 use crate::auth::middleware::get_user_id_from_request;
-use crate::permissions::handlers::{get_user_permission_by_name, get_user_permissions_by_type};
+use crate::permissions::handlers::{get_user_permission_by_name};
 use chrono::Utc;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, 

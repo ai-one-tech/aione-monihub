@@ -1,15 +1,12 @@
 import { useEffect, useState } from 'react'
-import { useEffect, useState } from 'react'
 import { type NavigateOptions } from '@tanstack/react-router'
 import {
-  type ColumnDef,
-  type ColumnFiltersState,
   type SortingState,
   type VisibilityState,
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
@@ -46,17 +43,16 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 
-interface ProjectsTableProps {
-  search: {
-    page?: number
-    pageSize?: number
-    search?: string
-    status?: string
-  }
-  navigate: (options: NavigateOptions) => void
+type NavigateFn = (options: NavigateOptions) => void
+
+type DataTableProps = {
+  data: ProjectResponse[]
+  totalPages: number
+  search: Record<string, unknown>
+  navigate: NavigateFn
 }
 
-export function ProjectsTable({ search, navigate }: ProjectsTableProps) {
+export function ProjectsTable({ data = [], totalPages, search, navigate }: DataTableProps) {
   // 构建API查询参数
   const apiParams = {
     page: search.page || 1,
@@ -75,7 +71,11 @@ export function ProjectsTable({ search, navigate }: ProjectsTableProps) {
   } = useProjectsContext()
 
   const [sorting, setSorting] = useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  })
+  const [columnFilters, setColumnFilters] = useState([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState({})
   
@@ -87,7 +87,7 @@ export function ProjectsTable({ search, navigate }: ProjectsTableProps) {
     setLocalSearchValue(search.search || '')
   }, [search.search])
 
-  const columns: ColumnDef<ProjectResponse>[] = [
+  const columns = [
     {
       accessorKey: 'id',
       header: ({ column }) => (
@@ -257,21 +257,43 @@ export function ProjectsTable({ search, navigate }: ProjectsTableProps) {
   const table = useReactTable({
     data,
     columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
     state: {
       sorting,
+      pagination,
+      rowSelection,
       columnFilters,
       columnVisibility,
-      rowSelection,
     },
+    enableRowSelection: true,
+    onPaginationChange,
+    onColumnFiltersChange,
+    onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
+    onColumnVisibilityChange: setColumnVisibility,
+    manualPagination: true,
+    pageCount: totalPages,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
   })
+
+  useEffect(() => {
+    ensurePageInRange(totalPages)
+  }, [totalPages, ensurePageInRange])
+
+  const onPaginationChange = (state) => {
+    setPagination(state)
+    navigate({
+      search: (prev) => ({ ...prev, page: state.pageIndex + 1 }),
+    })
+  }
+
+  const ensurePageInRange = (totalPages) => {
+    if (pagination.pageIndex + 1 > totalPages) {
+      setPagination((prev) => ({ ...prev, pageIndex: totalPages - 1 }))
+    }
+  }
 
   // Debounced search function with 2 second delay
   const debouncedSearchChange = useDebouncedCallback((value: string) => {

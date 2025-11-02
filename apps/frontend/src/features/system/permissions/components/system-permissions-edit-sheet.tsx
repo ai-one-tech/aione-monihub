@@ -32,6 +32,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useSystemPermissions } from './system-permissions-provider'
 import { type UpdatePermissionRequest, type CreatePermissionRequest } from '../data/api-schema'
+import { ACTION_MAP, PERMISSION_TYPE_MAP } from '../data/permission-enums'
 import { usePermissionDetailQuery } from '../hooks/use-permission-detail-query'
 import { useUpdatePermissionMutation, useCreatePermissionMutation } from '../hooks/use-permission-mutations'
 import { toast } from 'sonner'
@@ -256,11 +257,11 @@ export function SystemPermissionsEditSheet() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value='Read'>读取</SelectItem>
-                          <SelectItem value='Create'>创建</SelectItem>
-                          <SelectItem value='Update'>更新</SelectItem>
-                          <SelectItem value='Delete'>删除</SelectItem>
-                          <SelectItem value='Execute'>执行</SelectItem>
+                          {Object.entries(ACTION_MAP).map(([key, value]) => (
+                            <SelectItem key={key} value={key}>
+                              {value.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -285,9 +286,11 @@ export function SystemPermissionsEditSheet() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value='Menu'>菜单</SelectItem>
-                          <SelectItem value='Page'>页面</SelectItem>
-                          <SelectItem value='Action'>操作</SelectItem>
+                          {Object.entries(PERMISSION_TYPE_MAP).map(([key, value]) => (
+                            <SelectItem key={key} value={key}>
+                              {value.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />

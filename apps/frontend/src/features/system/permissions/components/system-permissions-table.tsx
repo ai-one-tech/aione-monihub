@@ -84,7 +84,6 @@ export function SystemPermissionsTable({ data = [], totalPages, search, navigate
     manualPagination: true,
     pageCount: totalPages,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
