@@ -558,7 +558,6 @@ AiOne MoniHub 是一个集成化监控和管理平台，旨在通过 PC 和移�
 | id | String | 权限ID |
 | name | String | 权限名称 |
 | description | String | 权限描述 |
-| resource | String | 资源 |
 | action | String | 操作 |
 | created_by | String | 创建人 |
 | updated_by | String | 修改人 |

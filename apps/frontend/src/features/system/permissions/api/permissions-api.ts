@@ -20,9 +20,6 @@ class PermissionsApi {
     if (params.permission_type) {
       searchParams.append('permission_type', params.permission_type)
     }
-    if (params.resource) {
-      searchParams.append('resource', params.resource)
-    }
 
     const queryString = searchParams.toString()
     const endpoint = `/api/permissions${queryString ? `?${queryString}` : ''}`

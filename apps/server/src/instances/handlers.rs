@@ -8,7 +8,7 @@ use crate::shared::generate_snowflake_id;
 use crate::entities::instances::{Entity as Instances, ActiveModel};
 use actix_web::{web, HttpResponse, Result, HttpRequest};
 use crate::auth::middleware::get_user_id_from_request;
-use crate::permissions::handlers::get_user_permissions_by_type;
+use crate::permissions::handlers::{get_user_permission_by_name, get_user_permissions_by_type};
 use chrono::Utc;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, 
@@ -216,9 +216,8 @@ pub async fn enable_instance(
     let instance_id = path.into_inner();
     let user_id = get_user_id_from_request(&req)?;
     // 权限检查：需要具有 instance_management.enable 权限
-    let permissions = get_user_permissions_by_type(&user_id.to_string(), "instance_management", &db).await?;
-    let has_permission = permissions.iter().any(|p| p.name == "instance_management.enable");
-    if !has_permission {
+    let permission = get_user_permission_by_name(&user_id.to_string(), "instance_management.enable", &db).await?;
+    if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限启用实例".to_string()));
     }
     let existing = Instances::find_by_id(&instance_id)
@@ -243,9 +242,8 @@ pub async fn disable_instance(
     let instance_id = path.into_inner();
     let user_id = get_user_id_from_request(&req)?;
     // 权限检查：需要具有 instance_management.disable 权限
-    let permissions = get_user_permissions_by_type(&user_id.to_string(), "instance_management", &db).await?;
-    let has_permission = permissions.iter().any(|p| p.name == "instance_management.disable");
-    if !has_permission {
+    let permission = get_user_permission_by_name(&user_id.to_string(), "instance_management.disable", &db).await?;
+    if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限禁用实例".to_string()));
     }
     let existing = Instances::find_by_id(&instance_id)

@@ -240,7 +240,6 @@ struct Permission {
     id: String,
     name: String,
     description: String,
-    resource: String,
     action: String,
     created_at: String,
     updated_at: String,

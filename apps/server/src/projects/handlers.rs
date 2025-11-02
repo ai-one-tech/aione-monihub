@@ -7,7 +7,7 @@ use crate::shared::error::ApiError;
 use crate::shared::status::is_valid_status;
 use crate::shared::snowflake::generate_snowflake_id;
 use crate::auth::middleware::get_user_id_from_request;
-use crate::permissions::handlers::get_user_permissions_by_type;
+use crate::permissions::handlers::{get_user_permission_by_name};
 use actix_web::{web, HttpRequest, HttpResponse, Result};
 use chrono::Utc;
 use serde_json::json;
@@ -371,9 +371,8 @@ pub async fn enable_project(
     let user_id = get_user_id_from_request(&req)?;
 
     // 权限检查：需要具有 project_management.enable 权限
-    let permissions = get_user_permissions_by_type(&user_id.to_string(), "project_management", &db).await?;
-    let has_permission = permissions.iter().any(|p| p.name == "project_management.enable");
-    if !has_permission {
+    let permission = get_user_permission_by_name(&user_id.to_string(), "project_management.enable", &db).await?;
+    if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限启用项目".to_string()));
     }
 
@@ -414,9 +413,8 @@ pub async fn disable_project(
     let user_id = get_user_id_from_request(&req)?;
 
     // 权限检查：需要具有 project_management.disable 权限
-    let permissions = get_user_permissions_by_type(&user_id.to_string(), "project_management", &db).await?;
-    let has_permission = permissions.iter().any(|p| p.name == "project_management.disable");
-    if !has_permission {
+    let permission = get_user_permission_by_name(&user_id.to_string(), "project_management.disable", &db).await?;
+    if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限禁用项目".to_string()));
     }
 

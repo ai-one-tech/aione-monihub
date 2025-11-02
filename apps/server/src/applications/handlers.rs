@@ -1,14 +1,20 @@
-use crate::applications::models::{ApplicationCreateRequest, ApplicationListQuery, ApplicationListResponse, ApplicationResponse, Pagination};
+use crate::applications::models::{
+    ApplicationCreateRequest, ApplicationListQuery, ApplicationListResponse, ApplicationResponse,
+    Pagination,
+};
 use crate::applications::ApplicationsModule;
 use crate::auth::middleware::get_user_id_from_request;
-use crate::permissions::handlers::get_user_permissions_by_type;
 use crate::entities::applications::Entity as Applications;
+use crate::permissions::handlers::get_user_permission_by_name;
 use crate::shared::error::ApiError;
-use crate::shared::status::{STATUS_ACTIVE, STATUS_DISABLED, is_valid_status};
 use crate::shared::snowflake::generate_snowflake_id;
+use crate::shared::status::{is_valid_status, STATUS_ACTIVE, STATUS_DISABLED};
 use actix_web::{web, HttpRequest, HttpResponse};
-use sea_orm::{ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect};
 use chrono::Utc;
+use sea_orm::{
+    ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait,
+    QueryFilter, QueryOrder, QuerySelect,
+};
 
 #[utoipa::path(
     get,
@@ -38,7 +44,8 @@ pub async fn get_applications(
     let limit = query.limit.unwrap_or(10);
     let offset = (page - 1) * limit;
 
-    let mut select = Applications::find().filter(crate::entities::applications::Column::DeletedAt.is_null());
+    let mut select =
+        Applications::find().filter(crate::entities::applications::Column::DeletedAt.is_null());
 
     // 搜索过滤：名称、编码、描述（任意匹配）
     if let Some(search) = &query.search {
@@ -60,7 +67,11 @@ pub async fn get_applications(
     select = select.order_by_desc(crate::entities::applications::Column::CreatedAt);
 
     // 获取总数和分页数据
-    let total = select.clone().count(&**db).await.map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
+    let total = select
+        .clone()
+        .count(&**db)
+        .await
+        .map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
     let applications: Vec<crate::entities::applications::Model> = select
         .offset(offset as u64)
         .limit(limit as u64)
@@ -121,23 +132,39 @@ pub async fn create_application(
 
     // 验证请求数据
     if app.name.is_empty() || app.code.is_empty() {
-        return Err(ApiError::BadRequest("Name and code are required".to_string()));
+        return Err(ApiError::BadRequest(
+            "Name and code are required".to_string(),
+        ));
     }
     if !is_valid_status(app.status.as_str()) {
-        return Err(ApiError::BadRequest("Invalid status; must be 'active' or 'disabled'".to_string()));
+        return Err(ApiError::BadRequest(
+            "Invalid status; must be 'active' or 'disabled'".to_string(),
+        ));
     }
 
     // 创建ApplicationsModule实例
     let applications_module = ApplicationsModule::new(db.get_ref().clone());
 
     // 检查应用名称是否已存在
-    if let Some(existing_app) = applications_module.find_application_by_name(&app.name).await? {
-        return Err(ApiError::BadRequest(format!("应用名称已存在：{}", existing_app.name)));
+    if let Some(existing_app) = applications_module
+        .find_application_by_name(&app.name)
+        .await?
+    {
+        return Err(ApiError::BadRequest(format!(
+            "应用名称已存在：{}",
+            existing_app.name
+        )));
     }
 
     // 新增：检查应用编码是否已存在
-    if let Some(existing_app) = applications_module.find_application_by_code(&app.code).await? {
-        return Err(ApiError::BadRequest(format!("应用代码已存在：{}", existing_app.name)));
+    if let Some(existing_app) = applications_module
+        .find_application_by_code(&app.code)
+        .await?
+    {
+        return Err(ApiError::BadRequest(format!(
+            "应用代码已存在：{}",
+            existing_app.name
+        )));
     }
 
     // 创建应用
@@ -207,7 +234,9 @@ pub async fn get_application(
     if let Some(application) = applications_module.find_application_by_id(&app_id).await? {
         // 检查用户是否有访问权限
         if application.created_by != user_id.to_string() {
-            return Err(ApiError::Unauthorized("You do not have permission to access this application".to_string()));
+            return Err(ApiError::Unauthorized(
+                "You do not have permission to access this application".to_string(),
+            ));
         }
 
         // 转换为响应格式
@@ -262,23 +291,35 @@ pub async fn update_application(
 
     // 验证请求数据
     if app.name.is_empty() || app.code.is_empty() {
-        return Err(ApiError::BadRequest("Name and code are required".to_string()));
+        return Err(ApiError::BadRequest(
+            "Name and code are required".to_string(),
+        ));
     }
     if !is_valid_status(app.status.as_str()) {
-        return Err(ApiError::BadRequest("Invalid status; must be 'active' or 'disabled'".to_string()));
+        return Err(ApiError::BadRequest(
+            "Invalid status; must be 'active' or 'disabled'".to_string(),
+        ));
     }
 
     // 查询数据库获取应用信息
     if let Some(application) = applications_module.find_application_by_id(&app_id).await? {
         // 检查用户是否有更新权限
         if application.created_by != user_id.to_string() {
-            return Err(ApiError::Unauthorized("You do not have permission to update this application".to_string()));
+            return Err(ApiError::Unauthorized(
+                "You do not have permission to update this application".to_string(),
+            ));
         }
 
         // 新增：检查编码是否被其他应用使用（排除当前记录）
-        if let Some(existing_app) = applications_module.find_application_by_code(&app.code).await? {
+        if let Some(existing_app) = applications_module
+            .find_application_by_code(&app.code)
+            .await?
+        {
             if existing_app.id != app_id {
-                return Err(ApiError::BadRequest(format!("应用代码已存在：{}", existing_app.name)));
+                return Err(ApiError::BadRequest(format!(
+                    "应用代码已存在：{}",
+                    existing_app.name
+                )));
             }
         }
 
@@ -346,7 +387,9 @@ pub async fn delete_application(
     if let Some(application) = applications_module.find_application_by_id(&app_id).await? {
         // 检查用户是否有删除权限
         if application.created_by != user_id.to_string() {
-            return Err(ApiError::Unauthorized("You do not have permission to delete this application".to_string()));
+            return Err(ApiError::Unauthorized(
+                "You do not have permission to delete this application".to_string(),
+            ));
         }
 
         // 删除应用
@@ -372,9 +415,10 @@ pub async fn enable_application(
 ) -> Result<HttpResponse, ApiError> {
     let user_id = get_user_id_from_request(&req)?;
     // 权限检查：需要具有 application_management.enable 权限
-    let permissions = get_user_permissions_by_type(&user_id.to_string(), "application_management", &db).await?;
-    let has_permission = permissions.iter().any(|p| p.name == "application_management.enable");
-    if !has_permission {
+    let permission =
+        get_user_permission_by_name(&user_id.to_string(), "application_management.enable", &db)
+            .await?;
+    if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限启用应用".to_string()));
     }
     let app_id = path.into_inner();
@@ -416,9 +460,10 @@ pub async fn disable_application(
 ) -> Result<HttpResponse, ApiError> {
     let user_id = get_user_id_from_request(&req)?;
     // 权限检查：需要具有 application_management.disable 权限
-    let permissions = get_user_permissions_by_type(&user_id.to_string(), "application_management", &db).await?;
-    let has_permission = permissions.iter().any(|p| p.name == "application_management.disable");
-    if !has_permission {
+    let permission =
+        get_user_permission_by_name(&user_id.to_string(), "application_management.disable", &db)
+            .await?;
+    if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限禁用应用".to_string()));
     }
     let app_id = path.into_inner();

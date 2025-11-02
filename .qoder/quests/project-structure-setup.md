@@ -284,7 +284,6 @@ erDiagram
         string id
         string name
         string description
-        string resource
         string action
         datetime created_at
         datetime updated_at
@@ -304,7 +303,6 @@ erDiagram
         string id
         string user_id
         string action
-        string resource
         string ip_address
         string user_agent
         string details

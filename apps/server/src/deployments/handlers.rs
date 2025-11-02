@@ -4,7 +4,7 @@ use crate::deployments::models::{
 };
 use crate::entities::deployments::{ActiveModel, Entity as Deployments, Model as DeploymentModel};
 use crate::auth::middleware::get_user_id_from_request;
-use crate::permissions::handlers::get_user_permissions_by_type;
+use crate::permissions::handlers::{get_user_permission_by_name};
 use crate::shared::error::ApiError;
 use crate::shared::status::is_valid_status;
 use crate::shared::snowflake::generate_snowflake_id;
@@ -222,9 +222,9 @@ pub async fn enable_deployment(
 ) -> Result<HttpResponse, ApiError> {
     let user_id = get_user_id_from_request(&req)?;
     // 权限检查：需要具有 deployment_management.enable 权限
-    let permissions = get_user_permissions_by_type(&user_id.to_string(), "deployment_management", &db).await?;
-    let has_permission = permissions.iter().any(|p| p.name == "deployment_management.enable");
-    if !has_permission {
+
+    let permission = get_user_permission_by_name(&user_id.to_string(), "deployment_management", &db).await?;
+    if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限启用部署".to_string()));
     }
     let deployment_id = path.into_inner();
@@ -263,9 +263,8 @@ pub async fn disable_deployment(
 ) -> Result<HttpResponse, ApiError> {
     let user_id = get_user_id_from_request(&req)?;
     // 权限检查：需要具有 deployment_management.disable 权限
-    let permissions = get_user_permissions_by_type(&user_id.to_string(), "deployment_management", &db).await?;
-    let has_permission = permissions.iter().any(|p| p.name == "deployment_management.disable");
-    if !has_permission {
+    let permission = get_user_permission_by_name(&user_id.to_string(), "deployment_management.disable", &db).await?;
+    if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限禁用部署".to_string()));
     }
     let deployment_id = path.into_inner();

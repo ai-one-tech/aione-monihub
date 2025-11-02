@@ -230,7 +230,6 @@ COMMENT ON TABLE "public"."password_reset_tokens" IS '密码重置令牌表，�
 CREATE TABLE "public"."permissions" (
   "id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
   "name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-  "permission_resource" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
   "permission_action" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
   "description" text COLLATE "pg_catalog"."default",
   "permission_type" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
@@ -249,7 +248,6 @@ CREATE TABLE "public"."permissions" (
 ;
 COMMENT ON COLUMN "public"."permissions"."id" IS '权限唯一标识';
 COMMENT ON COLUMN "public"."permissions"."name" IS '权限名称标识';
-COMMENT ON COLUMN "public"."permissions"."permission_resource" IS '权限资源标识';
 COMMENT ON COLUMN "public"."permissions"."permission_action" IS '权限操作：create(创建), read(读取), update(更新), delete(删除)';
 COMMENT ON COLUMN "public"."permissions"."description" IS '权限描述信息';
 COMMENT ON COLUMN "public"."permissions"."permission_type" IS '权限类型：menu(菜单), action(操作), button(按钮), page(页面)';

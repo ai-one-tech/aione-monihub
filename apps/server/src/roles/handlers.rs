@@ -458,7 +458,6 @@ pub async fn get_role_permissions(
                 id: permission.id,
                 name: permission.name,
                 description: permission.description,
-                resource: permission.permission_resource,
                 action: permission.permission_action,
                 permission_type: permission.permission_type,
                 created_at: permission.created_at.to_rfc3339(),

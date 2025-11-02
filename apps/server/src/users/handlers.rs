@@ -1,7 +1,7 @@
 use crate::auth::middleware::get_user_id_from_request;
 use crate::entities::users::Model as UserModel;
 use crate::entities::users::{ActiveModel, Entity as Users};
-use crate::permissions::handlers::get_user_permissions_by_type;
+use crate::permissions::handlers::{get_user_permission_by_name};
 
 use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
@@ -175,12 +175,8 @@ pub async fn create_user(
     let current_user_id = get_user_id_from_request(&req)?;
 
     // 验证当前用户是否有创建用户的权限
-    let permissions =
-        get_user_permissions_by_type(&current_user_id.to_string(), "user_management", &db).await?;
-    let has_permission = permissions
-        .iter()
-        .any(|p| p.name == "user_management.create");
-    if !has_permission {
+    let permission = get_user_permission_by_name(&user_id.to_string(), "user_management.create", &db).await?;
+    if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限创建用户".to_string()));
     }
 
@@ -310,12 +306,8 @@ pub async fn update_user(
     let current_user_id = get_user_id_from_request(&req)?;
 
     // 验证当前用户是否有更新用户的权限
-    let permissions =
-        get_user_permissions_by_type(&current_user_id.to_string(), "user_management", &db).await?;
-    let has_permission = permissions
-        .iter()
-        .any(|p| p.name == "user_management.update");
-    if !has_permission {
+    let permission = get_user_permission_by_name(&user_id.to_string(), "user_management.update", &db).await?;
+    if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限更新用户".to_string()));
     }
 
@@ -460,12 +452,8 @@ pub async fn delete_user(
     let current_user_id = get_user_id_from_request(&req)?;
 
     // 验证当前用户是否有删除用户的权限
-    let permissions =
-        get_user_permissions_by_type(&current_user_id.to_string(), "user_management", &db).await?;
-    let has_permission = permissions
-        .iter()
-        .any(|p| p.name == "user_management.delete");
-    if !has_permission {
+    let permission = get_user_permission_by_name(&user_id.to_string(), "user_management.delete", &db).await?;
+    if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限删除用户".to_string()));
     }
 
@@ -523,12 +511,8 @@ pub async fn disable_user(
     let current_user_id = get_user_id_from_request(&req)?;
 
     // 验证当前用户是否有禁用用户的权限
-    let permissions =
-        get_user_permissions_by_type(&current_user_id.to_string(), "user_management", &db).await?;
-    let has_permission = permissions
-        .iter()
-        .any(|p| p.name == "user_management.disable");
-    if !has_permission {
+    let permission = get_user_permission_by_name(&user_id.to_string(), "user_management.disable", &db).await?;
+    if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限禁用用户".to_string()));
     }
 
@@ -586,12 +570,8 @@ pub async fn enable_user(
     let current_user_id = get_user_id_from_request(&req)?;
 
     // 验证当前用户是否有启用用户的权限
-    let permissions =
-        get_user_permissions_by_type(&current_user_id.to_string(), "user_management", &db).await?;
-    let has_permission = permissions
-        .iter()
-        .any(|p| p.name == "user_management.enable");
-    if !has_permission {
+    let permission = get_user_permission_by_name(&user_id.to_string(), "user_management.enable", &db).await?;
+    if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限启用用户".to_string()));
     }
 

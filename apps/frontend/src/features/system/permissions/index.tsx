@@ -29,7 +29,6 @@ export function SystemPermissions() {
     limit: search.pageSize,
     search: search.name || undefined,
     permission_type: search.permission_type || undefined,
-    resource: search.resource || undefined,
   }), [searchKey])
 
   const { data, isLoading, error, refetch } = usePermissionsQuery(apiParams)

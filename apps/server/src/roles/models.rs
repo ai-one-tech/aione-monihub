@@ -56,7 +56,6 @@ pub struct RolePermissionResponse {
     pub id: String,
     pub name: String,
     pub description: Option<String>,
-    pub resource: String,
     pub action: String,
     pub permission_type: String,
     pub created_at: String,

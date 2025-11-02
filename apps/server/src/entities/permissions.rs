@@ -9,7 +9,6 @@ pub struct Model {
     #[sea_orm(unique)]
     pub name: String,
     pub description: Option<String>,
-    pub permission_resource: String,  // 修改字段名
     pub permission_action: String,    // 修改字段名
     pub permission_type: String,
     pub menu_path: Option<String>,
