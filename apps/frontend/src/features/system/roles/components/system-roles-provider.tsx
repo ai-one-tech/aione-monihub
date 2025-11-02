@@ -1,13 +1,13 @@
 import React, { createContext, useContext, useState } from 'react'
 
-type DialogMode = 'create' | 'edit'
+type SheetMode = 'create' | 'edit' | 'view'
 
 interface SystemRolesContextType {
-  // 对话框状态
-  isDialogOpen: boolean
-  setIsDialogOpen: (open: boolean) => void
-  dialogMode: DialogMode
-  setDialogMode: (mode: DialogMode) => void
+  // Sheet状态（创建、编辑和查看）
+  isSheetOpen: boolean
+  setIsSheetOpen: (open: boolean) => void
+  sheetMode: SheetMode
+  setSheetMode: (mode: SheetMode) => void
   selectedRoleId: string | null
   setSelectedRoleId: (id: string | null) => void
   
@@ -33,9 +33,9 @@ interface SystemRolesProviderProps {
 }
 
 export function SystemRolesProvider({ children }: SystemRolesProviderProps) {
-  // 对话框状态
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [dialogMode, setDialogMode] = useState<DialogMode>('create')
+  // Sheet状态（创建、编辑和查看）
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [sheetMode, setSheetMode] = useState<SheetMode>('create')
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null)
   
   // 删除对话框状态
@@ -43,11 +43,11 @@ export function SystemRolesProvider({ children }: SystemRolesProviderProps) {
   const [deleteRoleId, setDeleteRoleId] = useState<string | null>(null)
 
   const value: SystemRolesContextType = {
-    // 对话框状态
-    isDialogOpen,
-    setIsDialogOpen,
-    dialogMode,
-    setDialogMode,
+    // Sheet状态
+    isSheetOpen,
+    setIsSheetOpen,
+    sheetMode,
+    setSheetMode,
     selectedRoleId,
     setSelectedRoleId,
     

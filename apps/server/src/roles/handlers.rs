@@ -1,13 +1,19 @@
 use crate::auth::middleware::get_user_id_from_request;
-use crate::entities::Permissions;
+use crate::entities::role_permissions::{
+    ActiveModel as RolePermissionActiveModel, Entity as RolePermissions,
+};
+use crate::entities::roles::{ActiveModel, Column, Entity as Roles};
+use crate::entities::{Permissions};
+use crate::permissions::handlers::get_role_permissions_list;
+use crate::roles::models::{
+    RoleCreateRequest, RoleListResponse, RolePermissionListResponse, RolePermissionResponse,
+    RoleResponse,
+};
 use crate::shared::error::ApiError;
 use crate::shared::generate_snowflake_id;
-use actix_web::{HttpRequest, HttpResponse, web};
+use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::Utc;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QuerySelect, Set};
-use crate::entities::role_permissions::{ActiveModel as RolePermissionActiveModel, Entity as RolePermissions};
-use crate::entities::roles::{ActiveModel, Column, Entity as Roles};
-use crate::roles::models::{RoleCreateRequest, RoleListResponse, RoleResponse, RolePermissionResponse, RolePermissionListResponse};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, Set};
 
 /// 获取角色列表
 #[utoipa::path(
@@ -31,13 +37,18 @@ pub async fn get_roles(
     db: web::Data<DatabaseConnection>,
     query: web::Query<std::collections::HashMap<String, String>>,
 ) -> Result<HttpResponse, ApiError> {
-    let page = query.get("page").and_then(|p| p.parse().ok()).unwrap_or(1u64);
-    let limit = query.get("limit").and_then(|p| p.parse().ok()).unwrap_or(10u64);
+    let page = query
+        .get("page")
+        .and_then(|p| p.parse().ok())
+        .unwrap_or(1u64);
+    let limit = query
+        .get("limit")
+        .and_then(|p| p.parse().ok())
+        .unwrap_or(10u64);
     let offset = (page - 1) * limit;
 
     // 构建查询
-    let query_builder = Roles::find()
-        .filter(Column::DeletedAt.is_null());
+    let query_builder = Roles::find().filter(Column::DeletedAt.is_null());
 
     // 获取总数
     let paginator = query_builder.clone().paginate(&**db, limit);
@@ -45,24 +56,21 @@ pub async fn get_roles(
     let total_pages = paginator.num_pages().await?;
 
     // 获取分页数据
-    let roles = query_builder
-        .offset(offset)
-        .limit(limit)
-        .all(&**db)
-        .await?;
+    let roles = query_builder.order_by_desc(Column::CreatedAt).offset(offset).limit(limit).all(&**db).await?;
 
     // 转换为响应格式
     let mut role_responses = Vec::new();
     for role in roles {
         // 获取角色权限
-        let role_permissions = RolePermissions::find()
-            .filter(crate::entities::role_permissions::Column::RoleId.eq(&role.id))
-            .all(&**db)
-            .await?;
+        // let role_permissions = RolePermissions::find()
+        //     .filter(crate::entities::role_permissions::Column::RoleId.eq(&role.id))
+        //     .all(&**db)
+        //     .await?;
+        let role_permissions = get_role_permissions_list(&role.id, &**db).await?;
 
         let mut permissions: Vec<String> = Vec::new();
         for role_permission in role_permissions {
-            permissions.push(role_permission.permission_id);
+            permissions.push(role_permission.id);
         }
 
         let role_response = RoleResponse {
@@ -90,6 +98,22 @@ pub async fn get_roles(
     };
 
     Ok(HttpResponse::Ok().json(response))
+}
+
+pub async fn is_admin_role(
+    role_id: &str,
+    db: &DatabaseConnection,
+) -> actix_web::Result<bool, sea_orm::DbErr> {
+    let role = Roles::find()
+        .filter(Column::DeletedAt.is_null())
+        .filter(Column::Id.eq(role_id))
+        .one(db)
+        .await?;
+
+    if role.is_some() {
+        return Ok(role.unwrap().name == "admin");
+    }
+    Ok(false)
 }
 
 /// 创建角色
@@ -154,7 +178,10 @@ pub async fn create_role(
             .await?;
 
         if permission_exists.is_none() {
-            return Err(ApiError::BadRequest(format!("权限 {} 不存在", permission_id)));
+            return Err(ApiError::BadRequest(format!(
+                "权限 {} 不存在",
+                permission_id
+            )));
         }
 
         // 创建角色权限关联
@@ -323,7 +350,10 @@ pub async fn update_role(
             .await?;
 
         if permission_exists.is_none() {
-            return Err(ApiError::BadRequest(format!("权限 {} 不存在", permission_id)));
+            return Err(ApiError::BadRequest(format!(
+                "权限 {} 不存在",
+                permission_id
+            )));
         }
 
         // 创建角色权限关联

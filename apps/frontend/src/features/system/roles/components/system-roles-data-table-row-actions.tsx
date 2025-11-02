@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { type ApiRoleResponse } from '../data/api-schema'
 import { useSystemRolesContext } from './system-roles-provider'
+import { useRoleQuery } from '../hooks/use-roles-query'
 import { rolesApi } from '../api/roles-api'
 import { toast } from 'sonner'
 
@@ -15,12 +16,16 @@ export function SystemRolesDataTableRowActions<TData>({
   row,
 }: SystemRolesDataTableRowActionsProps<TData>) {
   const role = row.original as ApiRoleResponse
-  const { setIsDialogOpen, setDialogMode, setSelectedRoleId, setIsDeleteDialogOpen, setDeleteRoleId } = useSystemRolesContext()
+  const { setIsSheetOpen, setSheetMode, setSelectedRoleId, setIsDeleteDialogOpen, setDeleteRoleId } = useSystemRolesContext()
+  // 用于触发数据刷新
+  const { refetch } = useRoleQuery(role.id)
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     setSelectedRoleId(role.id)
-    setDialogMode('edit')
-    setIsDialogOpen(true)
+    setSheetMode('edit')
+    // 在打开编辑表单前，重新调用API拉取最新数据
+    await refetch()
+    setIsSheetOpen(true)
   }
 
   const handleDelete = () => {

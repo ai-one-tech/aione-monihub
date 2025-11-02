@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useRef } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -21,39 +21,43 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Check } from 'lucide-react'
 import { useSystemRolesContext } from './system-roles-provider'
-import { useCreateRoleMutation, useUpdateRoleMutation, useRoleQuery } from '../hooks/use-roles-query'
+import { useUpdateRoleMutation, useCreateRoleMutation, useRoleQuery } from '../hooks/use-roles-query'
 import { usePermissionsQuery } from '../../permissions/hooks/use-permissions-query'
 import { roleFormSchema, type RoleFormData } from '../data/api-schema'
 import { toast } from 'sonner'
 
-export function SystemRolesCreateDialog() {
-  const { isSheetOpen, setIsSheetOpen, sheetMode, selectedRoleId } = useSystemRolesContext()
-  const createRoleMutation = useCreateRoleMutation()
-  const updateRoleMutation = useUpdateRoleMutation()
+export function SystemRolesEditSheet() {
+  const {
+    isSheetOpen,
+    setIsSheetOpen,
+    sheetMode,
+    selectedRoleId,
+  } = useSystemRolesContext()
+
   const { data: roleDetail, isLoading: isLoadingRole } = useRoleQuery(selectedRoleId || '')
   const { data: permissionsData, isLoading: isLoadingPermissions } = usePermissionsQuery({
     page: 1,
     limit: 1000, // 获取所有权限
   })
-  const initializedRoleIdRef = useRef<string | null>(null)
-  
+
+  const updateRoleMutation = useUpdateRoleMutation()
+  const createRoleMutation = useCreateRoleMutation()
+
   const isCreateMode = sheetMode === 'create'
   const isEditMode = sheetMode === 'edit'
   const isViewMode = sheetMode === 'view'
+  
+  // 判断是否为管理员角色
+  const isAdminRole = useMemo(() => {
+    if (!roleDetail?.name) return false
+    return roleDetail.name.toLowerCase() === 'admin'
+  }, [roleDetail?.name])
 
-  // 当sheet打开状态或选中的角色ID变化时，重置初始化标记
-  // 这样确保每次打开编辑sheet时都能重新加载表单数据
-  useEffect(() => {
-    if (!isSheetOpen || !selectedRoleId) {
-      initializedRoleIdRef.current = null
-    }
-  }, [isSheetOpen, selectedRoleId])
-
-  const form = useForm<RoleFormData>({
+  const form = useForm({
     resolver: zodResolver(roleFormSchema),
     defaultValues: {
       name: '',
@@ -65,36 +69,39 @@ export function SystemRolesCreateDialog() {
   // 当角色数据加载完成时，更新表单
   useEffect(() => {
     if ((isEditMode || isViewMode) && roleDetail) {
-      // 使用 useRef 追踪已初始化的角色ID，避免重复初始化
-      if (initializedRoleIdRef.current === roleDetail.id) {
-        return
-      }
-      initializedRoleIdRef.current = roleDetail.id
-      
-      // 使用微任务队列延迟设置值
-      Promise.resolve().then(() => {
-        form.setValue('name', roleDetail.name)
-        form.setValue('description', roleDetail.description)
-        form.setValue('permissions', roleDetail.permissions || [])
+      form.reset({
+        name: roleDetail.name,
+        description: roleDetail.description,
+        permissions: roleDetail.permissions || [],
       })
     } else if (isCreateMode) {
-      initializedRoleIdRef.current = null
       form.reset({
         name: '',
         description: '',
         permissions: [],
       })
     }
-  }, [roleDetail, isEditMode, isCreateMode, isViewMode, form])
+  }, [roleDetail, form, isEditMode, isCreateMode, isViewMode])
 
-  // 判断是否为管理员角色
-  const isAdminRole = useMemo(() => {
-    const roleName = form.watch('name')
-    if (!roleName) return false
-    return roleName.toLowerCase() === 'admin'
-  }, [form.watch('name')])
+  const permissionsList = permissionsData?.data || []
 
-  const onSubmit = async (data: RoleFormData) => {
+  // 按权限类型分组
+  const permissionsByType = useMemo(() => {
+    const grouped: Record<string, typeof permissionsList> = {}
+    permissionsList.forEach(perm => {
+      if (!grouped[perm.permission_type]) {
+        grouped[perm.permission_type] = []
+      }
+      grouped[perm.permission_type].push(perm)
+    })
+    return grouped
+  }, [permissionsList])
+  
+  // 不为创建模式时显示
+  const isVisible = isEditMode || isViewMode
+  if (!isVisible) return null
+
+  const onSubmit = async (data: any) => {
     try {
       const valid = await form.trigger()
       if (!valid) {
@@ -110,21 +117,16 @@ export function SystemRolesCreateDialog() {
 
       if (isCreateMode) {
         await createRoleMutation.mutateAsync(submitData)
-      } else if (isEditMode) {
-        if (!selectedRoleId) {
-          toast.error('未选择角色')
-          return
-        }
+      } else if (isEditMode && selectedRoleId) {
         await updateRoleMutation.mutateAsync({
           roleId: selectedRoleId,
           data: submitData,
         })
       }
-      
-      setIsSheetOpen(false)
+      handleClose()
       form.reset()
     } catch (error) {
-      console.error(isCreateMode ? '创建角色失败:' : '更新角色失败:', error)
+      console.error('保存角色失败:', error)
     }
   }
 
@@ -132,22 +134,6 @@ export function SystemRolesCreateDialog() {
     setIsSheetOpen(false)
     form.reset()
   }
-
-  const permissionsList = permissionsData?.data || []
-
-  // 按权限类型分组
-  const permissionsByType = useMemo(() => {
-    const grouped: Record<string, typeof permissionsList> = {}
-    permissionsList.forEach(perm => {
-      if (!grouped[perm.permission_type]) {
-        grouped[perm.permission_type] = []
-      }
-      grouped[perm.permission_type].push(perm)
-    })
-    return grouped
-  }, [permissionsList])
-
-  const isLoading = isCreateMode ? createRoleMutation.isPending : updateRoleMutation.isPending
 
   const getSheetTitle = () => {
     if (isCreateMode) return '新增角色'
@@ -157,13 +143,16 @@ export function SystemRolesCreateDialog() {
 
   const getSheetDescription = () => {
     if (isCreateMode) return '填写角色信息以创建新的角色'
-    if (isEditMode) return '修改角色信息'
+    if (isEditMode) return '修改角色信息和权限设置'
     return '查看角色详细信息'
   }
 
+  const isLoading = createRoleMutation.isPending || updateRoleMutation.isPending
+  const isLoadingData = (isEditMode || isViewMode) && (isLoadingRole || isLoadingPermissions)
+
   return (
     <Sheet open={isSheetOpen} onOpenChange={handleClose}>
-      <SheetContent side='right' className='!w-[1000px] !max-w-[1000px]'>
+      <SheetContent side='right' className='!w-[500px] !max-w-[500px]'>
         <SheetHeader>
           <SheetTitle>{getSheetTitle()}</SheetTitle>
           <SheetDescription>
@@ -171,24 +160,19 @@ export function SystemRolesCreateDialog() {
           </SheetDescription>
         </SheetHeader>
 
-        {((isEditMode || isViewMode) && isLoadingRole) ? (
-          <div className='flex-1 flex items-center justify-center'>
-            <div className='text-sm text-muted-foreground'>加载角色信息中...</div>
+        {isLoadingData ? (
+          <div className='flex-1 flex items-center justify-center py-8'>
+            <div className='space-y-4 w-full'>
+              <Skeleton className='h-10 w-full' />
+              <Skeleton className='h-20 w-full' />
+              <Skeleton className='h-10 w-full' />
+            </div>
           </div>
         ) : (
           <>
-            <div className='flex flex-col flex-1 min-h-0 px-6 py-4'>
+            <div className='flex-1 overflow-y-auto px-6 py-4'>
               <Form {...form}>
-                <form id='create-role-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-6 flex flex-col flex-1 min-h-0 overflow-y-auto'>
-                  {/* 角色ID字段 - 仅编辑/查看模式显示且不可编辑 */}
-                  {(isEditMode || isViewMode) && selectedRoleId && (
-                    <FormItem>
-                      <FormLabel>角色ID</FormLabel>
-                      <FormControl>
-                        <Input value={selectedRoleId} disabled />
-                      </FormControl>
-                    </FormItem>
-                  )}
+                <form id='role-form' onSubmit={form.handleSubmit(onSubmit as any)} className='space-y-6'>
                   <FormField
                     control={form.control}
                     name='name'
@@ -196,7 +180,11 @@ export function SystemRolesCreateDialog() {
                       <FormItem>
                         <FormLabel>角色名称 *</FormLabel>
                         <FormControl>
-                          <Input placeholder='请输入角色名称' {...field} disabled={isViewMode} />
+                          <Input 
+                            placeholder='请输入角色名称' 
+                            {...field}
+                            disabled={isViewMode}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -240,46 +228,44 @@ export function SystemRolesCreateDialog() {
                               <Skeleton className='h-6 w-full' />
                             </div>
                           ) : (
-                            <div className='border rounded-md p-4 flex flex-col flex-1 min-h-0'>
-                              <ScrollArea className='flex-1 min-h-0'>
+                            <div className='border rounded-lg p-4 bg-background'>
+                              <ScrollArea className='h-[400px]'>
                                 <div className='space-y-4 pr-4'>
                                   {Object.entries(permissionsByType).map(([type, perms]) => (
-                                    <div key={type}>
-                                      <h4 className='text-sm font-semibold mb-3 text-muted-foreground'>
-                                        {type === 'Menu' ? '菜单' : type === 'Action' ? '操作' : '页面'}
-                                      </h4>
-                                      <div className='space-y-3 space-x-3 ml-2 flex flex-row flex-wrap'>
+                                    <div key={type} className='border rounded-md overflow-hidden'>
+                                      {/* 分组标题 */}
+                                      <div className='bg-muted/50 px-4 py-3 border-b'>
+                                        <h4 className='text-sm font-semibold text-foreground'>
+                                          {type === 'Menu' ? '菜单' : type === 'Action' ? '操作' : '页面'}
+                                        </h4>
+                                      </div>
+                                      {/* 权限列表 */}
+                                      <div className='divide-y'>
                                         {perms.map((perm) => (
-                                          <div
-                                            key={perm.id}
-                                            className={`w-[31%] flex items-center space-x-2 ${!isViewMode && 'cursor-pointer'} p-1 rounded-md border-2 transition-colors ${
-                                              field.value.includes(perm.id)
-                                                ? 'bg-primary/5 border-primary hover:bg-primary/10'
-                                                : 'border-transparent hover:bg-gray-50'
-                                            }`}
-                                            onClick={() => {
-                                              if (isViewMode) return
-                                              const newValues = field.value.includes(perm.id)
-                                                ? field.value.filter(id => id !== perm.id)
-                                                : [...field.value, perm.id]
-                                              field.onChange(newValues)
-                                            }}
-                                          >
-                                            <div className={`h-4 w-4 rounded-sm border-2 flex items-center justify-center ${
-                                              field.value.includes(perm.id) 
-                                                ? 'bg-primary border-primary' 
-                                                : 'border-muted-foreground/30'
-                                            }`}>
-                                              {field.value.includes(perm.id) && (
-                                                <Check className='h-3 w-3 text-primary-foreground' />
-                                              )}
-                                            </div>
+                                          <div key={perm.id} className='px-4 py-3 flex items-center gap-3 hover:bg-muted/30 transition-colors'>
+                                            <Checkbox
+                                              id={perm.id}
+                                              checked={field.value.includes(perm.id)}
+                                              onCheckedChange={(checked) => {
+                                                if (checked) {
+                                                  field.onChange([...field.value, perm.id])
+                                                } else {
+                                                  field.onChange(
+                                                    field.value.filter(id => id !== perm.id)
+                                                  )
+                                                }
+                                              }}
+                                              disabled={isViewMode}
+                                            />
                                             <div className='flex-1'>
-                                              <span className={`text-sm font-medium leading-none ${!isViewMode && 'cursor-pointer'}`}>
+                                              <label 
+                                                htmlFor={perm.id}
+                                                className='text-sm font-medium cursor-pointer leading-tight'
+                                              >
                                                 {perm.name}
-                                              </span>
+                                              </label>
                                               {perm.description && (
-                                                <p className='text-xs text-muted-foreground mt-1'>
+                                                <p className='text-xs text-muted-foreground mt-0.5'>
                                                   {perm.description}
                                                 </p>
                                               )}
@@ -315,23 +301,20 @@ export function SystemRolesCreateDialog() {
             {!isViewMode && (
               <SheetFooter>
                 <div className='flex justify-end space-x-3 w-full'>
-                  <Button
-                    type='button'
-                    variant='outline'
+                  <Button 
+                    type='button' 
+                    variant='outline' 
                     onClick={handleClose}
                     disabled={isLoading}
                   >
                     取消
                   </Button>
-                  <Button
-                    type='submit'
-                    form='create-role-form'
-                    disabled={isLoading}
+                  <Button 
+                    type='submit' 
+                    form='role-form' 
+                    disabled={isLoading || !form.formState.isValid}
                   >
-                    {isCreateMode 
-                      ? (isLoading ? '创建中...' : '创建')
-                      : (isLoading ? '保存中...' : '保存更改')
-                    }
+                    {isLoading ? '保存中...' : '保存'}
                   </Button>
                 </div>
               </SheetFooter>

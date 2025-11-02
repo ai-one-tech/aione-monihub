@@ -56,7 +56,7 @@ export type UpdateRoleRequest = z.infer<typeof updateRoleRequestSchema>
 export const roleFormSchema = z.object({
   name: z.string().min(1, '角色名称不能为空'),
   description: z.string().min(1, '角色描述不能为空'),
-  permissions: z.array(z.string()).default([]),
+  permissions: z.array(z.string()),
 })
 
 export type RoleFormData = z.infer<typeof roleFormSchema>

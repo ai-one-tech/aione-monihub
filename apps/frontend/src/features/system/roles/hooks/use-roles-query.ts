@@ -18,6 +18,7 @@ export function useRoleQuery(roleId: string) {
     queryKey: ['role', roleId],
     queryFn: () => rolesApi.getRoleById(roleId),
     enabled: !!roleId,
+    staleTime: 0, // 禁用缓存，每次查询都是新鲜数据
   })
 }
 

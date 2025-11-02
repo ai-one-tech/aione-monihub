@@ -34,4 +34,5 @@ impl PermissionsModule {
         use sea_orm::EntityTrait;
         Permissions::find().all(&self.database).await
     }
+    
 }

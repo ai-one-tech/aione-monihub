@@ -1,7 +1,8 @@
 use crate::auth::middleware::get_user_id_from_request;
 use crate::entities::permissions;
-use crate::entities::permissions::{Entity as Permissions, Model as PermissionModel};
+use crate::entities::permissions::{Column, Entity as Permissions, Model as PermissionModel};
 use crate::entities::roles::Entity as Roles;
+use crate::entities::user_roles::Entity as UserRoles;
 use crate::permissions::models::{
     MenuItemResponse, PermissionAssignRequest, PermissionCreateRequest, PermissionListResponse,
     PermissionResponse, PermissionType, PermissionUpdateRequest, UserMenuResponse,
@@ -54,16 +55,16 @@ pub async fn get_permissions(
     let offset = (page - 1) * limit;
 
     // 构建查询条件
-    let mut query_builder = Permissions::find().filter(permissions::Column::DeletedAt.is_null());
+    let mut query_builder = Permissions::find().filter(Column::DeletedAt.is_null());
 
     // 添加搜索条件
     if let Some(search) = &query.search {
         if !search.is_empty() {
             let search_pattern = format!("%{}%", search.trim());
             query_builder = query_builder.filter(
-                permissions::Column::Name
+                Column::Name
                     .like(&search_pattern)
-                    .or(permissions::Column::Description.like(&search_pattern)),
+                    .or(Column::Description.like(&search_pattern)),
             );
         }
     }
@@ -72,7 +73,7 @@ pub async fn get_permissions(
     if let Some(permission_type) = &query.permission_type {
         if !permission_type.is_empty() {
             query_builder =
-                query_builder.filter(permissions::Column::PermissionType.eq(permission_type));
+                query_builder.filter(Column::PermissionType.eq(permission_type));
         }
     }
 
@@ -83,8 +84,7 @@ pub async fn get_permissions(
 
     // 获取分页数据
     let permissions: Vec<PermissionModel> = query_builder
-        .order_by_asc(permissions::Column::SortOrder)
-        .order_by_asc(permissions::Column::Name)
+        .order_by_asc(Column::SortOrder)
         .offset(offset)
         .limit(limit)
         .all(&**db)
@@ -148,8 +148,8 @@ pub async fn create_permission(
 ) -> Result<HttpResponse, ApiError> {
     // 检查权限名是否已存在
     let existing_permission = Permissions::find()
-        .filter(crate::entities::permissions::Column::Name.eq(&permission.name))
-        .filter(crate::entities::permissions::Column::DeletedAt.is_null())
+        .filter(Column::Name.eq(&permission.name))
+        .filter(Column::DeletedAt.is_null())
         .one(&**db)
         .await?;
 
@@ -228,7 +228,7 @@ pub async fn get_permission(
     let permission_id = path.into_inner();
 
     let permission = Permissions::find_by_id(&permission_id)
-        .filter(crate::entities::permissions::Column::DeletedAt.is_null())
+        .filter(Column::DeletedAt.is_null())
         .one(&**db)
         .await?;
 
@@ -284,7 +284,7 @@ pub async fn update_permission(
 
     // 检查权限是否存在
     let existing_permission = Permissions::find_by_id(&permission_id)
-        .filter(crate::entities::permissions::Column::DeletedAt.is_null())
+        .filter(Column::DeletedAt.is_null())
         .one(&**db)
         .await?;
 
@@ -295,9 +295,9 @@ pub async fn update_permission(
 
     // 检查权限名是否已被其他权限使用
     let name_conflict = Permissions::find()
-        .filter(crate::entities::permissions::Column::Name.eq(&permission.name))
-        .filter(crate::entities::permissions::Column::Id.ne(&permission_id))
-        .filter(crate::entities::permissions::Column::DeletedAt.is_null())
+        .filter(Column::Name.eq(&permission.name))
+        .filter(Column::Id.ne(&permission_id))
+        .filter(Column::DeletedAt.is_null())
         .one(&**db)
         .await?;
 
@@ -376,7 +376,7 @@ pub async fn delete_permission(
 
     // 检查权限是否存在
     let existing_permission = Permissions::find_by_id(&permission_id)
-        .filter(crate::entities::permissions::Column::DeletedAt.is_null())
+        .filter(Column::DeletedAt.is_null())
         .one(&**db)
         .await?;
 
@@ -436,70 +436,252 @@ pub async fn get_user_menu(
     Ok(HttpResponse::Ok().json(response))
 }
 
-/// 根据用户ID和权限类型获取用户权限
-pub async fn get_user_permissions_by_type(
-    _user_id: &str,
-    permission_type: PermissionType,
-    db: &DatabaseConnection,
-) -> Result<Vec<PermissionModel>, sea_orm::DbErr> {
-    // 简化的实现：暂时返回所有指定类型的权限
-    let permissions = Permissions::find()
-        .filter(crate::entities::permissions::Column::DeletedAt.is_null())
-        .filter(
-            crate::entities::permissions::Column::PermissionType.eq(permission_type.to_string()),
-        )
-        .order_by_asc(crate::entities::permissions::Column::SortOrder)
-        .order_by_asc(crate::entities::permissions::Column::Name)
+/// 检查用户是否是管理员
+pub async fn is_admin_user(user_id: &str, db: &DatabaseConnection) -> Result<bool, sea_orm::DbErr> {
+    // 获取用户的所有角色
+    let user_roles = UserRoles::find()
+        .filter(crate::entities::user_roles::Column::UserId.eq(user_id))
+        .find_with_related(Roles)
         .all(db)
         .await?;
 
-    Ok(permissions)
+    // 检查是否有admin角色
+    for (_, roles) in user_roles {
+        for role in roles {
+            if role.name.to_lowercase() == "admin" {
+                return Ok(true);
+            }
+        }
+    }
+
+    Ok(false)
+}
+
+pub async fn get_role_permissions_list_by_user(user_id: &str, role_id: &str, db: &DatabaseConnection) -> Result<Vec<PermissionModel>, sea_orm::DbErr> {
+    // 检查用户是否是管理员
+    let is_admin = is_admin_user(user_id, db).await?;
+
+    if is_admin {
+        let permissions = Permissions::find()
+            .filter(Column::DeletedAt.is_null())
+            .order_by_asc(Column::SortOrder)
+            .order_by_asc(Column::Name)
+            .all(db)
+            .await?;
+        Ok(permissions)
+    } else {
+        let permissions_ids: Vec<String> = RolePermissions::find()
+            .filter(crate::entities::role_permissions::Column::RoleId.eq(role_id))
+            .all(db)
+            .await?
+            .into_iter()
+            .map(|p| p.id)
+            .collect();
+
+        let permissions = Permissions::find()
+            .filter(Column::DeletedAt.is_null())
+            .filter(Column::Id.is_in(permissions_ids))
+            .order_by_asc(Column::SortOrder)
+            .order_by_asc(Column::Name)
+            .all(db)
+            .await?;
+
+        Ok(permissions)
+    }
+}
+
+pub async fn get_role_permissions_list(role_id: &str, db: &DatabaseConnection) -> Result<Vec<PermissionModel>, sea_orm::DbErr> {
+    // 检查用户是否是管理员
+    let is_admin = is_admin_role(role_id, db).await?;
+
+    if is_admin {
+        let permissions = Permissions::find()
+            .filter(Column::DeletedAt.is_null())
+            .order_by_asc(Column::SortOrder)
+            .order_by_asc(Column::Name)
+            .all(db)
+            .await?;
+        Ok(permissions)
+    } else {
+        let permissions_ids: Vec<String> = RolePermissions::find()
+            .filter(crate::entities::role_permissions::Column::RoleId.eq(role_id))
+            .all(db)
+            .await?
+            .into_iter()
+            .map(|p| p.permission_id)
+            .collect();
+
+        let permissions = Permissions::find()
+            .filter(Column::DeletedAt.is_null())
+            .filter(Column::Id.is_in(permissions_ids))
+            .order_by_asc(Column::SortOrder)
+            .order_by_asc(Column::Name)
+            .all(db)
+            .await?;
+
+        Ok(permissions)
+    }
+}
+
+/// 根据用户ID和权限类型获取用户权限
+pub async fn get_user_permissions_by_type(
+    user_id: &str,
+    permission_type: PermissionType,
+    db: &DatabaseConnection,
+) -> Result<Vec<PermissionModel>, sea_orm::DbErr> {
+    // 检查用户是否是管理员
+    let is_admin = is_admin_user(user_id, db).await?;
+
+    // 如果是管理员，返回所有指定类型的权限
+    let permissions = Permissions::find()
+        .filter(Column::DeletedAt.is_null())
+        .filter(
+            Column::PermissionType.eq(permission_type.to_string()),
+        )
+        .order_by_asc(Column::SortOrder)
+        .order_by_asc(Column::Name)
+        .all(db)
+        .await?;
+
+    if is_admin {
+        // 管理员返回所有权限
+        return Ok(permissions);
+    }
+
+    // 非管理员：从role_permissions表中获取用户拥有的权限
+    let user_roles = UserRoles::find()
+        .filter(crate::entities::user_roles::Column::UserId.eq(user_id))
+        .find_with_related(Roles)
+        .all(db)
+        .await?;
+
+    let role_ids: Vec<String> = user_roles
+        .into_iter()
+        .flat_map(|(_, roles)| roles.into_iter().map(|r| r.id))
+        .collect();
+
+    if role_ids.is_empty() {
+        return Ok(vec![]);
+    }
+
+    // 从role_permissions表中查询权限
+    let user_permissions = crate::entities::role_permissions::Entity::find()
+        .filter(crate::entities::role_permissions::Column::RoleId.is_in(&role_ids))
+        .find_with_related(Permissions)
+        .all(db)
+        .await?;
+
+    let mut permission_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
+    for (_, perms) in user_permissions {
+        for perm in perms {
+            if perm.permission_type == permission_type.to_string() {
+                permission_ids.insert(perm.id);
+            }
+        }
+    }
+
+    // 返回指定类型的权限
+    let result = permissions
+        .into_iter()
+        .filter(|p| permission_ids.contains(&p.id))
+        .collect();
+
+    Ok(result)
 }
 
 pub async fn get_user_permission_by_name(
-    _user_id: &str,
+    user_id: &str,
     name: &str,
     db: &DatabaseConnection,
 ) -> Result<Option<PermissionModel>, sea_orm::DbErr> {
-    // 简化的实现：暂时返回所有指定类型的权限
+    // 检查用户是否是管理员
+    let is_admin = is_admin_user(user_id, db).await?;
+
+    // 查找权限
     let permission = Permissions::find()
-        .filter(crate::entities::permissions::Column::DeletedAt.is_null())
+        .filter(Column::DeletedAt.is_null())
         .filter(
-            crate::entities::permissions::Column::PermissionType
+            Column::PermissionType
                 .eq(PermissionType::Action.to_string()),
         )
-        .filter(crate::entities::permissions::Column::Name.eq(name))
-        .order_by_asc(crate::entities::permissions::Column::SortOrder)
-        .order_by_asc(crate::entities::permissions::Column::Name)
+        .filter(Column::Name.eq(name))
+        .order_by_asc(Column::SortOrder)
+        .order_by_asc(Column::Name)
         .one(db)
         .await?;
 
-    Ok(permission)
+    // 如果是管理员，直接返回权限
+    if is_admin {
+        return Ok(permission);
+    }
+
+    // 如果不是管理员，需要检查用户是否拥有该权限
+    if permission.is_none() {
+        return Ok(None);
+    }
+
+    let permission = permission.unwrap();
+
+    // 获取用户的角色
+    let user_roles = UserRoles::find()
+        .filter(crate::entities::user_roles::Column::UserId.eq(user_id))
+        .find_with_related(Roles)
+        .all(db)
+        .await?;
+
+    let role_ids: Vec<String> = user_roles
+        .into_iter()
+        .flat_map(|(_, roles)| roles.into_iter().map(|r| r.id))
+        .collect();
+
+    if role_ids.is_empty() {
+        return Ok(None);
+    }
+
+    // 检查用户是否通过角色拥有该权限
+    let has_permission = crate::entities::role_permissions::Entity::find()
+        .filter(crate::entities::role_permissions::Column::RoleId.is_in(&role_ids))
+        .filter(crate::entities::role_permissions::Column::PermissionId.eq(&permission.id))
+        .one(db)
+        .await?;
+
+    if has_permission.is_some() {
+        Ok(Some(permission))
+    } else {
+        Ok(None)
+    }
 }
 
 // 更新权限分配功能
 use crate::entities::role_permissions::{
     ActiveModel as RolePermissionActiveModel, Entity as RolePermissions,
 };
+use crate::roles::handlers::is_admin_role;
 
 pub async fn assign_permissions(
     db: web::Data<DatabaseConnection>,
     assign_req: web::Json<PermissionAssignRequest>,
 ) -> Result<HttpResponse, ApiError> {
     // 检查角色是否存在
-    let role_exists = Roles::find_by_id(&assign_req.role_id)
+    let role = Roles::find_by_id(&assign_req.role_id)
         .filter(crate::entities::roles::Column::DeletedAt.is_null())
         .one(&**db)
         .await?;
 
-    if role_exists.is_none() {
-        return Err(ApiError::NotFound("角色不存在".to_string()));
+    let role = match role {
+        Some(r) => r,
+        None => return Err(ApiError::NotFound("角色不存在".to_string())),
+    };
+
+    // 禁止修改管理员角色的权限
+    if role.name.to_lowercase() == "admin" {
+        return Err(ApiError::Forbidden("不能修改管理员角色的权限".to_string()));
     }
 
     // 检查权限是否存在
     for permission_id in &assign_req.permissions {
         let permission_exists = Permissions::find_by_id(permission_id)
-            .filter(crate::entities::permissions::Column::DeletedAt.is_null())
+            .filter(Column::DeletedAt.is_null())
             .one(&**db)
             .await?;
 
