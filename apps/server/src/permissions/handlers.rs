@@ -8,15 +8,32 @@ use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
 use crate::auth::middleware::get_user_id_from_request;
 use actix_web::{web, HttpResponse, Result, HttpRequest};
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Set};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, PaginatorTrait, Set};
 use chrono::Utc;
 use std::collections::HashMap;
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+pub struct PermissionQueryParams {
+    pub page: Option<u64>,
+    pub limit: Option<u64>,
+    pub search: Option<String>,
+    pub permission_type: Option<String>,
+    pub resource: Option<String>,
+}
 
 /// 获取权限列表
 #[utoipa::path(
     get,
     path = "/api/permissions",
     tag = "Permissions",
+    params(
+        ("page" = Option<u64>, Query, description = "页码，从1开始"),
+        ("limit" = Option<u64>, Query, description = "每页数量"),
+        ("search" = Option<String>, Query, description = "搜索关键词"),
+        ("permission_type" = Option<String>, Query, description = "权限类型筛选"),
+        ("resource" = Option<String>, Query, description = "资源筛选")
+    ),
     responses(
         (status = 200, description = "成功获取权限列表", body = PermissionListResponse),
         (status = 401, description = "未授权"),
@@ -28,12 +45,54 @@ use std::collections::HashMap;
 )]
 pub async fn get_permissions(
     db: web::Data<DatabaseConnection>,
+    query: web::Query<PermissionQueryParams>,
 ) -> Result<HttpResponse, ApiError> {
-    // 获取所有未删除的权限
-    let permissions: Vec<PermissionModel> = Permissions::find()
-        .filter(crate::entities::permissions::Column::DeletedAt.is_null())
+    let page = query.page.unwrap_or(1).max(1);
+    let limit = query.limit.unwrap_or(10).min(100);
+    let offset = (page - 1) * limit;
+
+    // 构建查询条件
+    let mut query_builder = Permissions::find()
+        .filter(crate::entities::permissions::Column::DeletedAt.is_null());
+
+    // 添加搜索条件
+    if let Some(search) = &query.search {
+        if !search.is_empty() {
+            query_builder = query_builder.filter(
+                crate::entities::permissions::Column::Name.contains(search)
+            );
+        }
+    }
+
+    // 添加权限类型筛选
+    if let Some(permission_type) = &query.permission_type {
+        if !permission_type.is_empty() {
+            query_builder = query_builder.filter(
+                crate::entities::permissions::Column::PermissionType.eq(permission_type)
+            );
+        }
+    }
+
+    // 添加资源筛选
+    if let Some(resource) = &query.resource {
+        if !resource.is_empty() {
+            query_builder = query_builder.filter(
+                crate::entities::permissions::Column::PermissionResource.eq(resource)
+            );
+        }
+    }
+
+    // 获取总数
+    let paginator = query_builder.clone().paginate(&**db, limit);
+    let total = paginator.num_items().await?;
+    let total_pages = paginator.num_pages().await?;
+
+    // 获取分页数据
+    let permissions: Vec<PermissionModel> = query_builder
         .order_by_asc(crate::entities::permissions::Column::SortOrder)
         .order_by_asc(crate::entities::permissions::Column::Name)
+        .offset(offset)
+        .limit(limit)
         .all(&**db)
         .await?;
 
@@ -59,6 +118,10 @@ pub async fn get_permissions(
 
     let response = PermissionListResponse {
         data: permission_responses,
+        total,
+        page,
+        page_size: limit,
+        total_pages,
         timestamp: std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()

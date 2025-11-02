@@ -92,7 +92,7 @@ export function ProjectsTable({ data = [], search, navigate }: DataTableProps) {
   }, [table, ensurePageInRange])
 
   return (
-    <div className='space-y-4 max-sm:has-[div[role="toolbar"]]:mb-16'>
+    <div className='flex flex-col h-full min-h-0 max-sm:has-[div[role="toolbar"]]:mb-16'>
       <DataTableToolbar
         table={table}
         searchPlaceholder='搜索项目...'
@@ -110,9 +110,9 @@ export function ProjectsTable({ data = [], search, navigate }: DataTableProps) {
           },
         ]}
       />
-      <div className='overflow-hidden rounded-md border'>
+      <div className='flex-1 min-h-0 overflow-auto rounded-md border mt-4'>
         <Table>
-          <TableHeader>
+          <TableHeader className='sticky top-0 z-10'>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className='group/row'>
                 {headerGroup.headers.map((header) => {
@@ -174,7 +174,9 @@ export function ProjectsTable({ data = [], search, navigate }: DataTableProps) {
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} />
+      <div className='mt-4'>
+        <DataTablePagination table={table} />
+      </div>
     </div>
   )
 }

@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { getRouteApi } from '@tanstack/react-router'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
@@ -21,13 +22,15 @@ export function SystemPermissions() {
   const navigate = route.useNavigate()
 
   // 构建API查询参数
-  const apiParams = {
-    page: search.page || 1,
-    limit: search.pageSize || 10,
+  // 使用序列化的 search 作为 key，确保 URL 变化时触发新查询
+  const searchKey = JSON.stringify(search)
+  const apiParams = useMemo(() => ({
+    page: search.page,
+    limit: search.pageSize,
     search: search.name || undefined,
     permission_type: search.permission_type || undefined,
     resource: search.resource || undefined,
-  }
+  }), [searchKey])
 
   const { data, isLoading, error, refetch } = usePermissionsQuery(apiParams)
 
@@ -42,8 +45,8 @@ export function SystemPermissions() {
         </div>
       </Header>
 
-      <Main>
-        <div className='mb-2 flex flex-wrap items-center justify-between space-y-2'>
+      <Main fixed className='flex flex-col'>
+        <div className='mb-2 flex flex-wrap items-center justify-between space-y-2 flex-shrink-0'>
           <div>
             <h2 className='text-2xl font-bold tracking-tight'>权限管理</h2>
             <p className='text-muted-foreground'>
@@ -52,7 +55,7 @@ export function SystemPermissions() {
           </div>
           <SystemPermissionsPrimaryButtons />
         </div>
-        <div className='-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-y-0 lg:space-x-12'>
+        <div className='-mx-4 flex-1 min-h-0 overflow-hidden px-4 py-1 lg:flex-row lg:space-y-0 lg:space-x-12'>
           {isLoading ? (
             <div className='space-y-4'>
               <Skeleton className='h-10 w-full' />
@@ -75,6 +78,7 @@ export function SystemPermissions() {
           ) : (
             <SystemPermissionsTable 
               data={data?.data || []} 
+              totalPages={data?.total_pages || 0}
               search={search} 
               navigate={navigate} 
             />

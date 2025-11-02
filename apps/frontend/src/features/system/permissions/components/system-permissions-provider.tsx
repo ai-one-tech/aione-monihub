@@ -1,7 +1,16 @@
-import { createContext, useContext, type ReactNode } from 'react'
+import { createContext, useContext, useState, type ReactNode } from 'react'
+
+type PermissionSheetMode = 'create' | 'edit' | 'view'
 
 interface SystemPermissionsContextType {
-  // 可以在这里添加权限管理相关的状态和方法
+  isPermissionSheetOpen: boolean
+  setIsPermissionSheetOpen: (open: boolean) => void
+  permissionSheetMode: PermissionSheetMode
+  setPermissionSheetMode: (mode: PermissionSheetMode) => void
+  isDeleteDialogOpen: boolean
+  setIsDeleteDialogOpen: (open: boolean) => void
+  selectedPermissionId: string | null
+  setSelectedPermissionId: (id: string | null) => void
 }
 
 const SystemPermissionsContext = createContext<SystemPermissionsContextType | undefined>(undefined)
@@ -19,8 +28,20 @@ interface SystemPermissionsProviderProps {
 }
 
 export function SystemPermissionsProvider({ children }: SystemPermissionsProviderProps) {
+  const [isPermissionSheetOpen, setIsPermissionSheetOpen] = useState(false)
+  const [permissionSheetMode, setPermissionSheetMode] = useState<PermissionSheetMode>('create')
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [selectedPermissionId, setSelectedPermissionId] = useState<string | null>(null)
+
   const value: SystemPermissionsContextType = {
-    // 权限管理相关的状态和方法
+    isPermissionSheetOpen,
+    setIsPermissionSheetOpen,
+    permissionSheetMode,
+    setPermissionSheetMode,
+    isDeleteDialogOpen,
+    setIsDeleteDialogOpen,
+    selectedPermissionId,
+    setSelectedPermissionId,
   }
 
   return (

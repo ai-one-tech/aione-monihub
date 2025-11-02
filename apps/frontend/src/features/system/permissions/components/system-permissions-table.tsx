@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   type SortingState,
   type VisibilityState,
@@ -7,7 +7,6 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
@@ -35,11 +34,12 @@ declare module '@tanstack/react-table' {
 
 type DataTableProps = {
   data: ApiPermissionResponse[]
+  totalPages: number
   search: Record<string, unknown>
   navigate: NavigateFn
 }
 
-export function SystemPermissionsTable({ data = [], search, navigate }: DataTableProps) {
+export function SystemPermissionsTable({ data = [], totalPages, search, navigate }: DataTableProps) {
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -60,7 +60,7 @@ export function SystemPermissionsTable({ data = [], search, navigate }: DataTabl
     columnFilters: [
       // name per-column text filter
       { columnId: 'name', searchKey: 'name', type: 'string' },
-      { columnId: 'resource', searchKey: 'resource', type: 'array' },
+      // { columnId: 'resource', searchKey: 'resource', type: 'array' },
       { columnId: 'permission_type', searchKey: 'permission_type', type: 'array' },
     ],
   })
@@ -81,7 +81,8 @@ export function SystemPermissionsTable({ data = [], search, navigate }: DataTabl
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
-    getPaginationRowModel: getPaginationRowModel(),
+    manualPagination: true,
+    pageCount: totalPages,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -89,29 +90,13 @@ export function SystemPermissionsTable({ data = [], search, navigate }: DataTabl
     getFacetedUniqueValues: getFacetedUniqueValues(),
   })
 
-  useEffect(() => {
-    ensurePageInRange(table.getPageCount())
-  }, [table, ensurePageInRange])
-
   return (
-    <div className='space-y-4 max-sm:has-[div[role="toolbar"]]:mb-16'>
+    <div className='flex flex-col h-full min-h-0 max-sm:has-[div[role="toolbar"]]:mb-16'>
       <DataTableToolbar
         table={table}
         searchPlaceholder='搜索权限...'
         searchKey='name'
         filters={[
-          {
-            columnId: 'resource',
-            title: '资源',
-            options: [
-              { label: '用户', value: 'user' },
-              { label: '角色', value: 'role' },
-              { label: '权限', value: 'permission' },
-              { label: '项目', value: 'project' },
-              { label: '应用', value: 'application' },
-              { label: '系统', value: 'system' },
-            ],
-          },
           {
             columnId: 'permission_type',
             title: '类型',
@@ -124,9 +109,9 @@ export function SystemPermissionsTable({ data = [], search, navigate }: DataTabl
           },
         ]}
       />
-      <div className='overflow-hidden rounded-md border'>
+      <div className='flex-1 min-h-0 overflow-auto rounded-md border mt-4'>
         <Table>
-          <TableHeader>
+          <TableHeader className='sticky top-0 z-10'>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className='group/row'>
                 {headerGroup.headers.map((header) => {
@@ -188,7 +173,9 @@ export function SystemPermissionsTable({ data = [], search, navigate }: DataTabl
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} />
+      <div className='mt-4'>
+        <DataTablePagination table={table} />
+      </div>
       <SystemPermissionsDataTableBulkActions table={table} />
     </div>
   )

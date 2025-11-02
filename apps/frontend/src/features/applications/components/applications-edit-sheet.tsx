@@ -7,6 +7,7 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
+  SheetFooter,
 } from '@/components/ui/sheet'
 import {
   Form,
@@ -28,6 +29,9 @@ import {
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Command, CommandInput, CommandEmpty, CommandGroup, CommandList, CommandItem } from '@/components/ui/command'
+import { CheckIcon, CaretSortIcon } from '@radix-ui/react-icons'
 import { useApplicationsProvider } from './applications-provider'
 import { useCreateApplication, useUpdateApplication } from '../hooks/use-applications-query'
 import {
@@ -121,7 +125,7 @@ export function ApplicationsEditSheet() {
       )
       const payload: CreateApplicationRequest = {
         ...data,
-        authorization: { users: mergedUsers },
+        authorization: { users: mergedUsers, expiry_date: data.authorization?.expiry_date || null },
       }
 
       if (isCreateSheetOpen) {
@@ -180,9 +184,9 @@ export function ApplicationsEditSheet() {
             </SheetDescription>
           </SheetHeader>
 
-          <div className='px-6 py-4'>
+          <div className='flex-1 overflow-y-auto px-6 py-4'>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
+              <form id='application-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
                 <FormField
                   control={form.control}
                   name='project_id'
@@ -334,18 +338,20 @@ export function ApplicationsEditSheet() {
                     ))}
                   </div>
                 </div>
-
-                <div className='flex justify-end space-x-3 pt-6 mt-8 border-t'>
-                  <Button type='button' variant='outline' onClick={handleClose}>
-                    取消
-                  </Button>
-                  <Button type='submit' disabled={isLoading || !form.formState.isValid}>
-                    {isLoading ? '保存中...' : '保存'}
-                  </Button>
-                </div>
               </form>
             </Form>
           </div>
+
+          <SheetFooter>
+            <div className='flex justify-end space-x-3 w-full'>
+              <Button type='button' variant='outline' onClick={handleClose}>
+                取消
+              </Button>
+              <Button type='submit' form='application-form' disabled={isLoading || !form.formState.isValid}>
+                {isLoading ? '保存中...' : '保存'}
+              </Button>
+            </div>
+          </SheetFooter>
         </SheetContent>
       </Sheet>
 
@@ -356,8 +362,9 @@ export function ApplicationsEditSheet() {
             <SheetDescription>查看应用的详细信息</SheetDescription>
           </SheetHeader>
 
-          {viewingApplication && (
-            <div className='px-6 py-4 space-y-6'>
+          <div className='flex-1 overflow-y-auto px-6 py-4'>
+            {viewingApplication && (
+            <div className='space-y-6'>
               <div>
                 <label className='text-sm font-medium text-muted-foreground'>应用ID</label>
                 <p className='mt-1 text-sm font-mono bg-muted px-2 py-1 rounded'>
@@ -403,7 +410,8 @@ export function ApplicationsEditSheet() {
                 </div>
               </div>
             </div>
-          )}
+            )}
+          </div>
         </SheetContent>
       </Sheet>
     </>

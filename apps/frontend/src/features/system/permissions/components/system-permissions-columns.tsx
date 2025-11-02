@@ -77,21 +77,6 @@ export const systemPermissionsColumns: ColumnDef<ApiPermissionResponse>[] = [
     meta: { className: 'w-48' },
   },
   {
-    accessorKey: 'resource',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='资源' />
-    ),
-    cell: ({ row }) => (
-      <Badge variant='secondary' className='text-xs'>
-        {row.getValue('resource')}
-      </Badge>
-    ),
-    filterFn: (row, id, value) => {
-      const resource = row.getValue(id) as string
-      return value.includes(resource)
-    },
-  },
-  {
     accessorKey: 'action',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='操作' />

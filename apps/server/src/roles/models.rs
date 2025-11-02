@@ -43,6 +43,10 @@ pub struct RoleUpdateRequest {
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct RoleListResponse {
     pub data: Vec<RoleResponse>,
+    pub total: u64,
+    pub page: u64,
+    pub page_size: u64,
+    pub total_pages: u64,
     pub timestamp: u64,
     pub trace_id: String,
 }

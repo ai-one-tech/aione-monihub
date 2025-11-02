@@ -54,7 +54,10 @@ pub struct UserUpdateRequest {
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct UserListResponse {
     pub data: Vec<UserResponse>,
-    pub pagination: Pagination,
+    pub total: u64,
+    pub page: u64,
+    pub page_size: u64,
+    pub total_pages: u64,
     pub timestamp: u64,
     pub trace_id: String,
 }
@@ -80,18 +83,11 @@ pub struct UserRoleListResponse {
     pub trace_id: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct Pagination {
-    pub page: u32,
-    pub limit: u32,
-    pub total: u32,
-}
-
 // Query parameters for user list
 #[derive(Debug, Deserialize, IntoParams)]
 pub struct UserListQuery {
-    pub page: Option<u32>,
-    pub limit: Option<u32>,
+    pub page: Option<u64>,
+    pub limit: Option<u64>,
     pub search: Option<String>,
     pub status: Option<String>,
 }

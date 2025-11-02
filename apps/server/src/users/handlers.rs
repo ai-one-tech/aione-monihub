@@ -6,7 +6,7 @@ use crate::permissions::handlers::get_user_permissions_by_type;
 use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
 use crate::users::models::{
-    Pagination, RoleInfo, UserCreateRequest, UserListQuery, UserListResponse, UserResponse, UserUpdateRequest,
+    RoleInfo, UserCreateRequest, UserListQuery, UserListResponse, UserResponse, UserUpdateRequest,
     UserRoleAssignRequest, UserRoleResponse, UserRoleListResponse,
 };
 use crate::entities::user_roles::{ActiveModel as UserRoleActiveModel, Entity as UserRoles};
@@ -70,10 +70,13 @@ pub async fn get_users(
     select = select.order_by_desc(crate::entities::users::Column::CreatedAt);
 
     // 获取总数和分页数据
-    let total = select.clone().count(&**db).await?;
+    let paginator = select.clone().paginate(&**db, limit);
+    let total = paginator.num_items().await?;
+    let total_pages = paginator.num_pages().await?;
+    
     let users: Vec<UserModel> = select
-        .offset(offset as u64)
-        .limit(limit as u64)
+        .offset(offset)
+        .limit(limit)
         .all(&**db)
         .await?;
 
@@ -109,11 +112,10 @@ pub async fn get_users(
 
     let response = UserListResponse {
         data: user_responses,
-        pagination: Pagination {
-            page,
-            limit,
-            total: total as u32,
-        },
+        total,
+        page,
+        page_size: limit,
+        total_pages,
         timestamp: std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()

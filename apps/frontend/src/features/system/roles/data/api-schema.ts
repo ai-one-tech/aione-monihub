@@ -15,6 +15,10 @@ export type ApiRoleResponse = z.infer<typeof apiRoleResponseSchema>
 // 角色列表响应
 export const roleListResponseSchema = z.object({
   data: z.array(apiRoleResponseSchema),
+  total: z.number(),
+  page: z.number(),
+  page_size: z.number(),
+  total_pages: z.number(),
   timestamp: z.number(),
   trace_id: z.string(),
 })
@@ -24,7 +28,7 @@ export type RoleListResponse = z.infer<typeof roleListResponseSchema>
 // 查询参数
 export const getRolesParamsSchema = z.object({
   page: z.number().optional(),
-  page_size: z.number().optional(),
+  limit: z.number().optional(),
   search: z.string().optional(),
 })
 

@@ -11,8 +11,8 @@ class RolesApi {
     if (params.page !== undefined) {
       searchParams.append('page', params.page.toString())
     }
-    if (params.page_size !== undefined) {
-      searchParams.append('page_size', params.page_size.toString())
+    if (params.limit !== undefined) {
+      searchParams.append('limit', params.limit.toString())
     }
     if (params.search) {
       searchParams.append('search', params.search)

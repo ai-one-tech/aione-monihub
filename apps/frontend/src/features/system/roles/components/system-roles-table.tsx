@@ -1,12 +1,18 @@
 import {
   flexRender,
   getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getSortedRowModel,
   useReactTable,
   type ColumnFiltersState,
   type SortingState,
   type VisibilityState,
 } from '@tanstack/react-table'
 import { useState } from 'react'
+import { cn } from '@/lib/utils'
+import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
 import {
   Table,
   TableBody,
@@ -15,89 +21,82 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTablePagination } from '@/components/data-table/pagination'
-import { DataTableToolbar } from '@/components/data-table/toolbar'
+import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
 import { systemRolesColumns } from './system-roles-columns'
 import { type ApiRoleResponse } from '../data/api-schema'
 
 interface SystemRolesTableProps {
   data: ApiRoleResponse[]
-  search: any
-  navigate: any
+  totalPages: number
+  search: Record<string, unknown>
+  navigate: NavigateFn
 }
 
-export function SystemRolesTable({ data, search, navigate }: SystemRolesTableProps) {
+export function SystemRolesTable({ data, totalPages, search, navigate }: SystemRolesTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState({})
+
+  const {
+    columnFilters,
+    onColumnFiltersChange,
+    pagination,
+    onPaginationChange,
+  } = useTableUrlState({
+    search,
+    navigate,
+    pagination: { defaultPage: 1, defaultPageSize: 10 },
+    globalFilter: { enabled: false },
+    columnFilters: [],
+  })
 
   const table = useReactTable({
     data,
     columns: systemRolesColumns,
     state: {
       sorting,
+      pagination,
       columnVisibility,
       rowSelection,
       columnFilters,
     },
     enableRowSelection: true,
+    onPaginationChange,
+    onColumnFiltersChange,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
-    getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
-    manualSorting: true,
-    manualFiltering: true,
+    pageCount: totalPages,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
   })
 
-  const handleSearch = (value: string) => {
-    navigate({
-      search: (prev: any) => ({
-        ...prev,
-        page: 1,
-        search: value || undefined,
-      }),
-    })
-  }
-
-  const handlePageChange = (page: number) => {
-    navigate({
-      search: (prev: any) => ({
-        ...prev,
-        page,
-      }),
-    })
-  }
-
-  const handlePageSizeChange = (pageSize: number) => {
-    navigate({
-      search: (prev: any) => ({
-        ...prev,
-        page: 1,
-        pageSize,
-      }),
-    })
-  }
-
   return (
-    <div className='space-y-4'>
+    <div className='flex flex-col h-full min-h-0'>
       <DataTableToolbar
         table={table}
         searchKey='name'
         searchPlaceholder='搜索角色名称...'
-        onSearch={handleSearch}
-        searchValue={search.search || ''}
       />
-      <div className='rounded-md border'>
+      <div className='flex-1 min-h-0 overflow-auto rounded-md border mt-4'>
         <Table>
-          <TableHeader>
+          <TableHeader className='sticky top-0 z-10'>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className='group/row'>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead
+                      key={header.id}
+                      colSpan={header.colSpan}
+                      className={cn(
+                        'bg-background group-hover/row:bg-muted group-data-[state=selected]/row:bg-muted',
+                        header.column.columnDef.meta?.className ?? ''
+                      )}
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -116,9 +115,16 @@ export function SystemRolesTable({ data, search, navigate }: SystemRolesTablePro
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
+                  className='group/row'
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell
+                      key={cell.id}
+                      className={cn(
+                        'bg-background group-hover/row:bg-muted group-data-[state=selected]/row:bg-muted',
+                        cell.column.columnDef.meta?.className ?? ''
+                      )}
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -140,13 +146,9 @@ export function SystemRolesTable({ data, search, navigate }: SystemRolesTablePro
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination
-        table={table}
-        currentPage={search.page || 1}
-        pageSize={search.pageSize || 10}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
-      />
+      <div className='mt-4'>
+        <DataTablePagination table={table} />
+      </div>
     </div>
   )
 }

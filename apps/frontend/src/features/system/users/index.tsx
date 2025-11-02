@@ -40,8 +40,8 @@ export function SystemUsers() {
         </div>
       </Header>
 
-      <Main>
-        <div className='mb-2 flex flex-wrap items-center justify-between space-y-2'>
+      <Main fixed className='flex flex-col'>
+        <div className='mb-2 flex flex-wrap items-center justify-between space-y-2 flex-shrink-0'>
           <div>
             <h2 className='text-2xl font-bold tracking-tight'>系统用户管理</h2>
             <p className='text-muted-foreground'>
@@ -50,7 +50,7 @@ export function SystemUsers() {
           </div>
           <SystemUsersPrimaryButtons />
         </div>
-        <div className='-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-y-0 lg:space-x-12'>
+        <div className='-mx-4 flex-1 min-h-0 overflow-hidden px-4 py-1 lg:flex-row lg:space-y-0 lg:space-x-12'>
           {isLoading ? (
             <div className='space-y-4'>
               <Skeleton className='h-10 w-full' />

@@ -96,6 +96,10 @@ pub struct PermissionAssignRequest {
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct PermissionListResponse {
     pub data: Vec<PermissionResponse>,
+    pub total: u64,
+    pub page: u64,
+    pub page_size: u64,
+    pub total_pages: u64,
     pub timestamp: u64,
     pub trace_id: String,
 }

@@ -1,4 +1,4 @@
-import { type GetPermissionsParams, type PermissionListResponse } from '../data/api-schema'
+import { type GetPermissionsParams, type PermissionListResponse, type CreatePermissionRequest, type UpdatePermissionRequest, type ApiPermissionResponse } from '../data/api-schema'
 import { apiClient } from '@/lib/api-client'
 
 class PermissionsApi {
@@ -34,32 +34,31 @@ class PermissionsApi {
   /**
    * 创建权限
    */
-  async createPermission(permissionData: any): Promise<any> {
-    const response = await apiClient.post('/api/permissions', permissionData)
+  async createPermission(permissionData: CreatePermissionRequest): Promise<ApiPermissionResponse> {
+    const response = await apiClient.post<ApiPermissionResponse>('/api/permissions', permissionData)
     return response.data
   }
 
   /**
    * 更新权限
    */
-  async updatePermission(permissionId: string, permissionData: any): Promise<any> {
-    const response = await apiClient.put(`/api/permissions/${permissionId}`, permissionData)
+  async updatePermission(permissionId: string, permissionData: UpdatePermissionRequest): Promise<ApiPermissionResponse> {
+    const response = await apiClient.put<ApiPermissionResponse>(`/api/permissions/${permissionId}`, permissionData)
     return response.data
   }
 
   /**
    * 删除权限
    */
-  async deletePermission(permissionId: string): Promise<any> {
-    const response = await apiClient.delete(`/api/permissions/${permissionId}`)
-    return response.data
+  async deletePermission(permissionId: string): Promise<void> {
+    await apiClient.delete(`/api/permissions/${permissionId}`)
   }
 
   /**
    * 获取权限详情
    */
-  async getPermissionById(permissionId: string): Promise<any> {
-    const response = await apiClient.get(`/api/permissions/${permissionId}`)
+  async getPermissionById(permissionId: string): Promise<ApiPermissionResponse> {
+    const response = await apiClient.get<ApiPermissionResponse>(`/api/permissions/${permissionId}`)
     return response.data
   }
 }

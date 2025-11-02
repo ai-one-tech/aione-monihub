@@ -126,7 +126,7 @@ export function useTableUrlState(
     navigate({
       search: (prev) => ({
         ...(prev as SearchRecord),
-        [pageKey]: nextPage <= defaultPage ? undefined : nextPage,
+        [pageKey]: nextPage === defaultPage ? undefined : nextPage,
         [pageSizeKey]:
           nextPageSize === defaultPageSize ? undefined : nextPageSize,
       }),

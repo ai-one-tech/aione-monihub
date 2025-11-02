@@ -4,7 +4,7 @@ use crate::shared::error::ApiError;
 use crate::shared::generate_snowflake_id;
 use actix_web::{HttpRequest, HttpResponse, web};
 use chrono::Utc;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, Set};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QuerySelect, Set};
 use crate::entities::role_permissions::{ActiveModel as RolePermissionActiveModel, Entity as RolePermissions};
 use crate::entities::roles::{ActiveModel, Column, Entity as Roles};
 use crate::roles::models::{RoleCreateRequest, RoleListResponse, RoleResponse, RolePermissionResponse, RolePermissionListResponse};
@@ -31,16 +31,25 @@ pub async fn get_roles(
     db: web::Data<DatabaseConnection>,
     query: web::Query<std::collections::HashMap<String, String>>,
 ) -> Result<HttpResponse, ApiError> {
-    let page = query.get("page").and_then(|p| p.parse().ok()).unwrap_or(1);
-    let page_size = query.get("page_size").and_then(|p| p.parse().ok()).unwrap_or(10);
+    let page = query.get("page").and_then(|p| p.parse().ok()).unwrap_or(1u64);
+    let limit = query.get("limit").and_then(|p| p.parse().ok()).unwrap_or(10u64);
+    let offset = (page - 1) * limit;
 
     // 构建查询
-    let paginator = Roles::find()
-        .filter(Column::DeletedAt.is_null())
-        .paginate(&**db, page_size);
+    let mut query_builder = Roles::find()
+        .filter(Column::DeletedAt.is_null());
 
-    let _total = paginator.num_items().await?;
-    let roles = paginator.fetch_page(page - 1).await?;
+    // 获取总数
+    let paginator = query_builder.clone().paginate(&**db, limit);
+    let total = paginator.num_items().await?;
+    let total_pages = paginator.num_pages().await?;
+
+    // 获取分页数据
+    let roles = query_builder
+        .offset(offset)
+        .limit(limit)
+        .all(&**db)
+        .await?;
 
     // 转换为响应格式
     let mut role_responses = Vec::new();
@@ -69,6 +78,10 @@ pub async fn get_roles(
 
     let response = RoleListResponse {
         data: role_responses,
+        total,
+        page,
+        page_size: limit,
+        total_pages,
         timestamp: std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()

@@ -6,6 +6,7 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
+  SheetFooter,
 } from '@/components/ui/sheet'
 import {
   Form,
@@ -186,15 +187,14 @@ export function SystemUsersEditSheet() {
         </SheetHeader>
         
         {(isEditMode && isLoadingUser) ? (
-          <div className='px-6 py-4'>
-            <div className='flex items-center justify-center h-64'>
-              <div className='text-sm text-muted-foreground'>加载用户信息中...</div>
-            </div>
+          <div className='flex-1 flex items-center justify-center'>
+            <div className='text-sm text-muted-foreground'>加载用户信息中...</div>
           </div>
         ) : (
-          <div className='px-6 py-4'>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
+          <>
+            <div className='flex-1 overflow-y-auto px-6 py-4'>
+              <Form {...form}>
+                <form id='user-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
               {/* 用户ID字段 - 仅编辑模式显示且不可编辑 */}
               {isEditMode && selectedUserId && (
                 <FormItem>
@@ -309,29 +309,33 @@ export function SystemUsersEditSheet() {
                   )}
                 />
               )}
-
-              <div className='flex justify-end space-x-2'>
-                <Button
-                  type='button'
-                  variant='outline'
-                  onClick={() => setIsUserSheetOpen(false)}
-                >
-                  取消
-                </Button>
-                <Button 
-                  type='submit' 
-                  disabled={isCreateMode ? createUserMutation.isPending : updateUserMutation.isPending}
-                >
-                  {isCreateMode 
-                    ? (createUserMutation.isPending ? '创建中...' : '创建用户')
-                    : (updateUserMutation.isPending ? '保存中...' : '保存更改')
-                  }
-                </Button>
-              </div>
             </form>
           </Form>
+        </div>
+
+        <SheetFooter>
+          <div className='flex justify-end space-x-2 w-full'>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => setIsUserSheetOpen(false)}
+            >
+              取消
+            </Button>
+            <Button 
+              type='submit'
+              form='user-form'
+              disabled={isCreateMode ? createUserMutation.isPending : updateUserMutation.isPending}
+            >
+              {isCreateMode 
+                ? (createUserMutation.isPending ? '创建中...' : '创建用户')
+                : (updateUserMutation.isPending ? '保存中...' : '保存更改')
+              }
+            </Button>
           </div>
-        )}
+        </SheetFooter>
+      </>
+    )}
       </SheetContent>
     </Sheet>
   )

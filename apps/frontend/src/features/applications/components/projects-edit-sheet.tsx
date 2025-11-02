@@ -2,13 +2,13 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, Calendar, Clock } from 'lucide-react'
-import { useEffect } from 'react'
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
+  SheetFooter,
 } from '@/components/ui/sheet'
 import {
   Form,
@@ -114,9 +114,9 @@ export function ProjectsEditSheet() {
             </SheetDescription>
           </SheetHeader>
 
-          <div className='px-6 py-4'>
+          <div className='flex-1 overflow-y-auto px-6 py-4'>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
+              <form id='project-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
                 <FormField
                   control={form.control}
                   name='name'
@@ -187,18 +187,20 @@ export function ProjectsEditSheet() {
                     </FormItem>
                   )}
                 />
-
-                <div className='flex justify-end space-x-3 pt-6 mt-8 border-t'>
-                  <Button type='button' variant='outline' onClick={handleCancel}>
-                    取消
-                  </Button>
-                  <Button type='submit' disabled={isLoading}>
-                    {isLoading ? '保存中...' : '保存'}
-                  </Button>
-                </div>
               </form>
             </Form>
           </div>
+
+          <SheetFooter>
+            <div className='flex justify-end space-x-3 w-full'>
+              <Button type='button' variant='outline' onClick={handleCancel}>
+                取消
+              </Button>
+              <Button type='submit' form='project-form' disabled={isLoading}>
+                {isLoading ? '保存中...' : '保存'}
+              </Button>
+            </div>
+          </SheetFooter>
         </SheetContent>
       </Sheet>
 
@@ -215,8 +217,9 @@ export function ProjectsEditSheet() {
             </SheetDescription>
           </SheetHeader>
 
-          {viewingProject && (
-            <div className='px-6 py-4 space-y-6'>
+          <div className='flex-1 overflow-y-auto px-6 py-4'>
+            {viewingProject && (
+            <div className='space-y-6'>
               <div>
                 <label className='text-sm font-medium text-muted-foreground'>项目ID</label>
                 <p className='mt-1 text-sm font-mono bg-muted px-2 py-1 rounded'>
@@ -265,7 +268,8 @@ export function ProjectsEditSheet() {
                 </div>
               </div>
             </div>
-          )}
+            )}
+          </div>
         </SheetContent>
       </Sheet>
     </>
