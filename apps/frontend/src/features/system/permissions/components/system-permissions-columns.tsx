@@ -78,21 +78,6 @@ export const systemPermissionsColumns: ColumnDef<ApiPermissionResponse>[] = [
     meta: { className: 'w-48' },
   },
   {
-    accessorKey: 'action',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='操作' />
-    ),
-    cell: ({ row }) => {
-      const action = row.getValue('action') as string
-      const actionInfo = ACTION_MAP[action] || { label: action, variant: 'outline' as const }
-      return (
-        <Badge variant={actionInfo.variant} className='text-xs'>
-          {actionInfo.label}
-        </Badge>
-      )
-    },
-  },
-  {
     accessorKey: 'permission_type',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='类型' />
@@ -111,6 +96,29 @@ export const systemPermissionsColumns: ColumnDef<ApiPermissionResponse>[] = [
       return value.includes(permissionType)
     },
   },
+  {
+    accessorKey: 'action',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='操作' />
+    ),
+    cell: ({ row }) => {
+      const action = row.getValue('action') as string | null
+      if (!action) {
+        return (
+          <Badge variant="secondary" className='text-xs'>
+            --
+          </Badge>
+        )
+      }
+      const actionInfo = ACTION_MAP[action] || { label: action, variant: 'outline' as const }
+      return (
+        <Badge variant={actionInfo.variant} className='text-xs'>
+          {actionInfo.label}
+        </Badge>
+      )
+    },
+  },
+
   {
     accessorKey: 'sort_order',
     header: ({ column }) => (

@@ -23,8 +23,8 @@ export const ACTION_MAP: Record<string, { label: string; variant: BadgeVariant }
  */
 export const PERMISSION_TYPE_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
   Menu: { label: '菜单', variant: 'default' },
-  Action: { label: '操作', variant: 'secondary' },
   Page: { label: '页面', variant: 'secondary' },
+  Action: { label: '操作', variant: 'secondary' },
 }
 
 /**

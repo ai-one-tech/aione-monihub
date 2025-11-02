@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -41,14 +41,27 @@ import { toast } from 'sonner'
 const permissionFormSchema = z.object({
   name: z.string().min(1, '权限名称不能为空'),
   description: z.string().optional().nullable(),
-  action: z.string().min(1, '操作不能为空'),
+  action: z.string(),
   permission_type: z.string().min(1, '权限类型不能为空'),
   menu_path: z.string().optional().nullable(),
   menu_icon: z.string().optional().nullable(),
   parent_permission_id: z.string().optional().nullable(),
   sort_order: z.number().optional().nullable(),
   is_hidden: z.boolean().optional().nullable(),
-})
+}).refine(
+  (data) => {
+    // 如果权限类型是 Action，则操作类型必填
+    if (data.permission_type === 'Action') {
+      return data.action && data.action.length > 0
+    }
+    // 其他类型操作类型可以为空
+    return true
+  },
+  {
+    message: '当权限类型为操作时，操作类型不能为空',
+    path: ['action'],
+  }
+)
 
 type PermissionFormData = z.infer<typeof permissionFormSchema>
 
@@ -63,6 +76,7 @@ export function SystemPermissionsEditSheet() {
   const { data: permissionDetail, isLoading: isLoadingPermission, error } = usePermissionDetailQuery(selectedPermissionId)
   const updatePermissionMutation = useUpdatePermissionMutation()
   const createPermissionMutation = useCreatePermissionMutation()
+  const initializedPermissionIdRef = useRef<string | null>(null)
   
   const isCreateMode = permissionSheetMode === 'create'
   const isEditMode = permissionSheetMode === 'edit'
@@ -86,18 +100,26 @@ export function SystemPermissionsEditSheet() {
   // 当权限数据加载完成时，更新表单
   useEffect(() => {
     if ((isEditMode || isViewMode) && permissionDetail) {
-      form.reset({
-        name: permissionDetail.name,
-        description: permissionDetail.description || '',
-        action: permissionDetail.action,
-        permission_type: permissionDetail.permission_type,
-        menu_path: permissionDetail.menu_path || '',
-        menu_icon: permissionDetail.menu_icon || '',
-        parent_permission_id: permissionDetail.parent_permission_id || '',
-        sort_order: permissionDetail.sort_order,
-        is_hidden: permissionDetail.is_hidden || false,
+      // 使用 useRef 追踪已初始化的权限ID，避免重复初始化
+      if (initializedPermissionIdRef.current === permissionDetail.id) {
+        return
+      }
+      initializedPermissionIdRef.current = permissionDetail.id
+      
+      // 使用微任务队列延迟设置值，确保Select选项已经渲染
+      Promise.resolve().then(() => {
+        form.setValue('name', permissionDetail.name)
+        form.setValue('description', permissionDetail.description || '')
+        form.setValue('action', permissionDetail.action || '')
+        form.setValue('permission_type', permissionDetail.permission_type || '')
+        form.setValue('menu_path', permissionDetail.menu_path || '')
+        form.setValue('menu_icon', permissionDetail.menu_icon || '')
+        form.setValue('parent_permission_id', permissionDetail.parent_permission_id || '')
+        form.setValue('sort_order', permissionDetail.sort_order)
+        form.setValue('is_hidden', permissionDetail.is_hidden || false)
       })
     } else if (isCreateMode) {
+      initializedPermissionIdRef.current = null
       form.reset({
         name: '',
         description: '',
@@ -110,7 +132,7 @@ export function SystemPermissionsEditSheet() {
         is_hidden: false,
       })
     }
-  }, [permissionDetail, form, isEditMode, isCreateMode, isViewMode])
+  }, [permissionDetail, isEditMode, isCreateMode, isViewMode, form])
 
   // 处理错误
   useEffect(() => {
@@ -119,6 +141,14 @@ export function SystemPermissionsEditSheet() {
       toast.error('获取权限详情失败')
     }
   }, [error])
+
+  // 监听权限类型变化，如果不是 Action，则清空操作类型
+  useEffect(() => {
+    const permissionType = form.watch('permission_type')
+    if (permissionType !== 'Action') {
+      form.setValue('action', '')
+    }
+  }, [form.watch('permission_type'), form])
 
   const onSubmit = async (data: PermissionFormData) => {
     const valid = await form.trigger()
@@ -138,6 +168,10 @@ export function SystemPermissionsEditSheet() {
       parent_permission_id: data.parent_permission_id || null,
       sort_order: data.sort_order,
       is_hidden: data.is_hidden || false,
+    }
+
+    if (submitData.permission_type !== 'Action') {
+      submitData.action = ''
     }
 
     if (isCreateMode) {
@@ -242,42 +276,13 @@ export function SystemPermissionsEditSheet() {
 
                 <FormField
                   control={form.control}
-                  name='action'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>操作</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        value={field.value}
-                        disabled={isViewMode}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder='请选择操作类型' />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {Object.entries(ACTION_MAP).map(([key, value]) => (
-                            <SelectItem key={key} value={key}>
-                              {value.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
                   name='permission_type'
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>权限类型</FormLabel>
                       <Select 
                         onValueChange={field.onChange} 
-                        value={field.value}
+                        value={field.value || ''}
                         disabled={isViewMode}
                       >
                         <FormControl>
@@ -297,6 +302,37 @@ export function SystemPermissionsEditSheet() {
                     </FormItem>
                   )}
                 />
+
+                {form.watch('permission_type') === 'Action' && (
+                  <FormField
+                    control={form.control}
+                    name='action'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>操作类型</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value || ''}
+                          disabled={isViewMode}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder='请选择操作类型' />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {Object.entries(ACTION_MAP).map(([key, value]) => (
+                              <SelectItem key={key} value={key}>
+                                {value.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <FormField
                   control={form.control}
