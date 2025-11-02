@@ -1,6 +1,6 @@
 use crate::instances::models::{
     InstanceCreateRequest, InstanceListQuery, InstanceListResponse, InstanceMonitoringDataResponse,
-    InstanceResponse, NetworkTraffic, Pagination,
+    InstanceResponse, Pagination,
 };
 use crate::shared::error::ApiError;
 use crate::shared::status::is_valid_status;
@@ -32,12 +32,35 @@ pub async fn get_instances(
         select = select.filter(
             crate::entities::instances::Column::Name.contains(search)
                 .or(crate::entities::instances::Column::Hostname.contains(search))
+                .or(crate::entities::instances::Column::IpAddress.contains(search))
+                .or(crate::entities::instances::Column::PublicIp.contains(search))
+                .or(crate::entities::instances::Column::ApplicationId.contains(search))
         );
     }
 
     // 添加状态过滤器
     if let Some(status) = &query.status {
         select = select.filter(crate::entities::instances::Column::Status.eq(status));
+    }
+
+    // 添加应用ID过滤器
+    if let Some(application_id) = &query.application_id {
+        select = select.filter(crate::entities::instances::Column::ApplicationId.eq(application_id));
+    }
+
+    // 添加内网IP过滤器
+    if let Some(ip_address) = &query.ip_address {
+        select = select.filter(crate::entities::instances::Column::IpAddress.contains(ip_address));
+    }
+
+    // 添加公网IP过滤器
+    if let Some(public_ip) = &query.public_ip {
+        select = select.filter(crate::entities::instances::Column::PublicIp.contains(public_ip));
+    }
+
+    // 添加计算机名过滤器
+    if let Some(hostname) = &query.hostname {
+        select = select.filter(crate::entities::instances::Column::Hostname.contains(hostname));
     }
 
     // 获取总数
@@ -149,18 +172,19 @@ pub async fn update_instance(
     }
 
     // 更新实例信息
-    use serde_json::json;
-    let specifications = json!({
-        "deployment_id": instance.deployment_id,
-        "application_id": instance.application_id
-    });
-
     let updated_instance = ActiveModel {
         id: Set(instance_id),
         name: Set(instance.name.clone()),
         status: Set(instance.status.clone()),
-        specifications: Set(specifications),
         environment: Set(instance.instance_type.clone()),
+        application_id: Set(instance.application_id.clone()),
+        mac_address: Set(instance.mac_address.clone()),
+        public_ip: Set(instance.public_ip.clone()),
+        port: Set(instance.port),
+        program_path: Set(instance.program_path.clone()),
+        os_type: Set(instance.os_type.clone()),
+        os_version: Set(instance.os_version.clone()),
+        custom_fields: Set(instance.custom_fields.clone()),
         updated_by: Set(current_user_id),
         revision: Set(existing_instance.revision + 1),
         updated_at: Set(Utc::now().into()),
@@ -276,19 +300,7 @@ pub async fn get_instance_monitoring_data(
         return Err(ApiError::NotFound("实例不存在".to_string()));
     }
 
-    // 实际实现时，这里应该从监控系统获取实时数据
-    // 目前返回模拟数据
-    use rand::Rng;
-    let mut rng = rand::thread_rng();
-    
     let response = InstanceMonitoringDataResponse {
-        cpu_usage: rng.gen_range(10.0..90.0),
-        memory_usage: rng.gen_range(20.0..80.0),
-        disk_usage: rng.gen_range(30.0..95.0),
-        network_traffic: NetworkTraffic {
-            incoming: rng.gen_range(100.0..2000.0),
-            outgoing: rng.gen_range(50.0..1500.0),
-        },
         timestamp: Utc::now().to_rfc3339(),
     };
 

@@ -9,11 +9,10 @@ pub struct Instance {
     pub name: String,
     pub hostname: String,
     pub ip_address: String,
-    pub instance_type: String, // 映射到数据库的environment字段
+    pub instance_type: String,
     pub status: String,
-    pub deployment_id: String, // 从specifications JSON中读取
-    pub application_id: String, // 从specifications JSON中读取
-    pub specs: Option<JsonValue>, // 映射到数据库的specifications字段
+    pub application_id: String,
+    pub specs: Option<JsonValue>,
     pub created_by: String,
     pub updated_by: String,
     pub deleted_at: Option<DateTime<Utc>>,
@@ -26,10 +25,31 @@ pub struct Instance {
 pub struct InstanceResponse {
     pub id: String,
     pub name: String,
+    pub hostname: String,
+    pub ip_address: String,
     pub instance_type: String,
     pub status: String,
-    pub deployment_id: String,
     pub application_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mac_address: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub public_ip: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub port: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub program_path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub os_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub os_version: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub first_report_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_report_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub report_count: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub custom_fields: Option<JsonValue>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -39,8 +59,21 @@ pub struct InstanceCreateRequest {
     pub name: String,
     pub instance_type: String,
     pub status: String,
-    pub deployment_id: String,
     pub application_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mac_address: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub public_ip: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub port: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub program_path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub os_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub os_version: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub custom_fields: Option<JsonValue>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -48,23 +81,12 @@ pub struct InstanceUpdateRequest {
     pub name: String,
     pub instance_type: String,
     pub status: String,
-    pub deployment_id: String,
     pub application_id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InstanceMonitoringDataResponse {
-    pub cpu_usage: f64,
-    pub memory_usage: f64,
-    pub disk_usage: f64,
-    pub network_traffic: NetworkTraffic,
     pub timestamp: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct NetworkTraffic {
-    pub incoming: f64,
-    pub outgoing: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -89,8 +111,10 @@ pub struct InstanceListQuery {
     pub limit: Option<u32>,
     pub search: Option<String>,
     pub status: Option<String>,
-    pub deployment_id: Option<String>,
     pub application_id: Option<String>,
+    pub ip_address: Option<String>,
+    pub public_ip: Option<String>,
+    pub hostname: Option<String>,
     pub start_time: Option<String>,
     pub end_time: Option<String>,
 }
@@ -98,50 +122,53 @@ pub struct InstanceListQuery {
 // 数据库实体与API模型转换函数
 impl InstanceResponse {
     pub fn from_entity(entity: crate::entities::instances::Model) -> Self {
-        // 从specifications JSON中提取deployment_id和application_id
-        let empty_map = serde_json::Map::new();
-        let specs = entity.specifications.as_object().unwrap_or(&empty_map);
-        let deployment_id = specs.get("deployment_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("").to_string();
-        let application_id = specs.get("application_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("").to_string();
-        
         Self {
             id: entity.id,
             name: entity.name,
-            instance_type: entity.environment, // environment映射到instance_type
+            hostname: entity.hostname,
+            ip_address: entity.ip_address,
+            instance_type: entity.environment,
             status: entity.status,
-            deployment_id,
-            application_id,
+            application_id: entity.application_id,
+            mac_address: entity.mac_address,
+            public_ip: entity.public_ip,
+            port: entity.port,
+            program_path: entity.program_path,
+            os_type: entity.os_type,
+            os_version: entity.os_version,
+            first_report_at: entity.first_report_at.map(|v| v.to_rfc3339()),
+            last_report_at: entity.last_report_at.map(|v| v.to_rfc3339()),
+            report_count: entity.report_count,
+            custom_fields: entity.custom_fields,
             created_at: entity.created_at.to_rfc3339(),
             updated_at: entity.updated_at.to_rfc3339(),
         }
     }
 }
 
-// 创建请求转换为数据库实体
 impl InstanceCreateRequest {
     pub fn to_active_model(&self, id: String, user_id: String) -> crate::entities::instances::ActiveModel {
         use sea_orm::ActiveValue::Set;
         use chrono::Utc;
-        use serde_json::json;
-        
-        // 将deployment_id和application_id存储到specifications JSON中
-        let specifications = json!({
-            "deployment_id": self.deployment_id,
-            "application_id": self.application_id
-        });
         
         crate::entities::instances::ActiveModel {
             id: Set(id),
             name: Set(self.name.clone()),
-            hostname: Set(format!("host-{}", generate_snowflake_id())), // 生成临时hostname
-            ip_address: Set("0.0.0.0".to_string()), // 默认IP，实际使用时需要修改
+            hostname: Set(format!("host-{}", generate_snowflake_id())),
+            ip_address: Set("0.0.0.0".to_string()),
             status: Set(self.status.clone()),
-            specifications: Set(specifications),
-            environment: Set(self.instance_type.clone()), // instance_type映射到environment
+            environment: Set(self.instance_type.clone()),
+            application_id: Set(self.application_id.clone()),
+            mac_address: Set(self.mac_address.clone()),
+            public_ip: Set(self.public_ip.clone()),
+            port: Set(self.port),
+            program_path: Set(self.program_path.clone()),
+            os_type: Set(self.os_type.clone()),
+            os_version: Set(self.os_version.clone()),
+            first_report_at: Set(None),
+            last_report_at: Set(None),
+            report_count: Set(Some(0)),
+            custom_fields: Set(self.custom_fields.clone()),
             created_by: Set(user_id.clone()),
             updated_by: Set(user_id),
             deleted_at: Set(None),

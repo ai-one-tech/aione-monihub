@@ -28,19 +28,11 @@ pub enum Relation {
         to = "super::projects::Column::Id"
     )]
     Projects,
-    #[sea_orm(has_many = "super::deployments::Entity")]
-    Deployments,
 }
 
 impl Related<super::projects::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Projects.def()
-    }
-}
-
-impl Related<super::deployments::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::Deployments.def()
     }
 }
 
@@ -61,6 +53,4 @@ pub struct ApplicationDetail {
     pub revision: i32,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,
-    // 添加与部署的关联信息
-    pub deployments: Option<Vec<super::deployments::Model>>,
 }

@@ -1,0 +1,122 @@
+import { z } from 'zod'
+
+// 实例状态枚举
+export const instanceStatusSchema = z.enum(['active', 'disabled', 'offline'])
+export type InstanceStatus = z.infer<typeof instanceStatusSchema>
+
+// 分页信息
+export const paginationSchema = z.object({
+  page: z.number(),
+  limit: z.number(),
+  total: z.number(),
+  total_pages: z.number().optional(),
+})
+
+export type Pagination = z.infer<typeof paginationSchema>
+
+// 实例响应数据
+export const instanceResponseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  hostname: z.string(),
+  ip_address: z.string(),
+  instance_type: z.string(),
+  status: instanceStatusSchema,
+  application_id: z.string(),
+  mac_address: z.string().optional(),
+  public_ip: z.string().optional(),
+  port: z.number().optional(),
+  program_path: z.string().optional(),
+  os_type: z.string().optional(),
+  os_version: z.string().optional(),
+  first_report_at: z.string().optional(),
+  last_report_at: z.string().optional(),
+  report_count: z.number().optional(),
+  custom_fields: z.any().optional(),
+  created_at: z.string(),
+  updated_at: z.string(),
+})
+
+export type InstanceResponse = z.infer<typeof instanceResponseSchema>
+
+// 实例列表响应
+export const instanceListResponseSchema = z.object({
+  data: z.array(instanceResponseSchema),
+  pagination: paginationSchema,
+  timestamp: z.number(),
+  trace_id: z.string(),
+})
+
+export type InstanceListResponse = z.infer<typeof instanceListResponseSchema>
+
+// 实例详情响应
+export const instanceDetailResponseSchema = instanceResponseSchema
+export type InstanceDetailResponse = z.infer<typeof instanceDetailResponseSchema>
+
+// 创建实例请求
+export const createInstanceRequestSchema = z.object({
+  name: z.string().min(1, '实例名称不能为空'),
+  instance_type: z.string().min(1, '实例类型不能为空'),
+  status: instanceStatusSchema,
+  application_id: z.string().min(1, '应用ID不能为空'),
+  mac_address: z.string().optional(),
+  public_ip: z.string().optional(),
+  port: z.number().optional(),
+  program_path: z.string().optional(),
+  os_type: z.string().optional(),
+  os_version: z.string().optional(),
+  custom_fields: z.any().optional(),
+})
+
+export type CreateInstanceRequest = z.infer<typeof createInstanceRequestSchema>
+
+// 更新实例请求
+export const updateInstanceRequestSchema = createInstanceRequestSchema
+export type UpdateInstanceRequest = z.infer<typeof updateInstanceRequestSchema>
+
+// 获取实例列表参数
+export const getInstancesParamsSchema = z.object({
+  page: z.number().optional(),
+  limit: z.number().optional(),
+  search: z.string().optional(),
+  status: instanceStatusSchema.optional(),
+  application_id: z.string().optional(),
+  ip_address: z.string().optional(),
+  public_ip: z.string().optional(),
+  hostname: z.string().optional(),
+  os_type: z.string().optional(),
+  mac_address: z.string().optional(),
+  start_time: z.string().optional(),
+  end_time: z.string().optional(),
+})
+
+export type GetInstancesParams = z.infer<typeof getInstancesParamsSchema>
+
+// 实例状态选项
+export const INSTANCE_STATUS_OPTIONS = [
+  { value: 'all', label: '全部状态' },
+  { value: 'active', label: '正常' },
+  { value: 'disabled', label: '已禁用' },
+  { value: 'offline', label: '离线' },
+] as const
+
+// 实例状态标签映射
+export const INSTANCE_STATUS_LABELS: Record<InstanceStatus, string> = {
+  active: '正常',
+  disabled: '已禁用',
+  offline: '离线',
+}
+
+// 实例环境类型选项
+export const INSTANCE_ENVIRONMENT_OPTIONS = [
+  { value: 'dev', label: '开发环境' },
+  { value: 'test', label: '测试环境' },
+  { value: 'prod', label: '生产环境' },
+] as const
+
+// 操作系统类型选项
+export const OS_TYPE_OPTIONS = [
+  { value: 'linux', label: 'Linux' },
+  { value: 'windows', label: 'Windows' },
+  { value: 'macos', label: 'macOS' },
+] as const

@@ -1,5 +1,4 @@
 use crate::auth::middleware::get_user_id_from_request;
-use crate::entities::permissions;
 use crate::entities::permissions::{Column, Entity as Permissions, Model as PermissionModel};
 use crate::entities::roles::Entity as Roles;
 use crate::entities::user_roles::Entity as UserRoles;
@@ -84,7 +83,7 @@ pub async fn get_permissions(
 
     // 获取分页数据
     let permissions: Vec<PermissionModel> = query_builder
-        .order_by_asc(Column::SortOrder)
+        .order_by_desc(Column::SortOrder)
         .offset(offset)
         .limit(limit)
         .all(&**db)
@@ -419,7 +418,7 @@ pub async fn get_user_menu(
 
     // 根据当前用户的角色获取权限菜单
     let menu_permissions: Vec<PermissionModel> =
-        get_user_permissions_by_type(&user_id.to_string(), PermissionType::Menu, &**db).await?;
+        get_user_permissions_by_type(&user_id.to_string(), Vec::from([PermissionType::Menu, PermissionType::Page]), &**db).await?;
 
     // 构建菜单树
     let menu_items = build_menu_tree(menu_permissions);
@@ -526,20 +525,23 @@ pub async fn get_role_permissions_list(role_id: &str, db: &DatabaseConnection) -
 /// 根据用户ID和权限类型获取用户权限
 pub async fn get_user_permissions_by_type(
     user_id: &str,
-    permission_type: PermissionType,
+    permission_types: Vec<PermissionType>,
     db: &DatabaseConnection,
 ) -> Result<Vec<PermissionModel>, sea_orm::DbErr> {
     // 检查用户是否是管理员
     let is_admin = is_admin_user(user_id, db).await?;
 
+    let permission_type_str_list: Vec<String> = permission_types.iter()
+        .map(|permission_type| {permission_type.to_string()})
+        .collect();
+
     // 如果是管理员，返回所有指定类型的权限
     let permissions = Permissions::find()
         .filter(Column::DeletedAt.is_null())
         .filter(
-            Column::PermissionType.eq(permission_type.to_string()),
+            Column::PermissionType.is_in(permission_type_str_list.clone()),
         )
-        .order_by_asc(Column::SortOrder)
-        .order_by_asc(Column::Name)
+        .order_by_desc(Column::SortOrder)
         .all(db)
         .await?;
 
@@ -565,25 +567,19 @@ pub async fn get_user_permissions_by_type(
     }
 
     // 从role_permissions表中查询权限
-    let user_permissions = crate::entities::role_permissions::Entity::find()
+    let user_permissions: Vec<String> = crate::entities::role_permissions::Entity::find()
         .filter(crate::entities::role_permissions::Column::RoleId.is_in(&role_ids))
-        .find_with_related(Permissions)
         .all(db)
-        .await?;
-
-    let mut permission_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
-    for (_, perms) in user_permissions {
-        for perm in perms {
-            if perm.permission_type == permission_type.to_string() {
-                permission_ids.insert(perm.id);
-            }
-        }
-    }
+        .await?
+        .into_iter()
+        .map(| p| p.permission_id )
+        .collect();
 
     // 返回指定类型的权限
     let result = permissions
         .into_iter()
-        .filter(|p| permission_ids.contains(&p.id))
+        .filter(|p| user_permissions.contains(&p.id))
+        .filter(|p| permission_type_str_list.clone().contains(&p.permission_type))
         .collect();
 
     Ok(result)

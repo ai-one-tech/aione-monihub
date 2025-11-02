@@ -95,46 +95,6 @@ COMMENT ON TABLE "public"."configs" IS '配置表，存储各环境的配置信�
 -- ----------------------------
 
 -- ----------------------------
--- Table structure for deployments
--- ----------------------------
-CREATE TABLE "public"."deployments" (
-  "id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-  "application_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-  "environment" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
-  "version" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-  "status" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
-  "config" jsonb NOT NULL DEFAULT '{}'::jsonb,
-  "deployed_by" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-  "deployed_at" timestamptz(3),
-  "created_by" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-  "updated_by" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-  "deleted_at" timestamptz(3),
-  "revision" int4 NOT NULL DEFAULT 1,
-  "created_at" timestamptz(3) NOT NULL DEFAULT now(),
-  "updated_at" timestamptz(3) NOT NULL DEFAULT now()
-)
-;
-COMMENT ON COLUMN "public"."deployments"."id" IS '部署唯一标识';
-COMMENT ON COLUMN "public"."deployments"."application_id" IS '应用ID';
-COMMENT ON COLUMN "public"."deployments"."environment" IS '部署环境：dev(开发), test(测试), prod(生产)';
-COMMENT ON COLUMN "public"."deployments"."version" IS '部署版本号';
-COMMENT ON COLUMN "public"."deployments"."status" IS '部署状态：pending(待部署), deploying(部署中), success(成功), failed(失败), rollback(回滚)';
-COMMENT ON COLUMN "public"."deployments"."config" IS '部署配置信息（JSON格式）';
-COMMENT ON COLUMN "public"."deployments"."deployed_by" IS '部署人ID';
-COMMENT ON COLUMN "public"."deployments"."deployed_at" IS '部署完成时间';
-COMMENT ON COLUMN "public"."deployments"."created_by" IS '创建人ID';
-COMMENT ON COLUMN "public"."deployments"."updated_by" IS '更新人ID';
-COMMENT ON COLUMN "public"."deployments"."deleted_at" IS '软删除时间戳';
-COMMENT ON COLUMN "public"."deployments"."revision" IS '数据版本号，用于乐观锁';
-COMMENT ON COLUMN "public"."deployments"."created_at" IS '记录创建时间';
-COMMENT ON COLUMN "public"."deployments"."updated_at" IS '记录更新时间';
-COMMENT ON TABLE "public"."deployments" IS '部署表，存储应用部署记录';
-
--- ----------------------------
--- Records of deployments
--- ----------------------------
-
--- ----------------------------
 -- Table structure for instances
 -- ----------------------------
 CREATE TABLE "public"."instances" (
@@ -143,7 +103,6 @@ CREATE TABLE "public"."instances" (
   "hostname" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
   "ip_address" inet NOT NULL,
   "status" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
-  "specifications" jsonb NOT NULL DEFAULT '{}'::jsonb,
   "environment" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
   "created_by" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
   "updated_by" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
@@ -158,7 +117,6 @@ COMMENT ON COLUMN "public"."instances"."name" IS '实例名称';
 COMMENT ON COLUMN "public"."instances"."hostname" IS '实例主机名';
 COMMENT ON COLUMN "public"."instances"."ip_address" IS '实例IP地址';
 COMMENT ON COLUMN "public"."instances"."status" IS '实例状态：active(激活), disabled(禁用)';
-COMMENT ON COLUMN "public"."instances"."specifications" IS '实例规格信息（JSON格式），包含CPU、内存、磁盘等信息';
 COMMENT ON COLUMN "public"."instances"."environment" IS '实例环境：dev(开发), test(测试), prod(生产)';
 COMMENT ON COLUMN "public"."instances"."created_by" IS '创建人ID';
 COMMENT ON COLUMN "public"."instances"."updated_by" IS '更新人ID';
@@ -269,9 +227,7 @@ COMMENT ON TABLE "public"."permissions" IS '权限表，存储系统权限信息
 -- ----------------------------
 INSERT INTO "public"."permissions" VALUES ('1734095616123456316', 'menu.settings', 'menu', 'read', '系统设置菜单', 'menu', '/settings', 'Settings', NULL, 6, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:25:47.767+00', '2025-11-02 03:25:47.767+00', 'f');
 INSERT INTO "public"."permissions" VALUES ('1734095616123456303', 'menu.applications', 'menu', 'read', '应用管理', 'menu', '/applications', 'Package', NULL, 3, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:21:41.807+00', '2025-11-02 03:24:02.909+00', 'f');
-INSERT INTO "public"."permissions" VALUES ('1734095616123456406', 'menu.logs', 'menu', 'read', '日志管理', 'menu', '/logs', 'HelpCircle', NULL, 10, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:21:41.807+00', '2025-11-02 03:26:46.989+00', 'f');
-INSERT INTO "public"."permissions" VALUES ('1734095616123456404', 'menu.instances', 'menu', 'read', '实例管理', 'menu', '/instances', 'HelpCircle', NULL, 8, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:21:41.807+00', '2025-11-02 03:26:45.636+00', 'f');
-INSERT INTO "public"."permissions" VALUES ('1734095616123456405', 'menu.deployments', 'menu', 'read', '部署管理', 'menu', '/deployments', 'HelpCircle', NULL, 9, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:21:41.807+00', '2025-11-02 03:27:05.53+00', 'f');
+INSERT INTO "public"."permissions" VALUES ('1734095616123456406', 'menu.logs', 'menu', 'read', '日志管理', 'menu', '/logs', 'HelpCircle', NULL, 9, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:21:41.807+00', '2025-11-02 03:26:46.989+00', 'f');
 INSERT INTO "public"."permissions" VALUES ('1734095616123456421', 'menu.system.users', 'menu', 'read', '用户管理', 'menu', '/system/users', '', '1734095616123456306', 1, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:21:41.807+00', '2025-11-02 03:27:32.634+00', 'f');
 INSERT INTO "public"."permissions" VALUES ('1734095616123456422', 'menu.system.roles', 'menu', 'read', '角色管理', 'menu', '/system/roles', '', '1734095616123456306', 2, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:21:41.807+00', '2025-11-02 03:27:32.657+00', 'f');
 INSERT INTO "public"."permissions" VALUES ('1734095616123456423', 'menu.system.permissions', 'menu', 'read', '权限管理', 'menu', '/system/permissions', '', '1734095616123456306', 3, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:21:41.807+00', '2025-11-02 03:27:32.687+00', 'f');
@@ -291,10 +247,6 @@ INSERT INTO "public"."permissions" VALUES ('1734095616123456521', 'instances.cre
 INSERT INTO "public"."permissions" VALUES ('1734095616123456522', 'instances.edit', 'instances', 'update', '编辑实例', 'action', NULL, NULL, NULL, NULL, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:21:41.807+00', '2025-11-02 03:21:41.807+00', 'f');
 INSERT INTO "public"."permissions" VALUES ('1734095616123456523', 'instances.delete', 'instances', 'delete', '删除实例', 'action', NULL, NULL, NULL, NULL, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:21:41.807+00', '2025-11-02 03:21:41.807+00', 'f');
 INSERT INTO "public"."permissions" VALUES ('1734095616123456524', 'instances.view', 'instances', 'read', '查看实例', 'action', NULL, NULL, NULL, NULL, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:21:41.807+00', '2025-11-02 03:21:41.807+00', 'f');
-INSERT INTO "public"."permissions" VALUES ('1734095616123456531', 'deployments.create', 'deployments', 'create', '创建部署', 'action', NULL, NULL, NULL, NULL, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:21:41.807+00', '2025-11-02 03:21:41.807+00', 'f');
-INSERT INTO "public"."permissions" VALUES ('1734095616123456532', 'deployments.edit', 'deployments', 'update', '编辑部署', 'action', NULL, NULL, NULL, NULL, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:21:41.807+00', '2025-11-02 03:21:41.807+00', 'f');
-INSERT INTO "public"."permissions" VALUES ('1734095616123456533', 'deployments.delete', 'deployments', 'delete', '删除部署', 'action', NULL, NULL, NULL, NULL, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:21:41.807+00', '2025-11-02 03:21:41.807+00', 'f');
-INSERT INTO "public"."permissions" VALUES ('1734095616123456534', 'deployments.view', 'deployments', 'read', '查看部署', 'action', NULL, NULL, NULL, NULL, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:21:41.807+00', '2025-11-02 03:21:41.807+00', 'f');
 INSERT INTO "public"."permissions" VALUES ('1734095616123456541', 'logs.view', 'logs', 'read', '查看日志', 'action', NULL, NULL, NULL, NULL, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:21:41.807+00', '2025-11-02 03:21:41.807+00', 'f');
 INSERT INTO "public"."permissions" VALUES ('1734095616123456542', 'logs.export', 'logs', 'export', '导出日志', 'action', NULL, NULL, NULL, NULL, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:21:41.807+00', '2025-11-02 03:21:41.807+00', 'f');
 INSERT INTO "public"."permissions" VALUES ('1734095616123456551', 'system.users.manage', 'users', 'manage', '管理用户', 'action', NULL, NULL, NULL, NULL, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:21:41.807+00', '2025-11-02 03:21:41.807+00', 'f');
@@ -303,6 +255,7 @@ INSERT INTO "public"."permissions" VALUES ('1734095616123456553', 'system.permis
 INSERT INTO "public"."permissions" VALUES ('1734095616123456411', 'menu.logs.system', 'menu', 'read', '系统日志', 'menu', '/logs/system', 'FileText', '1734095616123456406', 1, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:21:41.807+00', '2025-11-02 03:21:48.045+00', 'f');
 INSERT INTO "public"."permissions" VALUES ('1734095616123456412', 'menu.logs.operations', 'menu', 'read', '操作日志', 'menu', '/logs/operations', 'Activity', '1734095616123456406', 2, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:21:41.807+00', '2025-11-02 03:21:48.045+00', 'f');
 INSERT INTO "public"."permissions" VALUES ('1734095616123456413', 'menu.logs.requests', 'menu', 'read', '请求日志', 'menu', '/logs/requests', 'Globe', '1734095616123456406', 3, '1734095616123456001', '1734095616123456001', NULL, 1, '2025-11-02 03:21:41.807+00', '2025-11-02 03:21:48.045+00', 'f');
+
 
 -- ----------------------------
 -- Table structure for projects
@@ -380,7 +333,6 @@ INSERT INTO "public"."role_permissions" VALUES ('17340956161234565002', '1734095
 INSERT INTO "public"."role_permissions" VALUES ('17340956161234565003', '1734095616123456102', '1734095616123456306', '2025-11-02 03:10:31.003+00');
 INSERT INTO "public"."role_permissions" VALUES ('17340956161234565004', '1734095616123456102', '1734095616123456307', '2025-11-02 03:10:31.003+00');
 INSERT INTO "public"."role_permissions" VALUES ('1734095616123457001', '1734095616123456101', '1734095616123456404', '2025-11-02 03:10:31.232+00');
-INSERT INTO "public"."role_permissions" VALUES ('1734095616123457002', '1734095616123456101', '1734095616123456405', '2025-11-02 03:10:31.232+00');
 INSERT INTO "public"."role_permissions" VALUES ('1734095616123457003', '1734095616123456101', '1734095616123456406', '2025-11-02 03:10:31.232+00');
 INSERT INTO "public"."role_permissions" VALUES ('1734095616123457004', '1734095616123456101', '1734095616123456501', '2025-11-02 03:10:31.232+00');
 INSERT INTO "public"."role_permissions" VALUES ('1734095616123457005', '1734095616123456101', '1734095616123456502', '2025-11-02 03:10:31.232+00');
@@ -397,10 +349,6 @@ INSERT INTO "public"."role_permissions" VALUES ('1734095616123457015', '17340956
 INSERT INTO "public"."role_permissions" VALUES ('1734095616123457016', '1734095616123456101', '1734095616123456522', '2025-11-02 03:10:31.232+00');
 INSERT INTO "public"."role_permissions" VALUES ('1734095616123457017', '1734095616123456101', '1734095616123456523', '2025-11-02 03:10:31.232+00');
 INSERT INTO "public"."role_permissions" VALUES ('1734095616123457018', '1734095616123456101', '1734095616123456524', '2025-11-02 03:10:31.232+00');
-INSERT INTO "public"."role_permissions" VALUES ('1734095616123457019', '1734095616123456101', '1734095616123456531', '2025-11-02 03:10:31.232+00');
-INSERT INTO "public"."role_permissions" VALUES ('1734095616123457020', '1734095616123456101', '1734095616123456532', '2025-11-02 03:10:31.232+00');
-INSERT INTO "public"."role_permissions" VALUES ('1734095616123457021', '1734095616123456101', '1734095616123456533', '2025-11-02 03:10:31.232+00');
-INSERT INTO "public"."role_permissions" VALUES ('1734095616123457022', '1734095616123456101', '1734095616123456534', '2025-11-02 03:10:31.232+00');
 INSERT INTO "public"."role_permissions" VALUES ('1734095616123457023', '1734095616123456101', '1734095616123456541', '2025-11-02 03:10:31.232+00');
 INSERT INTO "public"."role_permissions" VALUES ('1734095616123457024', '1734095616123456101', '1734095616123456542', '2025-11-02 03:10:31.232+00');
 INSERT INTO "public"."role_permissions" VALUES ('1734095616123457025', '1734095616123456101', '1734095616123456551', '2025-11-02 03:10:31.232+00');
@@ -576,48 +524,8 @@ ALTER TABLE "public"."configs" ADD CONSTRAINT "configs_code_environment_version_
 ALTER TABLE "public"."configs" ADD CONSTRAINT "configs_pkey" PRIMARY KEY ("id");
 
 -- ----------------------------
--- Indexes structure for table deployments
--- ----------------------------
-CREATE INDEX "idx_deployments_application_id" ON "public"."deployments" USING btree (
-  "application_id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
-CREATE INDEX "idx_deployments_deployed_at" ON "public"."deployments" USING btree (
-  "deployed_at" "pg_catalog"."timestamptz_ops" ASC NULLS LAST
-);
-CREATE INDEX "idx_deployments_environment" ON "public"."deployments" USING btree (
-  "environment" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
-CREATE INDEX "idx_deployments_status" ON "public"."deployments" USING btree (
-  "status" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
-
--- ----------------------------
--- Triggers structure for table deployments
--- ----------------------------
-CREATE TRIGGER "update_deployments_updated_at" BEFORE UPDATE ON "public"."deployments"
-FOR EACH ROW
-EXECUTE PROCEDURE "public"."update_updated_at_column"();
-
--- ----------------------------
--- Primary Key structure for table deployments
--- ----------------------------
-ALTER TABLE "public"."deployments" ADD CONSTRAINT "deployments_pkey" PRIMARY KEY ("id");
-
--- ----------------------------
 -- Indexes structure for table instances
 -- ----------------------------
-CREATE INDEX "idx_instances_environment" ON "public"."instances" USING btree (
-  "environment" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
-CREATE INDEX "idx_instances_hostname" ON "public"."instances" USING btree (
-  "hostname" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
-CREATE INDEX "idx_instances_ip_address" ON "public"."instances" USING btree (
-  "ip_address" "pg_catalog"."inet_ops" ASC NULLS LAST
-);
-CREATE INDEX "idx_instances_status" ON "public"."instances" USING btree (
-  "status" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
 
 -- ----------------------------
 -- Triggers structure for table instances

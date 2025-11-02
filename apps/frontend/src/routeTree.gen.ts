@@ -13,6 +13,7 @@ import { Route as ClerkRouteRouteImport } from './routes/clerk/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
+import { Route as AuthenticatedInstancesRouteImport } from './routes/_authenticated/instances'
 import { Route as AuthenticatedApplicationsRouteImport } from './routes/_authenticated/applications'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
 import { Route as errors500RouteImport } from './routes/(errors)/500'
@@ -62,6 +63,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedInstancesRoute = AuthenticatedInstancesRouteImport.update({
+  id: '/instances',
+  path: '/instances',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedApplicationsRoute =
@@ -245,6 +251,7 @@ export interface FileRoutesByFullPath {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/applications': typeof AuthenticatedApplicationsRoute
+  '/instances': typeof AuthenticatedInstancesRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/': typeof AuthenticatedIndexRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
@@ -278,6 +285,7 @@ export interface FileRoutesByTo {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/applications': typeof AuthenticatedApplicationsRoute
+  '/instances': typeof AuthenticatedInstancesRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/': typeof AuthenticatedIndexRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
@@ -316,6 +324,7 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
   '/_authenticated/applications': typeof AuthenticatedApplicationsRoute
+  '/_authenticated/instances': typeof AuthenticatedInstancesRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
@@ -352,6 +361,7 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/applications'
+    | '/instances'
     | '/projects'
     | '/'
     | '/errors/$error'
@@ -385,6 +395,7 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/applications'
+    | '/instances'
     | '/projects'
     | '/'
     | '/errors/$error'
@@ -422,6 +433,7 @@ export interface FileRouteTypes {
     | '/(errors)/500'
     | '/(errors)/503'
     | '/_authenticated/applications'
+    | '/_authenticated/instances'
     | '/_authenticated/projects'
     | '/_authenticated/'
     | '/_authenticated/errors/$error'
@@ -486,6 +498,13 @@ declare module '@tanstack/react-router' {
       path: '/projects'
       fullPath: '/projects'
       preLoaderRoute: typeof AuthenticatedProjectsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/instances': {
+      id: '/_authenticated/instances'
+      path: '/instances'
+      fullPath: '/instances'
+      preLoaderRoute: typeof AuthenticatedInstancesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/applications': {
@@ -734,6 +753,7 @@ const AuthenticatedSettingsRouteRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedApplicationsRoute: typeof AuthenticatedApplicationsRoute
+  AuthenticatedInstancesRoute: typeof AuthenticatedInstancesRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
@@ -750,6 +770,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedApplicationsRoute: AuthenticatedApplicationsRoute,
+  AuthenticatedInstancesRoute: AuthenticatedInstancesRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,

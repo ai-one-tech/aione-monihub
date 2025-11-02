@@ -1,6 +1,5 @@
 pub mod applications;
 pub mod configs;
-pub mod deployments;
 pub mod logs;
 pub mod instances;
 pub mod password_reset_tokens;
@@ -13,7 +12,6 @@ pub mod users;
 
 pub use applications::Entity as Applications;
 pub use configs::Entity as Configs;
-pub use deployments::Entity as Deployments;
 pub use logs::Entity as Logs;
 pub use instances::Entity as Instances;
 pub use password_reset_tokens::Entity as PasswordResetTokens;

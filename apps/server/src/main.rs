@@ -154,7 +154,6 @@ impl Modify for SecurityAddon {
 use aione_monihub_server::applications::routes::application_routes;
 use aione_monihub_server::auth::routes::auth_routes;
 use aione_monihub_server::configs::routes::config_routes;
-use aione_monihub_server::deployments::routes::deployment_routes;
 use aione_monihub_server::health::routes::health_routes;
 use aione_monihub_server::logs::routes::log_routes;
 use aione_monihub_server::instances::routes::instance_routes;
@@ -219,7 +218,6 @@ async fn main() -> io::Result<()> {
             .configure(auth_routes)
             .configure(project_routes)
             .configure(application_routes)
-            .configure(deployment_routes)
             .configure(user_routes)
             .configure(role_routes)
             .configure(permission_routes)
