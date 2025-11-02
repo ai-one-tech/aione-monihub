@@ -84,13 +84,17 @@ export function ApplicationsEditSheet() {
   // 当应用数据加载完成时，更新表单
   useEffect(() => {
     if ((isEditMode || isViewMode) && applicationDetail) {
-      form.reset({
-        project_id: applicationDetail.project_id,
-        name: applicationDetail.name,
-        code: applicationDetail.code,
-        description: applicationDetail.description,
-        status: applicationDetail.status,
-      })
+      
+      Promise.resolve(() => {
+        form.reset({
+          project_id: applicationDetail.project_id,
+          name: applicationDetail.name,
+          code: applicationDetail.code,
+          description: applicationDetail.description,
+          status: applicationDetail.status,
+        })
+      }).then();
+
     } else if (isCreateMode) {
       form.reset({
         project_id: '',
@@ -154,142 +158,142 @@ export function ApplicationsEditSheet() {
               <div className='text-sm text-muted-foreground'>加载应用信息中...</div>
             </div>
           ) : (
-          <div className='flex-1 overflow-y-auto px-6 py-4'>
-            <Form {...form}>
-              <form id='application-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
-                <FormField
-                  control={form.control}
-                  name='project_id'
-                  render={({ field }) => (
-                    <FormItem className='flex flex-col'>
-                      <FormLabel>所属项目 *</FormLabel>
-                      <Popover open={projectPopoverOpen} onOpenChange={setProjectPopoverOpen}>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant='outline'
-                              role='combobox'
-                              className={cn('justify-between', !field.value && 'text-muted-foreground')}
-                            >
-                              {field.value
-                                ? (selectedProject
+            <div className='flex-1 overflow-y-auto px-6 py-4'>
+              <Form {...form}>
+                <form id='application-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
+                  <FormField
+                    control={form.control}
+                    name='project_id'
+                    render={({ field }) => (
+                      <FormItem className='flex flex-col'>
+                        <FormLabel>所属项目 *</FormLabel>
+                        <Popover open={projectPopoverOpen} onOpenChange={setProjectPopoverOpen}>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant='outline'
+                                role='combobox'
+                                className={cn('justify-between', !field.value && 'text-muted-foreground')}
+                              >
+                                {field.value
+                                  ? (selectedProject
                                     ? `${selectedProject.name} (${selectedProject.code})`
                                     : field.value)
-                                : '请选择项目'}
-                              <CaretSortIcon className='ms-2 h-4 w-4 shrink-0 opacity-50' />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className='w-[320px] p-0'>
-                          <Command>
-                            <CommandInput
-                              placeholder='搜索项目...'
-                              onValueChange={setProjectSearch}
-                            />
-                            <CommandEmpty>未找到项目</CommandEmpty>
-                            <CommandGroup>
-                              <CommandList>
-                                {(projectsList?.data ?? []).map((project) => (
-                                  <CommandItem
-                                    key={project.id}
-                                    value={project.name}
-                                    onSelect={() => {
-                                      form.setValue('project_id', project.id, { shouldValidate: true })
-                                      setProjectPopoverOpen(false)
-                                    }}
-                                  >
-                                    <CheckIcon
-                                      className={cn(
-                                        'size-4',
-                                        field.value === project.id ? 'opacity-100' : 'opacity-0'
-                                      )}
-                                    />
-                                    {project.name}（{project.code}）
-                                  </CommandItem>
-                                ))}
-                              </CommandList>
-                            </CommandGroup>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                                  : '请选择项目'}
+                                <CaretSortIcon className='ms-2 h-4 w-4 shrink-0 opacity-50' />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className='w-[320px] p-0'>
+                            <Command>
+                              <CommandInput
+                                placeholder='搜索项目...'
+                                onValueChange={setProjectSearch}
+                              />
+                              <CommandEmpty>未找到项目</CommandEmpty>
+                              <CommandGroup>
+                                <CommandList>
+                                  {(projectsList?.data ?? []).map((project) => (
+                                    <CommandItem
+                                      key={project.id}
+                                      value={project.name}
+                                      onSelect={() => {
+                                        form.setValue('project_id', project.id, { shouldValidate: true })
+                                        setProjectPopoverOpen(false)
+                                      }}
+                                    >
+                                      <CheckIcon
+                                        className={cn(
+                                          'size-4',
+                                          field.value === project.id ? 'opacity-100' : 'opacity-0'
+                                        )}
+                                      />
+                                      {project.name}（{project.code}）
+                                    </CommandItem>
+                                  ))}
+                                </CommandList>
+                              </CommandGroup>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name='name'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>应用名称 *</FormLabel>
-                      <FormControl>
-                        <Input placeholder='请输入应用名称' {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name='code'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>应用代码 *</FormLabel>
-                      <FormControl>
-                        <Input placeholder='请输入应用代码' {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name='status'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>应用状态 *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                  <FormField
+                    control={form.control}
+                    name='name'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>应用名称 *</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder='请选择应用状态' />
-                          </SelectTrigger>
+                          <Input placeholder='请输入应用名称' {...field} />
                         </FormControl>
-                        <SelectContent>
-                          {APPLICATION_STATUS_OPTIONS.filter(option => option.value !== 'all').map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name='description'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>应用描述 *</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder='请输入应用描述'
-                          className='min-h-[100px]'
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </form>
-            </Form>
-          </div>
+                  <FormField
+                    control={form.control}
+                    name='code'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>应用代码 *</FormLabel>
+                        <FormControl>
+                          <Input placeholder='请输入应用代码' {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name='status'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>应用状态 * </FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder='请选择应用状态' />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {APPLICATION_STATUS_OPTIONS.filter(option => option.value !== 'all').map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name='description'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>应用描述 *</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder='请输入应用描述'
+                            className='min-h-[100px]'
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </form>
+              </Form>
+            </div>
           )}
 
           <SheetFooter>
