@@ -155,6 +155,8 @@ use aione_monihub_server::applications::routes::application_routes;
 use aione_monihub_server::auth::routes::auth_routes;
 use aione_monihub_server::configs::routes::config_routes;
 use aione_monihub_server::health::routes::health_routes;
+use aione_monihub_server::instance_reports::routes::{instance_report_routes, open_instance_report_routes};
+use aione_monihub_server::instance_tasks::routes::{instance_task_routes, open_instance_task_routes};
 use aione_monihub_server::logs::routes::log_routes;
 use aione_monihub_server::instances::routes::instance_routes;
 use aione_monihub_server::permissions::routes::permission_routes;
@@ -222,9 +224,17 @@ async fn main() -> io::Result<()> {
             .configure(role_routes)
             .configure(permission_routes)
             .configure(instance_routes)
+            .configure(instance_report_routes)
+            .configure(instance_task_routes)
             .configure(config_routes)
             .configure(websocket_routes)
             .configure(log_routes)
+            // 开放 API 路由（无需认证）
+            .service(
+                web::scope("/api")
+                    .configure(open_instance_report_routes)
+                    .configure(open_instance_task_routes)
+            )
     })
     .bind(&bind_address)?
     .run()

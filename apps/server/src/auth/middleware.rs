@@ -64,6 +64,7 @@ where
                 "/api/auth/login",
                 "/api/auth/forgot-password",
                 "/api/auth/reset-password",
+                "/api/open",  // 所有开放 API
                 "/health",
                 "/swagger-ui",
                 "/api-docs",

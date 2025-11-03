@@ -4,6 +4,8 @@ pub mod auth;
 pub mod configs;
 pub mod entities;
 pub mod health;
+pub mod instance_reports;
+pub mod instance_tasks;
 pub mod logs;
 pub mod instances;
 // pub mod migrator; // 已使用SQL迁移文件

@@ -1,0 +1,55 @@
+# AiOne MoniHub Java Agent 配置示例
+
+monihub:
+  agent:
+    # 实例ID（必填，需要先在服务端创建实例）
+    instance-id: your-instance-id-here
+    
+    # 服务端URL
+    server-url: http://localhost:9080
+    
+    # Agent类型
+    agent-type: java
+    
+    # Agent版本
+    agent-version: 1.0.0
+    
+    # 上报配置
+    report:
+      # 是否启用上报
+      enabled: true
+      # 上报间隔（秒）
+      interval-seconds: 60
+    
+    # 任务配置
+    task:
+      # 是否启用任务功能
+      enabled: true
+      # 任务拉取间隔（秒）
+      poll-interval-seconds: 30
+      # 是否启用长轮询
+      long-poll-enabled: true
+      # 长轮询超时（秒）
+      long-poll-timeout-seconds: 30
+      # 最大并发任务数
+      max-concurrent-tasks: 5
+    
+    # 文件配置
+    file:
+      # 上传目录
+      upload-dir: /tmp/monihub/uploads
+      # 最大上传大小（MB）
+      max-upload-size-mb: 100
+
+# Spring Boot 配置
+spring:
+  application:
+    name: aione-monihub-agent
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    tech.aione.monihub.agent: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
