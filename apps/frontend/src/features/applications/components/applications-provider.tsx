@@ -16,6 +16,12 @@ interface ApplicationsProviderState {
   setIsDeleteDialogOpen: (open: boolean) => void
   deletingApplicationId: string | null
   setDeletingApplicationId: (id: string | null) => void
+  
+  // 任务下发抽屉状态
+  isTaskDrawerOpen: boolean
+  setIsTaskDrawerOpen: (open: boolean) => void
+  taskDrawerApplicationId: string | null
+  setTaskDrawerApplicationId: (id: string | null) => void
 }
 
 const ApplicationsProviderContext = createContext<ApplicationsProviderState | undefined>(undefined)
@@ -33,6 +39,10 @@ export function ApplicationsProvider({ children }: ApplicationsProviderProps) {
   // 删除确认状态
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [deletingApplicationId, setDeletingApplicationId] = useState<string | null>(null)
+  
+  // 任务下发抽屉状态
+  const [isTaskDrawerOpen, setIsTaskDrawerOpen] = useState(false)
+  const [taskDrawerApplicationId, setTaskDrawerApplicationId] = useState<string | null>(null)
 
   const value: ApplicationsProviderState = {
     // Sheet 状态
@@ -48,6 +58,12 @@ export function ApplicationsProvider({ children }: ApplicationsProviderProps) {
     setIsDeleteDialogOpen,
     deletingApplicationId,
     setDeletingApplicationId,
+    
+    // 任务下发抽屉状态
+    isTaskDrawerOpen,
+    setIsTaskDrawerOpen,
+    taskDrawerApplicationId,
+    setTaskDrawerApplicationId,
   }
 
   return (

@@ -7,6 +7,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import tech.aione.monihub.agent.service.InstanceReportService;
+import tech.aione.monihub.agent.service.InstanceTaskService;
 
 /**
  * Agent应用主类
@@ -23,7 +24,8 @@ public class AgentApplication {
      * 应用启动后自动启动Agent服务
      */
     @Bean
-    public ApplicationRunner agentRunner(InstanceReportService reportService) {
+    public ApplicationRunner agentRunner(InstanceReportService reportService,
+                                        InstanceTaskService taskService) {
         return new ApplicationRunner() {
             @Override
             public void run(ApplicationArguments args) throws Exception {
@@ -32,12 +34,16 @@ public class AgentApplication {
                 // 启动上报服务
                 reportService.start();
                 
+                // 启动任务服务
+                taskService.start();
+                
                 log.info("Agent started successfully");
                 
                 // 注册关闭钩子
                 Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                     log.info("Shutting down Agent...");
                     reportService.stop();
+                    taskService.stop();
                     log.info("Agent stopped");
                 }));
             }

@@ -1,4 +1,16 @@
-import { type GetApplicationsParams, type ApplicationListResponse, type ApplicationDetailResponse, type UpdateApplicationRequest, type CreateApplicationRequest } from '../data/api-schema'
+import { 
+  type GetApplicationsParams, 
+  type ApplicationListResponse, 
+  type ApplicationDetailResponse, 
+  type UpdateApplicationRequest, 
+  type CreateApplicationRequest,
+  type TaskCreateRequest,
+  type TaskResponse,
+  type TaskListResponse,
+  type TaskRecordListResponse,
+  type GetTasksParams,
+  type GetTaskRecordsParams
+} from '../data/api-schema'
 import { apiClient } from '@/lib/api-client'
 
 class ApplicationsApi {
@@ -60,6 +72,87 @@ class ApplicationsApi {
    */
   async getApplicationById(applicationId: string): Promise<ApplicationDetailResponse> {
     const response = await apiClient.get<ApplicationDetailResponse>(`/api/applications/${applicationId}`)
+    return response.data
+  }
+
+  /**
+   * 创建任务
+   */
+  async createTask(taskData: TaskCreateRequest): Promise<TaskResponse> {
+    const response = await apiClient.post<TaskResponse>('/api/instances/tasks', taskData)
+    return response.data
+  }
+
+  /**
+   * 获取任务列表
+   */
+  async getTasks(params: GetTasksParams = {}): Promise<TaskListResponse> {
+    const searchParams = new URLSearchParams()
+
+    if (params.page !== undefined) {
+      searchParams.append('page', params.page.toString())
+    }
+    if (params.limit !== undefined) {
+      searchParams.append('limit', params.limit.toString())
+    }
+    if (params.status) {
+      searchParams.append('status', params.status)
+    }
+    if (params.task_type) {
+      searchParams.append('task_type', params.task_type)
+    }
+
+    const queryString = searchParams.toString()
+    const endpoint = `/api/instances/tasks${queryString ? `?${queryString}` : ''}`
+
+    const response = await apiClient.get<TaskListResponse>(endpoint)
+    return response.data
+  }
+
+  /**
+   * 获取单个任务详情
+   */
+  async getTaskById(taskId: string): Promise<Task> {
+    const response = await apiClient.get<Task>(`/api/instances/tasks/${taskId}`)
+    return response.data
+  }
+
+  /**
+   * 获取任务执行记录
+   */
+  async getTaskRecords(taskId: string, params: GetTaskRecordsParams = {}): Promise<TaskRecordListResponse> {
+    const searchParams = new URLSearchParams()
+
+    if (params.page !== undefined) {
+      searchParams.append('page', params.page.toString())
+    }
+    if (params.limit !== undefined) {
+      searchParams.append('limit', params.limit.toString())
+    }
+    if (params.status) {
+      searchParams.append('status', params.status)
+    }
+
+    const queryString = searchParams.toString()
+    const endpoint = `/api/instances/tasks/${taskId}/records${queryString ? `?${queryString}` : ''}`
+
+    const response = await apiClient.get<TaskRecordListResponse>(endpoint)
+    return response.data
+  }
+
+  /**
+   * 取消任务
+   */
+  async cancelTask(taskId: string): Promise<any> {
+    const response = await apiClient.post(`/api/instances/tasks/${taskId}/cancel`, {})
+    return response.data
+  }
+
+  /**
+   * 重试任务记录
+   */
+  async retryTaskRecord(recordId: string): Promise<any> {
+    const response = await apiClient.post(`/api/instances/task-records/${recordId}/retry`, {})
     return response.data
   }
 }

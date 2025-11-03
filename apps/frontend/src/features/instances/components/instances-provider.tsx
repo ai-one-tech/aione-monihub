@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, type ReactNode } from 'react'
+import { type InstanceResponse } from '../data/api-schema'
 
 type SheetMode = 'create' | 'edit' | 'view'
 
@@ -16,6 +17,12 @@ interface InstancesProviderState {
   setIsDeleteDialogOpen: (open: boolean) => void
   deletingInstanceId: string | null
   setDeletingInstanceId: (id: string | null) => void
+  
+  // 上报记录抽屉状态
+  reportDrawerOpen: boolean
+  setReportDrawerOpen: (open: boolean) => void
+  reportInstance: InstanceResponse | null
+  setReportInstance: (instance: InstanceResponse | null) => void
 }
 
 const InstancesProviderContext = createContext<InstancesProviderState | undefined>(undefined)
@@ -33,6 +40,10 @@ export function InstancesProvider({ children }: InstancesProviderProps) {
   // 删除确认状态
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [deletingInstanceId, setDeletingInstanceId] = useState<string | null>(null)
+  
+  // 上报记录抽屉状态
+  const [reportDrawerOpen, setReportDrawerOpen] = useState(false)
+  const [reportInstance, setReportInstance] = useState<InstanceResponse | null>(null)
 
   const value: InstancesProviderState = {
     // Sheet 状态
@@ -48,6 +59,12 @@ export function InstancesProvider({ children }: InstancesProviderProps) {
     setIsDeleteDialogOpen,
     deletingInstanceId,
     setDeletingInstanceId,
+    
+    // 上报记录抽屉状态
+    reportDrawerOpen,
+    setReportDrawerOpen,
+    reportInstance,
+    setReportInstance,
   }
 
   return (

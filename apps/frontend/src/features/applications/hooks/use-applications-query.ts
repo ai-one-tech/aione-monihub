@@ -36,6 +36,11 @@ export function useApplicationQuery(applicationId: string) {
 }
 
 /**
+ * 应用详情查询 Hook (别名)
+ */
+export const useApplicationById = useApplicationQuery
+
+/**
  * 创建应用 Hook
  */
 export function useCreateApplication() {

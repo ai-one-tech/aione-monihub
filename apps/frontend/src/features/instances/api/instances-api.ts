@@ -3,7 +3,9 @@ import {
   type InstanceListResponse, 
   type InstanceDetailResponse, 
   type UpdateInstanceRequest, 
-  type CreateInstanceRequest 
+  type CreateInstanceRequest,
+  type GetInstanceReportsParams,
+  type InstanceReportListResponse
 } from '../data/api-schema'
 import { apiClient } from '@/lib/api-client'
 
@@ -111,6 +113,32 @@ class InstancesApi {
    */
   async getInstanceMonitoringData(instanceId: string): Promise<any> {
     const response = await apiClient.get(`/api/instances/${instanceId}/monitoring`)
+    return response.data
+  }
+
+  /**
+   * 获取实例上报记录列表
+   */
+  async getInstanceReports(instanceId: string, params: GetInstanceReportsParams = {}): Promise<InstanceReportListResponse> {
+    const searchParams = new URLSearchParams()
+
+    if (params.page !== undefined) {
+      searchParams.append('page', params.page.toString())
+    }
+    if (params.limit !== undefined) {
+      searchParams.append('limit', params.limit.toString())
+    }
+    if (params.start_time) {
+      searchParams.append('start_time', params.start_time)
+    }
+    if (params.end_time) {
+      searchParams.append('end_time', params.end_time)
+    }
+
+    const queryString = searchParams.toString()
+    const endpoint = `/api/instances/${instanceId}/reports${queryString ? `?${queryString}` : ''}`
+
+    const response = await apiClient.get<InstanceReportListResponse>(endpoint)
     return response.data
   }
 }

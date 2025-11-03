@@ -7,10 +7,12 @@ import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { ApplicationsDialogs } from './components/applications-dialogs'
 import { ApplicationsPrimaryButtons } from './components/applications-primary-buttons'
-import { ApplicationsProvider } from './components/applications-provider'
+import { ApplicationsProvider, useApplicationsProvider } from './components/applications-provider'
 import { ApplicationsTable } from './components/applications-table'
 import { ApplicationsEditSheet } from './components/applications-edit-sheet'
+import { ApplicationTaskDrawer } from './components/applications-task-drawer'
 import { useApplicationsQuery } from './hooks/use-applications-query'
+import { useApplicationById } from './hooks/use-applications-query'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
@@ -85,6 +87,23 @@ export function Applications() {
 
       <ApplicationsEditSheet />
       <ApplicationsDialogs />
+      <TaskDrawerWrapper />
     </ApplicationsProvider>
   )
+}
+
+function TaskDrawerWrapper() {
+  const { isTaskDrawerOpen, setIsTaskDrawerOpen, taskDrawerApplicationId } = useApplicationsProvider()
+  const { data: application } = useApplicationById(taskDrawerApplicationId || '')
+
+  if (!taskDrawerApplicationId || !application) return null
+
+  return (
+    <ApplicationTaskDrawer
+      application={application}
+      open={isTaskDrawerOpen}
+      onOpenChange={setIsTaskDrawerOpen}
+    />
+  )
+}
 }

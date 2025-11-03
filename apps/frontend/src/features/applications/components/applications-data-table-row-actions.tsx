@@ -1,5 +1,5 @@
 import { type Row } from '@tanstack/react-table'
-import { Eye, Edit, Trash2 } from 'lucide-react'
+import { Eye, Edit, Trash2, Link2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { type ApplicationResponse } from '../data/api-schema'
@@ -18,6 +18,8 @@ export function ApplicationsDataTableRowActions({
     setSelectedApplicationId,
     setIsDeleteDialogOpen,
     setDeletingApplicationId,
+    setIsTaskDrawerOpen,
+    setTaskDrawerApplicationId,
   } = useApplicationsProvider()
   
   const application = row.original
@@ -37,6 +39,11 @@ export function ApplicationsDataTableRowActions({
   const handleDelete = () => {
     setDeletingApplicationId(application.id)
     setIsDeleteDialogOpen(true)
+  }
+
+  const handleConnectInstances = () => {
+    setTaskDrawerApplicationId(application.id)
+    setIsTaskDrawerOpen(true)
   }
 
   return (
@@ -63,6 +70,19 @@ export function ApplicationsDataTableRowActions({
           </TooltipTrigger>
           <TooltipContent>
             <p>编辑应用</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant='ghost' size='sm' onClick={handleConnectInstances}>
+              <Link2 className='h-4 w-4' />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>连接实例</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

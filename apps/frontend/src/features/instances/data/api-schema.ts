@@ -120,3 +120,60 @@ export const OS_TYPE_OPTIONS = [
   { value: 'windows', label: 'Windows' },
   { value: 'macos', label: 'macOS' },
 ] as const
+
+// ===================================================================
+// 实例上报记录相关类型定义
+// ===================================================================
+
+// 实例上报记录响应
+export const instanceReportRecordSchema = z.object({
+  id: z.string(),
+  instance_id: z.string(),
+  agent_type: z.string(),
+  agent_version: z.string().optional(),
+  os_type: z.string().optional(),
+  os_version: z.string().optional(),
+  hostname: z.string().optional(),
+  ip_address: z.string().optional(),
+  public_ip: z.string().optional(),
+  mac_address: z.string().optional(),
+  network_type: z.string().optional(),
+  cpu_model: z.string().optional(),
+  cpu_cores: z.number().optional(),
+  cpu_usage_percent: z.string().optional(),
+  memory_total_mb: z.number().optional(),
+  memory_used_mb: z.number().optional(),
+  memory_usage_percent: z.string().optional(),
+  disk_total_gb: z.number().optional(),
+  disk_used_gb: z.number().optional(),
+  disk_usage_percent: z.string().optional(),
+  process_id: z.number().optional(),
+  process_uptime_seconds: z.number().optional(),
+  thread_count: z.number().optional(),
+  custom_metrics: z.any().optional(),
+  report_timestamp: z.string(),
+  received_at: z.string(),
+  created_at: z.string(),
+})
+
+export type InstanceReportRecord = z.infer<typeof instanceReportRecordSchema>
+
+// 实例上报记录列表响应
+export const instanceReportListResponseSchema = z.object({
+  data: z.array(instanceReportRecordSchema),
+  pagination: paginationSchema,
+  timestamp: z.number(),
+  trace_id: z.string(),
+})
+
+export type InstanceReportListResponse = z.infer<typeof instanceReportListResponseSchema>
+
+// 获取实例上报记录参数
+export const getInstanceReportsParamsSchema = z.object({
+  page: z.number().optional(),
+  limit: z.number().optional(),
+  start_time: z.string().optional(),
+  end_time: z.string().optional(),
+})
+
+export type GetInstanceReportsParams = z.infer<typeof getInstanceReportsParamsSchema>

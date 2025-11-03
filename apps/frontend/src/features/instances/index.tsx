@@ -11,6 +11,7 @@ import { InstancesProvider } from './components/instances-provider'
 import { InstancesTable } from './components/instances-data-table'
 import { InstancesEditSheet } from './components/instances-edit-sheet'
 import { InstancesDeleteDialog } from './components/instances-delete-dialog'
+import { InstanceReportDrawer } from './components/instances-report-drawer'
 import { useInstancesQuery } from './hooks/use-instances-query'
 import { useInstancesProvider } from './components/instances-provider'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -22,7 +23,14 @@ const route = getRouteApi('/_authenticated/instances')
 function InstancesContent() {
   const search = route.useSearch()
   const navigate = route.useNavigate()
-  const { setIsSheetOpen, setSheetMode, setSelectedInstanceId } = useInstancesProvider()
+  const { 
+    setIsSheetOpen, 
+    setSheetMode, 
+    setSelectedInstanceId,
+    reportDrawerOpen,
+    setReportDrawerOpen,
+    reportInstance,
+  } = useInstancesProvider()
 
   // 构建API查询参数
   const apiParams = {
@@ -102,6 +110,11 @@ function InstancesContent() {
 
       <InstancesEditSheet />
       <InstancesDeleteDialog />
+      <InstanceReportDrawer 
+        instance={reportInstance}
+        open={reportDrawerOpen}
+        onOpenChange={setReportDrawerOpen}
+      />
     </>
   )
 }

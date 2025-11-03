@@ -1,5 +1,5 @@
 import { type Row } from '@tanstack/react-table'
-import { Eye, Edit, Trash2, Power, PowerOff } from 'lucide-react'
+import { Eye, Edit, Trash2, Power, PowerOff, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { type InstanceResponse } from '../data/api-schema'
@@ -19,6 +19,8 @@ export function InstancesDataTableRowActions({
     setSelectedInstanceId,
     setIsDeleteDialogOpen,
     setDeletingInstanceId,
+    setReportDrawerOpen,
+    setReportInstance,
   } = useInstancesProvider()
   
   const enableInstance = useEnableInstance()
@@ -55,6 +57,11 @@ export function InstancesDataTableRowActions({
     }
   }
 
+  const handleViewReports = () => {
+    setReportInstance(instance)
+    setReportDrawerOpen(true)
+  }
+
   const isActive = instance.status === 'active'
 
   return (
@@ -68,6 +75,19 @@ export function InstancesDataTableRowActions({
           </TooltipTrigger>
           <TooltipContent>
             <p>查看详情</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant='ghost' size='sm' onClick={handleViewReports}>
+              <FileText className='h-4 w-4' />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>查看上报记录</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
