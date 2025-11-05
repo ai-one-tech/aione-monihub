@@ -1,6 +1,6 @@
 package org.aione.monihub.agent.util;
 
-import org.aione.monihub.agent.config.AgentProperties;
+import org.aione.monihub.agent.config.AgentConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -13,19 +13,20 @@ import javax.annotation.Resource;
  */
 @Component
 public class AgentLoggerFactory {
-    
-    private static AgentProperties staticProperties;
-    
+
+    private static AgentConfig staticProperties;
+
     @Resource
-    private AgentProperties properties;
-    
+    private AgentConfig properties;
+
     @javax.annotation.PostConstruct
     public void init() {
         staticProperties = properties;
     }
-    
+
     /**
      * 获取日志对象
+     *
      * @param clazz 类对象
      * @return AgentLogger实例
      */
@@ -33,9 +34,10 @@ public class AgentLoggerFactory {
         Logger logger = LoggerFactory.getLogger(clazz);
         return new AgentLogger(logger, staticProperties);
     }
-    
+
     /**
      * 获取日志对象
+     *
      * @param name 日志名称
      * @return AgentLogger实例
      */

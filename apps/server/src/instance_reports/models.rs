@@ -11,18 +11,19 @@ use std::collections::HashMap;
 pub struct InstanceReportRequest {
     pub instance_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub port: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub program_path: Option<String>,
+    pub profiles: Option<String>,
     pub agent_type: String,
     pub agent_version: Option<String>,
     pub application_code: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub environment: Option<HashMap<String, String>>,
+    pub environment: Option<JsonValue>,
     pub system_info: SystemInfo,
     pub network_info: NetworkInfo,
     pub hardware_info: HardwareInfo,
     pub runtime_info: RuntimeInfo,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub custom_fields: Option<JsonValue>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub custom_metrics: Option<JsonValue>,
     pub report_timestamp: String, // ISO 8601 format
@@ -49,6 +50,8 @@ pub struct NetworkInfo {
     pub mac_address: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub network_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub port: Option<i16>
 }
 
 /// 硬件信息

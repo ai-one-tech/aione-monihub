@@ -10,22 +10,22 @@ import java.util.Map;
  */
 @Data
 public class TaskDispatchItem {
-    
+
     @JsonProperty("task_id")
     private String taskId;
-    
+
     @JsonProperty("record_id")
     private String recordId;
-    
+
     @JsonProperty("task_type")
     private String taskType;
-    
+
     @JsonProperty("task_content")
     private Map<String, Object> taskContent;
-    
+
     @JsonProperty("timeout_seconds")
     private Integer timeoutSeconds;
-    
+
     @JsonProperty("priority")
     private Integer priority;
 }

@@ -1,5 +1,6 @@
 # AiOne MoniHub Java Agent 配置示例
 
+
 monihub:
   agent:
     # 实例ID（必填，需要先在服务端创建实例）
@@ -42,8 +43,7 @@ monihub:
       max-upload-size-mb: 5120
     
     # Debug模式，开启后会打印详细日志，默认关闭
-    debug: false
-
+    debug: true
 # Spring Boot 配置
 spring:
   application:
@@ -53,9 +53,6 @@ spring:
 logging:
   level:
     root: INFO
-    org.aione.monihub.agent: DEBUG
-    # 屏蔽 OSHI 在 macOS 上的已知警告
-    oshi.software.os.mac.MacOperatingSystem: ERROR
-    oshi.util.platform.mac.SysctlUtil: ERROR
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+server:
+  port: 8080

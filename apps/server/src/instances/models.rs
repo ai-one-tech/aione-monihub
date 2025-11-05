@@ -8,7 +8,7 @@ pub struct Instance {
     pub id: String,
     pub hostname: String,
     pub ip_address: String,
-    pub instance_type: String,
+    pub environment: String,
     pub status: String,
     pub application_id: String,
     pub specs: Option<JsonValue>,
@@ -25,7 +25,7 @@ pub struct InstanceResponse {
     pub id: String,
     pub hostname: String,
     pub ip_address: String,
-    pub instance_type: String,
+    pub environment: Option<JsonValue>,
     pub status: String,
     pub application_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -33,7 +33,7 @@ pub struct InstanceResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub public_ip: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub port: Option<i32>,
+    pub port: Option<i16>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub program_path: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -54,7 +54,7 @@ pub struct InstanceResponse {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InstanceCreateRequest {
-    pub instance_type: String,
+    pub environment: Option<JsonValue>,
     pub status: String,
     pub application_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -62,9 +62,10 @@ pub struct InstanceCreateRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub public_ip: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub port: Option<i32>,
+    pub port: Option<i16>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub program_path: Option<String>,
+    pub profiles: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub os_type: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -76,7 +77,7 @@ pub struct InstanceCreateRequest {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InstanceUpdateRequest {
     pub name: String,
-    pub instance_type: String,
+    pub environment: String,
     pub status: String,
     pub application_id: String,
 }
@@ -123,7 +124,7 @@ impl InstanceResponse {
             id: entity.id,
             hostname: entity.hostname,
             ip_address: entity.ip_address,
-            instance_type: entity.environment,
+            environment: entity.environment,
             status: entity.status,
             application_id: entity.application_id,
             mac_address: entity.mac_address,
@@ -152,12 +153,13 @@ impl InstanceCreateRequest {
             hostname: Set(format!("host-{}", generate_snowflake_id())),
             ip_address: Set("0.0.0.0".to_string()),
             status: Set(self.status.clone()),
-            environment: Set(self.instance_type.clone()),
+            environment: Set(self.environment.clone()),
             application_id: Set(self.application_id.clone()),
             mac_address: Set(self.mac_address.clone()),
             public_ip: Set(self.public_ip.clone()),
             port: Set(self.port),
             program_path: Set(self.program_path.clone()),
+            profiles: Set(self.profiles.clone()),
             os_type: Set(self.os_type.clone()),
             os_version: Set(self.os_version.clone()),
             first_report_at: Set(None),

@@ -1,55 +1,65 @@
 package org.aione.monihub.agent.collector;
 
-import lombok.extern.slf4j.Slf4j;
+import org.aione.monihub.agent.config.AgentConfig;
+import org.aione.monihub.agent.executor.TaskExecutor;
+import org.aione.monihub.agent.util.AgentLogger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import oshi.SystemInfo;
 import oshi.software.os.OperatingSystem;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * 系统信息采集器
  * 采集操作系统类型、版本、主机名等信息
  */
-@Slf4j
 @Component
 public class SystemInfoCollector {
-    
-    private final SystemInfo systemInfo;
+
+    private AgentLogger log;
+    @javax.annotation.Resource
+    private AgentConfig properties;
+
+    private final oshi.SystemInfo systemInfo;
     private final OperatingSystem os;
-    
+
+    @javax.annotation.PostConstruct
+    public void init() {
+        // 初始化日志
+        this.log = new AgentLogger(LoggerFactory.getLogger(TaskExecutor.class), properties);
+    }
+
     public SystemInfoCollector() {
-        this.systemInfo = new SystemInfo();
+        this.systemInfo = new oshi.SystemInfo();
         this.os = systemInfo.getOperatingSystem();
     }
-    
+
     /**
      * 采集系统信息
-     * @return 系统信息Map
+     *
+     * @return 系统信息
      */
-    public Map<String, Object> collect() {
-        Map<String, Object> info = new HashMap<>();
-        
+    public org.aione.monihub.agent.model.SystemInfo collect() {
+        org.aione.monihub.agent.model.SystemInfo info = new org.aione.monihub.agent.model.SystemInfo();
+
         try {
-            info.put("os_type", getOsType());
-            info.put("os_version", getOsVersion());
-            info.put("hostname", getHostname());
+            info.setOsType(getOsType());
+            info.setOsVersion(getOsVersion());
+            info.setHostname(getHostname());
         } catch (Exception e) {
             log.error("Failed to collect system info", e);
         }
-        
+
         return info;
     }
-    
+
     /**
      * 获取操作系统类型
      */
     private String getOsType() {
         String family = os.getFamily();
-        
+
         // 转换为标准类型
         if (family.toLowerCase().contains("windows")) {
             return "Windows";
@@ -61,14 +71,14 @@ public class SystemInfoCollector {
             return family;
         }
     }
-    
+
     /**
      * 获取操作系统版本
      */
     private String getOsVersion() {
         return os.getVersionInfo().getVersion();
     }
-    
+
     /**
      * 获取主机名
      */

@@ -10,10 +10,10 @@ import java.util.List;
  */
 @Data
 public class TaskDispatchResponse {
-    
+
     @JsonProperty("tasks")
     private List<TaskDispatchItem> tasks;
-    
+
     @JsonProperty("timestamp")
     private Long timestamp;
 }

@@ -1,14 +1,12 @@
 package org.aione.monihub.agent.executor;
 
-import org.aione.monihub.agent.config.AgentProperties;
+import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.handler.TaskHandler;
 import org.aione.monihub.agent.model.TaskDispatchItem;
 import org.aione.monihub.agent.model.TaskResult;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 
 import java.util.HashMap;
 import java.util.List;
@@ -20,45 +18,46 @@ import java.util.concurrent.*;
  */
 @Component("agentTaskExecutor")
 public class TaskExecutor {
-    
+
     private AgentLogger log;
-    
+
     private final Map<String, TaskHandler> handlers = new HashMap<>();
     private ExecutorService executorService;
-    
+
     @javax.annotation.Resource
-    private AgentProperties properties;
-    
+    private AgentConfig properties;
+
     @javax.annotation.Resource
     private List<TaskHandler> taskHandlers;
-    
+
     @javax.annotation.PostConstruct
     public void init() {
         // 初始化日志
         this.log = new AgentLogger(LoggerFactory.getLogger(TaskExecutor.class), properties);
-        
+
         // 创建线程池，最多并发执行3个任务
         this.executorService = new ThreadPoolExecutor(
-            3,
-            3,
-            60L,
-            TimeUnit.SECONDS,
-            new LinkedBlockingQueue<>(100),
-            new ThreadFactory() {
-                private int counter = 0;
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread thread = new Thread(r, "task-executor-" + (counter++));
-                    thread.setDaemon(true);
-                    return thread;
-                }
-            },
-            new ThreadPoolExecutor.CallerRunsPolicy()
+                3,
+                3,
+                60L,
+                TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(100),
+                new ThreadFactory() {
+                    private int counter = 0;
+
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        Thread thread = new Thread(r, "task-executor-" + (counter++));
+                        thread.setDaemon(true);
+                        return thread;
+                    }
+                },
+                new ThreadPoolExecutor.CallerRunsPolicy()
         );
         // 注册所有任务处理器
         initHandlers();
     }
-    
+
     /**
      * 初始化任务处理器
      */
@@ -71,10 +70,10 @@ public class TaskExecutor {
             }
         }
     }
-    
+
     /**
      * 执行任务
-     * 
+     *
      * @param task 任务项
      * @return 执行结果
      */
@@ -83,7 +82,7 @@ public class TaskExecutor {
         TaskResult result;
         String status;
         String errorMessage = null;
-        
+
         try {
             // 查找任务处理器
             TaskHandler handler = handlers.get(task.getTaskType());
@@ -97,11 +96,11 @@ public class TaskExecutor {
                 if (timeoutSeconds == null || timeoutSeconds <= 0) {
                     timeoutSeconds = 300; // 默认5分钟
                 }
-                
-                Future<TaskResult> future = executorService.submit(() -> 
-                    handler.execute(task.getTaskContent())
+
+                Future<TaskResult> future = executorService.submit(() ->
+                        handler.execute(task.getTaskContent())
                 );
-                
+
                 try {
                     result = future.get(timeoutSeconds, TimeUnit.SECONDS);
                     status = result.getCode() == 0 ? "success" : "failed";
@@ -125,22 +124,22 @@ public class TaskExecutor {
             status = "failed";
             errorMessage = e.getMessage();
         }
-        
+
         long endTime = System.currentTimeMillis();
         long durationMs = endTime - startTime;
-        
+
         return new TaskExecutionResult(
-            status,
-            result.getCode(),
-            result.getMessage(),
-            result.getData(),
-            errorMessage,
-            startTime,
-            endTime,
-            durationMs
+                status,
+                result.getCode(),
+                result.getMessage(),
+                result.getData(),
+                errorMessage,
+                startTime,
+                endTime,
+                durationMs
         );
     }
-    
+
     /**
      * 关闭执行器
      */
@@ -155,7 +154,7 @@ public class TaskExecutor {
             Thread.currentThread().interrupt();
         }
     }
-    
+
     /**
      * 任务执行结果
      */

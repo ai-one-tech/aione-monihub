@@ -4,15 +4,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    
+
     <groupId>org.aione</groupId>
     <artifactId>aione-monihub-agent-java</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
-    
+
     <name>AiOne MoniHub Java Agent</name>
     <description>Java agent for AiOne MoniHub platform</description>
-    
+
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -22,15 +22,20 @@
         <oshi.version>6.9.1</oshi.version>
         <jackson.version>2.13.5</jackson.version>
     </properties>
-    
+
     <dependencies>
         <!-- Spring Boot Starter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>${spring-boot.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
             <version>${spring-boot.version}</version>
         </dependency>
-        
+
         <!-- Spring Boot Configuration Processor -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -38,21 +43,21 @@
             <version>${spring-boot.version}</version>
             <optional>true</optional>
         </dependency>
-        
+
         <!-- OkHttp for HTTP requests -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
             <version>${okhttp.version}</version>
         </dependency>
-        
+
         <!-- OSHI for system information -->
         <dependency>
             <groupId>com.github.oshi</groupId>
             <artifactId>oshi-core</artifactId>
             <version>${oshi.version}</version>
         </dependency>
-        
+
         <!-- Jackson for JSON processing -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -64,7 +69,7 @@
             <artifactId>jackson-datatype-jsr310</artifactId>
             <version>${jackson.version}</version>
         </dependency>
-        
+
         <!-- Lombok (optional, for cleaner code) -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -72,15 +77,16 @@
             <version>1.18.24</version>
             <scope>provided</scope>
         </dependency>
-        
+
         <!-- SLF4J Logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>1.7.36</version>
         </dependency>
+
     </dependencies>
-    
+
     <build>
         <plugins>
             <plugin>

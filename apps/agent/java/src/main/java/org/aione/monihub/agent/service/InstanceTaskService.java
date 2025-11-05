@@ -2,7 +2,7 @@ package org.aione.monihub.agent.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
-import org.aione.monihub.agent.config.AgentProperties;
+import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.executor.TaskExecutor;
 import org.aione.monihub.agent.model.TaskDispatchItem;
 import org.aione.monihub.agent.model.TaskDispatchResponse;
@@ -28,7 +28,7 @@ public class InstanceTaskService {
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
     @javax.annotation.Resource
-    private AgentProperties properties;
+    private AgentConfig properties;
 
     @javax.annotation.Resource
     private OkHttpClient httpClient;
@@ -103,7 +103,7 @@ public class InstanceTaskService {
      */
     private void pollTasks() {
         try {
-            log.debug("Polling tasks for instance: {}", properties.getInstanceId());
+            log.info("Polling tasks for instance: {}", properties.getInstanceId());
 
             // 构建拉取任务的URL
             String url = properties.getServerUrl() + "/api/open/instances/tasks?instance_id" + properties.getInstanceId();
@@ -111,6 +111,8 @@ public class InstanceTaskService {
             if (longPollingEnabled) {
                 url += "&wait=true&timeout=30";
             }
+            
+            log.info("Polling tasks from: {}", url);
 
             Request request = new Request.Builder()
                     .url(url)
@@ -204,6 +206,8 @@ public class InstanceTaskService {
 
                 String json = objectMapper.writeValueAsString(request);
                 String url = properties.getServerUrl() + "/api/open/instances/tasks/result";
+                
+                log.info("Sending task result to {}: {}", url, json);
 
                 RequestBody body = RequestBody.create(JSON, json);
                 Request httpRequest = new Request.Builder()

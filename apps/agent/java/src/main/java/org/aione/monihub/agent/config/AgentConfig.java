@@ -11,7 +11,7 @@ import java.util.UUID;
  */
 @Data
 @ConfigurationProperties(prefix = "monihub.agent")
-public class AgentProperties {
+public class AgentConfig {
 
     /**
      * 实例ID

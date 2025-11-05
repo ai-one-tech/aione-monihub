@@ -174,7 +174,7 @@ pub async fn update_instance(
     let updated_instance = ActiveModel {
         id: Set(instance_id),
         status: Set(instance.status.clone()),
-        environment: Set(instance.instance_type.clone()),
+        environment: Set(instance.environment.clone()),
         application_id: Set(instance.application_id.clone()),
         mac_address: Set(instance.mac_address.clone()),
         public_ip: Set(instance.public_ip.clone()),
