@@ -1,6 +1,8 @@
 package org.aione.monihub.agent;
 
-import lombok.extern.slf4j.Slf4j;
+import org.aione.monihub.agent.config.AgentProperties;
+import org.aione.monihub.agent.util.AgentLogger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
@@ -14,7 +16,6 @@ import javax.annotation.Resource;
 /**
  * Agent应用主类
  */
-@Slf4j
 @SpringBootApplication
 public class AgentApplication {
     
@@ -35,11 +36,13 @@ public class AgentApplication {
             @Resource
             private InstanceTaskService taskService;
             
+            @Resource
+            private AgentProperties properties;
+            
             @Override
             public void run(ApplicationArguments args) throws Exception {
-                if (reportService.getProperties().isDebug()) {
-                    log.info("Starting AiOne MoniHub Agent...");
-                }
+                AgentLogger log = new AgentLogger(LoggerFactory.getLogger(AgentApplication.class), properties);
+                log.info("Starting AiOne MoniHub Agent...");
                 
                 // 启动上报服务
                 reportService.start();
@@ -47,20 +50,14 @@ public class AgentApplication {
                 // 启动任务服务
                 taskService.start();
                 
-                if (reportService.getProperties().isDebug()) {
-                    log.info("Agent started successfully");
-                }
+                log.info("Agent started successfully");
                 
                 // 注册关闭钩子
                 Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                    if (reportService.getProperties().isDebug()) {
-                        log.info("Shutting down Agent...");
-                    }
+                    log.info("Shutting down Agent...");
                     reportService.stop();
                     taskService.stop();
-                    if (reportService.getProperties().isDebug()) {
-                        log.info("Agent stopped");
-                    }
+                    log.info("Agent stopped");
                 }));
             }
         };

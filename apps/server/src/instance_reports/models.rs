@@ -10,8 +10,6 @@ use std::collections::HashMap;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InstanceReportRequest {
     pub instance_id: String,
-    pub instance_name: String,
-    pub instance_status: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]

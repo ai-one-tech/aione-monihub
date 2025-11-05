@@ -6,7 +6,6 @@ use crate::shared::snowflake::generate_snowflake_id;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Instance {
     pub id: String,
-    pub name: String,
     pub hostname: String,
     pub ip_address: String,
     pub instance_type: String,
@@ -24,7 +23,6 @@ pub struct Instance {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InstanceResponse {
     pub id: String,
-    pub name: String,
     pub hostname: String,
     pub ip_address: String,
     pub instance_type: String,
@@ -56,7 +54,6 @@ pub struct InstanceResponse {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InstanceCreateRequest {
-    pub name: String,
     pub instance_type: String,
     pub status: String,
     pub application_id: String,
@@ -124,7 +121,6 @@ impl InstanceResponse {
     pub fn from_entity(entity: crate::entities::instances::Model) -> Self {
         Self {
             id: entity.id,
-            name: entity.name,
             hostname: entity.hostname,
             ip_address: entity.ip_address,
             instance_type: entity.environment,
@@ -153,7 +149,6 @@ impl InstanceCreateRequest {
         
         crate::entities::instances::ActiveModel {
             id: Set(id),
-            name: Set(self.name.clone()),
             hostname: Set(format!("host-{}", generate_snowflake_id())),
             ip_address: Set("0.0.0.0".to_string()),
             status: Set(self.status.clone()),

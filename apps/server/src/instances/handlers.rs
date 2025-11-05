@@ -30,8 +30,7 @@ pub async fn get_instances(
     // 添加搜索过滤器
     if let Some(search) = &query.search {
         select = select.filter(
-            crate::entities::instances::Column::Name.contains(search)
-                .or(crate::entities::instances::Column::Hostname.contains(search))
+            crate::entities::instances::Column::Hostname.contains(search)
                 .or(crate::entities::instances::Column::IpAddress.contains(search))
                 .or(crate::entities::instances::Column::PublicIp.contains(search))
                 .or(crate::entities::instances::Column::ApplicationId.contains(search))
@@ -174,7 +173,6 @@ pub async fn update_instance(
     // 更新实例信息
     let updated_instance = ActiveModel {
         id: Set(instance_id),
-        name: Set(instance.name.clone()),
         status: Set(instance.status.clone()),
         environment: Set(instance.instance_type.clone()),
         application_id: Set(instance.application_id.clone()),

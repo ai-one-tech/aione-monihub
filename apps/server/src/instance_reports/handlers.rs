@@ -50,7 +50,8 @@ pub async fn report_instance_info(
     };
 
     // 4. 验证实例是否存在，如果不存在则自动创建
-    let instance = instances::Entity::find_by_id(&request.instance_id)
+    let instance = instances::Entity::find()
+        .filter(instances::Column::Id.eq(&request.instance_id))
         .filter(instances::Column::DeletedAt.is_null())
         .one(&**db)
         .await?;
@@ -59,10 +60,9 @@ pub async fn report_instance_info(
         // 自动创建新实例
         let new_instance = instances::ActiveModel {
             id: Set(request.instance_id.clone()),
-            name: Set(request.instance_name.clone()),
             hostname: Set(request.system_info.hostname.clone().unwrap_or_default()),
             ip_address: Set(request.network_info.ip_address.clone().unwrap_or_default()),
-            status: Set(request.instance_status.clone()),
+            status: Set("active".to_string()),
             environment: Set(environment_value.to_string()),
             application_id: Set(application_id.clone()),
             mac_address: Set(request.network_info.mac_address.clone()),
@@ -198,7 +198,8 @@ pub async fn get_instance_reports(
     let instance_id = path.into_inner();
 
     // 验证实例是否存在
-    let instance = instances::Entity::find_by_id(&instance_id)
+    let instance = instances::Entity::find()
+        .filter(instances::Column::Id.eq(&instance_id))
         .filter(instances::Column::DeletedAt.is_null())
         .one(&**db)
         .await?;

@@ -1,10 +1,11 @@
 package org.aione.monihub.agent.executor;
 
-import lombok.extern.slf4j.Slf4j;
 import org.aione.monihub.agent.config.AgentProperties;
 import org.aione.monihub.agent.handler.TaskHandler;
 import org.aione.monihub.agent.model.TaskDispatchItem;
 import org.aione.monihub.agent.model.TaskResult;
+import org.aione.monihub.agent.util.AgentLogger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -17,9 +18,10 @@ import java.util.concurrent.*;
 /**
  * 任务执行器
  */
-@Slf4j
 @Component("agentTaskExecutor")
 public class TaskExecutor {
+    
+    private AgentLogger log;
     
     private final Map<String, TaskHandler> handlers = new HashMap<>();
     private ExecutorService executorService;
@@ -32,6 +34,9 @@ public class TaskExecutor {
     
     @javax.annotation.PostConstruct
     public void init() {
+        // 初始化日志
+        this.log = new AgentLogger(LoggerFactory.getLogger(TaskExecutor.class), properties);
+        
         // 创建线程池，最多并发执行3个任务
         this.executorService = new ThreadPoolExecutor(
             3,
@@ -62,9 +67,7 @@ public class TaskExecutor {
             for (TaskHandler handler : taskHandlers) {
                 String taskType = handler.getTaskType();
                 handlers.put(taskType, handler);
-                if (properties.isDebug()) {
-                    log.info("Registered task handler: {}", taskType);
-                }
+                log.info("Registered task handler: {}", taskType);
             }
         }
     }

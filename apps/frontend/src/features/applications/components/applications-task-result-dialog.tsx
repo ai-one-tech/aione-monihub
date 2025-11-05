@@ -85,7 +85,7 @@ export function ApplicationTaskResultDialog({
             <span>任务执行详情</span>
           </DialogTitle>
           <DialogDescription>
-            实例: {result.instance_name || result.instance_id}
+            实例: {result.instance_id}
           </DialogDescription>
         </DialogHeader>
 

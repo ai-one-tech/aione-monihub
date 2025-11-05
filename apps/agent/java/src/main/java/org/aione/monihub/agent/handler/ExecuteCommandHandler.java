@@ -1,7 +1,8 @@
 package org.aione.monihub.agent.handler;
 
-import lombok.extern.slf4j.Slf4j;
 import org.aione.monihub.agent.config.AgentProperties;
+import org.aione.monihub.agent.util.AgentLogger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.aione.monihub.agent.model.TaskResult;
 
@@ -14,14 +15,20 @@ import java.util.concurrent.TimeUnit;
 /**
  * 命令执行处理器
  */
-@Slf4j
 @Component
 public class ExecuteCommandHandler implements TaskHandler {
+    
+    private AgentLogger log;
     
     private static final String TASK_TYPE = "execute_command";
     
     @javax.annotation.Resource
     private AgentProperties properties;
+    
+    @javax.annotation.PostConstruct
+    public void init() {
+        this.log = new AgentLogger(LoggerFactory.getLogger(ExecuteCommandHandler.class), properties);
+    }
     
     @Override
     public TaskResult execute(Map<String, Object> taskContent) throws Exception {
@@ -30,9 +37,7 @@ public class ExecuteCommandHandler implements TaskHandler {
             return TaskResult.failure("Command is empty");
         }
         
-        if (properties.isDebug()) {
-            log.info("Executing command: {}", command);
-        }
+        log.info("Executing command: {}", command);
         
         ProcessBuilder processBuilder = new ProcessBuilder();
         

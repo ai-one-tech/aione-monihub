@@ -158,15 +158,50 @@ Agent会在应用启动后自动开始工作，无需额外代码。
 
 ## 日志配置
 
-Agent使用SLF4J日志框架，建议日志级别：
+Agent 提供了统一的日志控制工具 `AgentLogger`，可以通过 `debug` 开关控制日志输出级别。
 
-- 生产环境：`INFO`
-- 开发/调试：`DEBUG`
+### 日志级别说明
+
+- **DEBUG/INFO/TRACE**：仅在 `debug=true` 时输出
+- **WARN/ERROR**：始终输出
+
+### 配置示例
 
 ```yaml
+monihub:
+  agent:
+    # Debug模式，开启后会打印详细日志，默认关闭
+    debug: false
+
 logging:
   level:
+    root: INFO
     org.aione.monihub.agent: DEBUG
+    # 屏蔽 OSHI 在 macOS 上的已知警告
+    oshi.software.os.mac.MacOperatingSystem: ERROR
+    oshi.util.platform.mac.SysctlUtil: ERROR
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+```
+
+### 使用 AgentLogger
+
+在新的类中使用日志工具：
+
+```java
+import org.aione.monihub.agent.util.AgentLogger;
+import org.aione.monihub.agent.util.AgentLoggerFactory;
+
+public class YourClass {
+    private static final AgentLogger log = AgentLoggerFactory.getLogger(YourClass.class);
+    
+    public void yourMethod() {
+        log.info("This will only print when debug=true");
+        log.debug("Debug message");
+        log.warn("This always prints");
+        log.error("Error always prints");
+    }
+}
 ```
 
 ## 故障排查

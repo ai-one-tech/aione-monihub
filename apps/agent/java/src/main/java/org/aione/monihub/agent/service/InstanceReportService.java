@@ -1,7 +1,6 @@
 package org.aione.monihub.agent.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import org.aione.monihub.agent.collector.HardwareInfoCollector;
 import org.aione.monihub.agent.collector.NetworkInfoCollector;
@@ -10,6 +9,8 @@ import org.aione.monihub.agent.collector.SystemInfoCollector;
 import org.aione.monihub.agent.config.AgentProperties;
 import org.aione.monihub.agent.collector.*;
 import org.aione.monihub.agent.model.InstanceReportRequest;
+import org.aione.monihub.agent.util.AgentLogger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
@@ -22,10 +23,11 @@ import java.util.concurrent.TimeUnit;
 /**
  * 实例信息上报服务
  */
-@Slf4j
 @Component
 @lombok.Data
 public class InstanceReportService {
+    
+    private AgentLogger log;
     
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     
@@ -57,6 +59,7 @@ public class InstanceReportService {
     
     @javax.annotation.PostConstruct
     public void init() {
+        this.log = new AgentLogger(LoggerFactory.getLogger(InstanceReportService.class), properties);
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread thread = new Thread(r, "instance-report-scheduler");
             thread.setDaemon(true);
@@ -69,16 +72,12 @@ public class InstanceReportService {
      */
     public void start() {
         if (!properties.getReport().isEnabled()) {
-            if (properties.isDebug()) {
-                log.info("Instance report is disabled");
-            }
+            log.info("Instance report is disabled");
             return;
         }
         
         long intervalSeconds = properties.getReport().getIntervalSeconds();
-        if (properties.isDebug()) {
-            log.info("Starting instance report service, interval: {} seconds", intervalSeconds);
-        }
+        log.info("Starting instance report service, interval: {} seconds", intervalSeconds);
         
         // 延迟10秒后开始首次上报，然后按固定间隔执行
         scheduler.scheduleAtFixedRate(
@@ -93,9 +92,7 @@ public class InstanceReportService {
      * 停止定时上报
      */
     public void stop() {
-        if (properties.isDebug()) {
-            log.info("Stopping instance report service");
-        }
+        log.info("Stopping instance report service");
         scheduler.shutdown();
         try {
             if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
@@ -112,9 +109,7 @@ public class InstanceReportService {
      */
     private void reportInstance() {
         try {
-            if (properties.isDebug()) {
-                log.debug("Collecting instance information...");
-            }
+            log.debug("Collecting instance information...");
             
             // 采集各类信息
             Map<String, Object> systemInfo = systemInfoCollector.collect();
@@ -132,14 +127,10 @@ public class InstanceReportService {
             
             if (success) {
                 failureCount = 0;
-                if (properties.isDebug()) {
-                    log.debug("Instance report sent successfully");
-                }
+                log.debug("Instance report sent successfully");
             } else {
                 failureCount++;
-                if (properties.isDebug()) {
-                    log.warn("Instance report failed, failure count: {}", failureCount);
-                }
+                log.warn("Instance report failed, failure count: {}", failureCount);
                 
                 if (failureCount >= MAX_FAILURES) {
                     log.error("Instance report failed {} times consecutively", MAX_FAILURES);
@@ -224,14 +215,10 @@ public class InstanceReportService {
             
             try (Response response = httpClient.newCall(httpRequest).execute()) {
                 if (response.isSuccessful()) {
-                    if (properties.isDebug()) {
-                        log.trace("Report response: {}", response.body().string());
-                    }
+                    log.trace("Report response: {}", response.body().string());
                     return true;
                 } else {
-                    if (properties.isDebug()) {
-                        log.warn("Report failed with status: {}", response.code());
-                    }
+                    log.warn("Report failed with status: {}", response.code());
                     return false;
                 }
             }

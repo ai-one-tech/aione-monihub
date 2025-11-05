@@ -39,7 +39,7 @@ monihub:
       # 上传目录
       upload-dir: /tmp/monihub/uploads
       # 最大上传大小（MB）
-      max-upload-size-mb: 100
+      max-upload-size-mb: 5120
     
     # Debug模式，开启后会打印详细日志，默认关闭
     debug: false
@@ -54,5 +54,8 @@ logging:
   level:
     root: INFO
     org.aione.monihub.agent: DEBUG
+    # 屏蔽 OSHI 在 macOS 上的已知警告
+    oshi.software.os.mac.MacOperatingSystem: ERROR
+    oshi.util.platform.mac.SysctlUtil: ERROR
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

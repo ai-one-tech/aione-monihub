@@ -143,7 +143,7 @@ function InstanceCard({ instance, isSelected, onToggle, disabled = false }: Inst
 
       <div className="flex-1 min-w-0 space-y-1">
         <div className="flex items-center gap-2">
-          <h4 className="text-sm font-medium truncate">{instance.instance_name}</h4>
+          <h4 className="text-sm font-medium truncate">{instance.name}</h4>
           <Badge variant={status.variant} className="shrink-0">
             {status.label}
           </Badge>

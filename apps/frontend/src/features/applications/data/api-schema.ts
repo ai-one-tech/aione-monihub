@@ -197,3 +197,14 @@ export const TASK_STATUS_LABELS: Record<string, string> = {
   timeout: '超时',
   cancelled: '已取消',
 }
+
+// ===================================================================
+// 类型别名（为向后兼容性）
+// ===================================================================
+
+// 从 instances 特性重新导出类型
+export type { InstanceResponse as Instance } from '@/features/instances/data/api-schema'
+
+// 任务相关类型别名
+export type TaskRecord = TaskRecordResponse
+export type TaskResult = TaskRecordResponse

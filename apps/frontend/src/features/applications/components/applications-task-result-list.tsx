@@ -225,7 +225,7 @@ function ResultCard({ result, onViewDetails }: ResultCardProps) {
         <div className="flex items-center gap-2">
           <Icon className={cn('h-5 w-5', status.color, status.animate && 'animate-spin')} />
           <div>
-            <div className="font-medium text-sm">{result.instance_name || result.instance_id}</div>
+            <div className="font-medium text-sm">{result.instance_id}</div>
             <div className="text-xs text-muted-foreground font-mono">{result.instance_id}</div>
           </div>
         </div>

@@ -161,10 +161,11 @@ impl UsersModule {
         use sea_orm::EntityTrait;
         
         // 查找令牌
+        let now = Utc::now();
         let reset_token = PasswordResetTokens::find()
             .filter(password_reset_tokens::Column::Token.eq(token))
             .filter(password_reset_tokens::Column::UsedAt.is_null())
-            .filter(password_reset_tokens::Column::ExpiresAt.gt(Utc::now()))
+            .filter(password_reset_tokens::Column::ExpiresAt.gt(now))
             .one(&self.database)
             .await
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;

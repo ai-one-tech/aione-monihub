@@ -1,7 +1,8 @@
 package org.aione.monihub.agent.collector;
 
-import lombok.extern.slf4j.Slf4j;
 import org.aione.monihub.agent.config.AgentProperties;
+import org.aione.monihub.agent.util.AgentLogger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -16,15 +17,21 @@ import java.util.Map;
  * 网络信息采集器
  * 采集IP地址、MAC地址、网络类型等信息
  */
-@Slf4j
 @Component
 public class NetworkInfoCollector {
+    
+    private AgentLogger log;
     
     @javax.annotation.Resource
     private OkHttpClient httpClient;
     
     @javax.annotation.Resource
     private AgentProperties properties;
+    
+    @javax.annotation.PostConstruct
+    public void init() {
+        this.log = new AgentLogger(LoggerFactory.getLogger(NetworkInfoCollector.class), properties);
+    }
     
     private String cachedPublicIp;
     private long lastPublicIpFetchTime = 0;
@@ -112,9 +119,7 @@ public class NetworkInfoCollector {
                     }
                 }
             } catch (Exception e) {
-                if (properties.isDebug()) {
-                    log.debug("Failed to get public IP from {}", service);
-                }
+                log.debug("Failed to get public IP from {}", service);
             }
         }
         
