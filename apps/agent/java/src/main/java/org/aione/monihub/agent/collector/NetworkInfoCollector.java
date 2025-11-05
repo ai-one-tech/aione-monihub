@@ -9,7 +9,6 @@ import org.aione.monihub.agent.util.AgentLogger;
 import org.apache.logging.log4j.util.Strings;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -21,7 +20,6 @@ import java.util.LinkedList;
  * 网络信息采集器
  * 采集IP地址、MAC地址、网络类型等信息
  */
-@Component
 public class NetworkInfoCollector {
 
     private AgentLogger log;

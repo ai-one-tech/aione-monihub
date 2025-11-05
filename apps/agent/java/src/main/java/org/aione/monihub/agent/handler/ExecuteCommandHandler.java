@@ -4,7 +4,6 @@ import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.model.TaskResult;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -15,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * 命令执行处理器
  */
-@Component
 public class ExecuteCommandHandler implements TaskHandler {
 
     private AgentLogger log;

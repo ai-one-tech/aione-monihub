@@ -13,7 +13,7 @@ pub struct Model {
     pub application_id: String,
     pub mac_address: Option<String>,
     pub public_ip: Option<String>,
-    pub port: Option<i16>,
+    pub port: Option<i32>,
     pub program_path: Option<String>,
     pub profiles: Option<String>,
     pub os_type: Option<String>,

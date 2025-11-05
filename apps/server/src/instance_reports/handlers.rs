@@ -41,14 +41,6 @@ pub async fn report_instance_info(
         }
     };
 
-    // 3. 处理 environment 参数，转换为 JSON
-    let environment_value = if let Some(env_map) = &request.environment {
-        serde_json::to_value(env_map)
-            .map_err(|_| ApiError::BadRequest("Invalid environment format".to_string()))?
-    } else {
-        serde_json::json!({})
-    };
-
     // 4. 验证实例是否存在，如果不存在则自动创建
     let instance = instances::Entity::find()
         .filter(instances::Column::Id.eq(&request.instance_id))

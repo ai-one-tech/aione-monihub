@@ -1,13 +1,13 @@
+use crate::auth::middleware::get_user_id_from_request;
+use crate::entities::{instance_task_records, instance_tasks, instances};
 use crate::instance_tasks::models::*;
 use crate::shared::error::ApiError;
 use crate::shared::generate_snowflake_id;
-use crate::auth::middleware::get_user_id_from_request;
-use crate::entities::{instance_task_records, instance_tasks, instances};
 use actix_web::{web, HttpRequest, HttpResponse, Result};
 use chrono::Utc;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait,
-    QueryFilter, QueryOrder, QuerySelect, Set,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter,
+    QueryOrder, QuerySelect, Set,
 };
 use serde_json::json;
 use std::time::Duration;
@@ -96,8 +96,8 @@ pub async fn get_tasks(
     let limit = query.limit.unwrap_or(20).min(100);
     let offset = (page - 1) * limit;
 
-    let mut select = instance_tasks::Entity::find()
-        .filter(instance_tasks::Column::DeletedAt.is_null());
+    let mut select =
+        instance_tasks::Entity::find().filter(instance_tasks::Column::DeletedAt.is_null());
 
     // 添加任务类型过滤
     if let Some(task_type) = &query.task_type {
@@ -128,10 +128,8 @@ pub async fn get_tasks(
         .all(&**db)
         .await?;
 
-    let task_responses: Vec<TaskResponse> = tasks
-        .into_iter()
-        .map(TaskResponse::from_entity)
-        .collect();
+    let task_responses: Vec<TaskResponse> =
+        tasks.into_iter().map(TaskResponse::from_entity).collect();
 
     let response = TaskListResponse {
         data: task_responses,
@@ -212,10 +210,7 @@ pub async fn cancel_task(
     // 将所有pending和dispatched状态的记录更新为cancelled
     let records = instance_task_records::Entity::find()
         .filter(instance_task_records::Column::TaskId.eq(&task_id))
-        .filter(
-            instance_task_records::Column::Status
-                .is_in(vec!["pending", "dispatched"]),
-        )
+        .filter(instance_task_records::Column::Status.is_in(vec!["pending", "dispatched"]))
         .all(&**db)
         .await?;
 
@@ -352,26 +347,41 @@ pub async fn get_instance_tasks(
     query: web::Query<std::collections::HashMap<String, String>>,
 ) -> Result<HttpResponse, ApiError> {
     // 从查询参数中获取instance_id
-    let instance_id = query.get("instance_id")
+    let instance_id = query
+        .get("instance_id")
         .ok_or_else(|| ApiError::BadRequest("Missing required parameter: instance_id".to_string()))?
         .clone();
-    log::info!("[get_instance_tasks] Received request for instance: {}", instance_id);
+    log::info!(
+        "[get_instance_tasks] Received request for instance: {}",
+        instance_id
+    );
 
     // 验证实例是否存在
-    let instance = instances::Entity::find_by_id(&instance_id)
+    let instance = instances::Entity::find()
+        .filter(instances::Column::Id.eq(&instance_id))
         .filter(instances::Column::DeletedAt.is_null())
         .one(&**db)
         .await?;
 
     if instance.is_none() {
         log::warn!("[get_instance_tasks] Instance not found: {}", instance_id);
-        return Err(ApiError::NotFound(format!("Instance {} not found", instance_id)));
+        return Err(ApiError::NotFound(format!(
+            "Instance {} not found",
+            instance_id
+        )));
     }
     log::debug!("[get_instance_tasks] Instance found: {}", instance_id);
 
     // 检查是否启用长轮询
-    let wait = query.get("wait").and_then(|v| v.parse::<bool>().ok()).unwrap_or(false);
-    let timeout_secs = query.get("timeout").and_then(|v| v.parse::<u64>().ok()).unwrap_or(30).min(60);
+    let wait = query
+        .get("wait")
+        .and_then(|v| v.parse::<bool>().ok())
+        .unwrap_or(false);
+    let timeout_secs = query
+        .get("timeout")
+        .and_then(|v| v.parse::<u64>().ok())
+        .unwrap_or(30)
+        .min(60);
 
     let start_time = std::time::Instant::now();
     let max_duration = Duration::from_secs(timeout_secs);

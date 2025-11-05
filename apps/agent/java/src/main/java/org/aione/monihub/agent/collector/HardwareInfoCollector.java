@@ -5,7 +5,6 @@ import org.aione.monihub.agent.executor.TaskExecutor;
 import org.aione.monihub.agent.model.HardwareInfo;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 import oshi.SystemInfo;
 import oshi.hardware.CentralProcessor;
 import oshi.hardware.GlobalMemory;
@@ -19,7 +18,6 @@ import java.util.List;
  * 硅件信息采集器
  * 采集CPU、内存、约盘使用情况
  */
-@Component
 public class HardwareInfoCollector {
 
     private AgentLogger log;

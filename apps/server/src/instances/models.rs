@@ -33,7 +33,7 @@ pub struct InstanceResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub public_ip: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub port: Option<i16>,
+    pub port: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub program_path: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -62,7 +62,7 @@ pub struct InstanceCreateRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub public_ip: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub port: Option<i16>,
+    pub port: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub program_path: Option<String>,
     pub profiles: Option<String>,

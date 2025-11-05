@@ -10,7 +10,6 @@ import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.model.*;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -21,7 +20,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * 实例信息上报服务
  */
-@Component
 @lombok.Data
 public class InstanceReportService {
 

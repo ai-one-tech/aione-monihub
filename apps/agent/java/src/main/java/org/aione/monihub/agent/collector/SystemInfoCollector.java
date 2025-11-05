@@ -4,7 +4,6 @@ import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.executor.TaskExecutor;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 import oshi.software.os.OperatingSystem;
 
 import java.net.InetAddress;
@@ -14,7 +13,6 @@ import java.net.UnknownHostException;
  * 系统信息采集器
  * 采集操作系统类型、版本、主机名等信息
  */
-@Component
 public class SystemInfoCollector {
 
     private AgentLogger log;

@@ -3,7 +3,6 @@ package org.aione.monihub.agent.util;
 import org.aione.monihub.agent.config.AgentConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 
@@ -11,7 +10,6 @@ import javax.annotation.Resource;
  * AgentLogger工厂类
  * 用于创建带有debug控制的日志对象
  */
-@Component
 public class AgentLoggerFactory {
 
     private static AgentConfig staticProperties;

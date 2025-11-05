@@ -4,7 +4,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.env.Environment;
-import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -17,7 +16,6 @@ import javax.servlet.http.HttpServletResponse;
  * @author harry.zhang
  *
  */
-@Component
 public class SpringContextUtils implements ApplicationContextAware {
     public static ApplicationContext applicationContext;
 

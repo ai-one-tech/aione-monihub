@@ -9,8 +9,8 @@ import org.aione.monihub.agent.model.TaskDispatchResponse;
 import org.aione.monihub.agent.model.TaskResultSubmitRequest;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
+import java.net.SocketTimeoutException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Executors;
@@ -20,7 +20,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * 任务拉取服务
  */
-@Component
 public class InstanceTaskService {
 
     private AgentLogger log;
@@ -106,12 +105,12 @@ public class InstanceTaskService {
             log.info("Polling tasks for instance: {}", properties.getInstanceId());
 
             // 构建拉取任务的URL
-            String url = properties.getServerUrl() + "/api/open/instances/tasks?instance_id" + properties.getInstanceId();
+            String url = properties.getServerUrl() + "/api/open/instances/tasks?instance_id=" + properties.getInstanceId();
 
             if (longPollingEnabled) {
                 url += "&wait=true&timeout=30";
             }
-            
+
             log.info("Polling tasks from: {}", url);
 
             Request request = new Request.Builder()
@@ -140,6 +139,8 @@ public class InstanceTaskService {
                 }
             }
 
+        } catch (SocketTimeoutException e) {
+            log.info("next polling tasks");
         } catch (Exception e) {
             log.error("Error polling tasks", e);
         }
@@ -206,7 +207,7 @@ public class InstanceTaskService {
 
                 String json = objectMapper.writeValueAsString(request);
                 String url = properties.getServerUrl() + "/api/open/instances/tasks/result";
-                
+
                 log.info("Sending task result to {}: {}", url, json);
 
                 RequestBody body = RequestBody.create(JSON, json);

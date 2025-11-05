@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
-use std::collections::HashMap;
 
 // ===================================================================
 // 实例信息上报请求/响应模型
@@ -51,7 +50,7 @@ pub struct NetworkInfo {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub network_type: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub port: Option<i16>
+    pub port: Option<i32>
 }
 
 /// 硬件信息

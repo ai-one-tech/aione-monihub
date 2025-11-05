@@ -9,7 +9,6 @@ import org.aione.monihub.agent.model.RuntimeInfo;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
@@ -21,7 +20,6 @@ import java.util.*;
  * 运行时信息采集器
  * 采集进程ID、运行时长、线程数等信息
  */
-@Component
 public class RuntimeInfoCollector {
 
     private AgentLogger log;

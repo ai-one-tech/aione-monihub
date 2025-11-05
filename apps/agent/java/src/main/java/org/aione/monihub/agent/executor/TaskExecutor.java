@@ -6,7 +6,6 @@ import org.aione.monihub.agent.model.TaskDispatchItem;
 import org.aione.monihub.agent.model.TaskResult;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.List;
@@ -16,7 +15,6 @@ import java.util.concurrent.*;
 /**
  * 任务执行器
  */
-@Component("agentTaskExecutor")
 public class TaskExecutor {
 
     private AgentLogger log;
