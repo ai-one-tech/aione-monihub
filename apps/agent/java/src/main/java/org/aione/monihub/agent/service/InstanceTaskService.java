@@ -1,15 +1,14 @@
-package tech.aione.monihub.agent.service;
+package org.aione.monihub.agent.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import tech.aione.monihub.agent.config.AgentProperties;
-import tech.aione.monihub.agent.executor.TaskExecutor;
-import tech.aione.monihub.agent.model.TaskDispatchItem;
-import tech.aione.monihub.agent.model.TaskDispatchResponse;
-import tech.aione.monihub.agent.model.TaskResultSubmitRequest;
+import org.aione.monihub.agent.config.AgentProperties;
+import org.aione.monihub.agent.executor.TaskExecutor;
+import org.aione.monihub.agent.model.TaskDispatchItem;
+import org.aione.monihub.agent.model.TaskDispatchResponse;
+import org.aione.monihub.agent.model.TaskResultSubmitRequest;
+import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -21,30 +20,31 @@ import java.util.concurrent.TimeUnit;
  * 任务拉取服务
  */
 @Slf4j
-@Service
+@Component
 public class InstanceTaskService {
     
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     
-    private final AgentProperties properties;
-    private final OkHttpClient httpClient;
-    private final ObjectMapper objectMapper;
-    private final TaskExecutor taskExecutor;
-    private final ScheduledExecutorService scheduler;
+    @javax.annotation.Resource
+    private AgentProperties properties;
+    
+    @javax.annotation.Resource
+    private OkHttpClient httpClient;
+    
+    @javax.annotation.Resource
+    private ObjectMapper objectMapper;
+    
+    @javax.annotation.Resource(name = "agentTaskExecutor")
+    private TaskExecutor taskExecutor;
+    
+    private ScheduledExecutorService scheduler;
     
     private boolean enabled = true;
     private int pollIntervalSeconds = 30;
     private boolean longPollingEnabled = true;
     
-    @Autowired
-    public InstanceTaskService(AgentProperties properties,
-                               OkHttpClient httpClient,
-                               ObjectMapper objectMapper,
-                               TaskExecutor taskExecutor) {
-        this.properties = properties;
-        this.httpClient = httpClient;
-        this.objectMapper = objectMapper;
-        this.taskExecutor = taskExecutor;
+    @javax.annotation.PostConstruct
+    public void init() {
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread thread = new Thread(r, "task-poller");
             thread.setDaemon(true);
@@ -62,11 +62,15 @@ public class InstanceTaskService {
      */
     public void start() {
         if (!enabled) {
-            log.info("Task service is disabled");
+            if (properties.isDebug()) {
+                log.info("Task service is disabled");
+            }
             return;
         }
         
-        log.info("Starting task service, poll interval: {} seconds", pollIntervalSeconds);
+        if (properties.isDebug()) {
+            log.info("Starting task service, poll interval: {} seconds", pollIntervalSeconds);
+        }
         
         // 延迟15秒后开始首次任务拉取，然后按固定间隔执行
         scheduler.scheduleAtFixedRate(
@@ -81,7 +85,9 @@ public class InstanceTaskService {
      * 停止任务拉取服务
      */
     public void stop() {
-        log.info("Stopping task service");
+        if (properties.isDebug()) {
+            log.info("Stopping task service");
+        }
         scheduler.shutdown();
         try {
             if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
@@ -100,8 +106,10 @@ public class InstanceTaskService {
      */
     private void pollTasks() {
         try {
-            log.debug("Polling tasks for instance: {}", properties.getInstanceId());
-            
+            if (properties.isDebug()) {
+                log.debug("Polling tasks for instance: {}", properties.getInstanceId());
+            }
+
             // 构建拉取任务的URL
             String url = properties.getServerUrl() + "/api/open/instances/" 
                 + properties.getInstanceId() + "/tasks";
@@ -122,17 +130,23 @@ public class InstanceTaskService {
                         responseBody, TaskDispatchResponse.class);
                     
                     if (taskResponse.getTasks() != null && !taskResponse.getTasks().isEmpty()) {
-                        log.info("Received {} tasks", taskResponse.getTasks().size());
+                        if (properties.isDebug()) {
+                            log.info("Received {} tasks", taskResponse.getTasks().size());
+                        }
                         
                         // 处理每个任务
                         for (TaskDispatchItem task : taskResponse.getTasks()) {
                             processTask(task);
                         }
                     } else {
-                        log.debug("No pending tasks");
+                        if (properties.isDebug()) {
+                            log.debug("No pending tasks");
+                        }
                     }
                 } else {
-                    log.warn("Failed to poll tasks, status: {}", response.code());
+                    if (properties.isDebug()) {
+                        log.warn("Failed to poll tasks, status: {}", response.code());
+                    }
                 }
             }
             
@@ -145,7 +159,9 @@ public class InstanceTaskService {
      * 处理任务
      */
     private void processTask(TaskDispatchItem task) {
-        log.info("Processing task: {} ({})", task.getTaskId(), task.getTaskType());
+        if (properties.isDebug()) {
+            log.info("Processing task: {} ({})", task.getTaskId(), task.getTaskType());
+        }
         
         // 异步执行任务
         scheduler.execute(() -> {
@@ -203,7 +219,7 @@ public class InstanceTaskService {
                 String json = objectMapper.writeValueAsString(request);
                 String url = properties.getServerUrl() + "/api/open/instances/tasks/result";
                 
-                RequestBody body = RequestBody.create(json, JSON);
+                RequestBody body = RequestBody.create(JSON, json);
                 Request httpRequest = new Request.Builder()
                     .url(url)
                     .post(body)
@@ -211,11 +227,15 @@ public class InstanceTaskService {
                 
                 try (Response response = httpClient.newCall(httpRequest).execute()) {
                     if (response.isSuccessful()) {
-                        log.info("Task result submitted successfully: {}", task.getTaskId());
+                        if (properties.isDebug()) {
+                            log.info("Task result submitted successfully: {}", task.getTaskId());
+                        }
                         return; // 成功提交，退出重试循环
                     } else {
-                        log.warn("Failed to submit task result, status: {}, attempt: {}", 
-                            response.code(), retryCount + 1);
+                        if (properties.isDebug()) {
+                            log.warn("Failed to submit task result, status: {}, attempt: {}", 
+                                response.code(), retryCount + 1);
+                        }
                     }
                 }
                 

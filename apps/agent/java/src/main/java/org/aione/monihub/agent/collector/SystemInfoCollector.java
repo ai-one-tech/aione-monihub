@@ -1,6 +1,7 @@
-package tech.aione.monihub.agent.collector;
+package org.aione.monihub.agent.collector;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 import oshi.SystemInfo;
 import oshi.software.os.OperatingSystem;
 
@@ -14,6 +15,7 @@ import java.util.Map;
  * 采集操作系统类型、版本、主机名等信息
  */
 @Slf4j
+@Component
 public class SystemInfoCollector {
     
     private final SystemInfo systemInfo;

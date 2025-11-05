@@ -1,6 +1,6 @@
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
+use std::collections::HashMap;
 
 // ===================================================================
 // 实例信息上报请求/响应模型
@@ -10,8 +10,17 @@ use serde_json::Value as JsonValue;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InstanceReportRequest {
     pub instance_id: String,
+    pub instance_name: String,
+    pub instance_status: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub port: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub program_path: Option<String>,
     pub agent_type: String,
     pub agent_version: Option<String>,
+    pub application_code: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub environment: Option<HashMap<String, String>>,
     pub system_info: SystemInfo,
     pub network_info: NetworkInfo,
     pub hardware_info: HardwareInfo,

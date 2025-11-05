@@ -7,7 +7,7 @@ use actix_web::{web, HttpRequest, HttpResponse, Result};
 use chrono::Utc;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait,
-    QueryFilter, QueryOrder, Set,
+    QueryFilter, QueryOrder, QuerySelect, Set,
 };
 use serde_json::json;
 use std::time::Duration;
@@ -329,14 +329,33 @@ pub async fn retry_task_record(
     }
 }
 
-/// GET /api/open/instances/{instance_id}/tasks
+/// GET /api/open/instances/tasks
 /// Agent拉取待执行任务（支持长轮询）
+#[utoipa::path(
+    get,
+    path = "/api/open/instances/tasks",
+    params(
+        ("instance_id" = String, Query, description = "实例ID"),
+        ("wait" = Option<bool>, Query, description = "是否启用长轮询"),
+        ("timeout" = Option<u64>, Query, description = "超时时间(秒)")
+    ),
+    responses(
+        (status = 200, description = "成功返回任务列表", body = TaskDispatchResponse),
+        (status = 400, description = "缺少instance_id参数"),
+        (status = 404, description = "实例不存在"),
+        (status = 500, description = "服务器错误")
+    ),
+    tag = "Instance Tasks"
+)]
 pub async fn get_instance_tasks(
     db: web::Data<DatabaseConnection>,
-    path: web::Path<String>,
     query: web::Query<std::collections::HashMap<String, String>>,
 ) -> Result<HttpResponse, ApiError> {
-    let instance_id = path.into_inner();
+    // 从查询参数中获取instance_id
+    let instance_id = query.get("instance_id")
+        .ok_or_else(|| ApiError::BadRequest("Missing required parameter: instance_id".to_string()))?
+        .clone();
+    log::info!("[get_instance_tasks] Received request for instance: {}", instance_id);
 
     // 验证实例是否存在
     let instance = instances::Entity::find_by_id(&instance_id)
@@ -345,8 +364,10 @@ pub async fn get_instance_tasks(
         .await?;
 
     if instance.is_none() {
-        return Err(ApiError::NotFound("Instance not found".to_string()));
+        log::warn!("[get_instance_tasks] Instance not found: {}", instance_id);
+        return Err(ApiError::NotFound(format!("Instance {} not found", instance_id)));
     }
+    log::debug!("[get_instance_tasks] Instance found: {}", instance_id);
 
     // 检查是否启用长轮询
     let wait = query.get("wait").and_then(|v| v.parse::<bool>().ok()).unwrap_or(false);
@@ -427,6 +448,18 @@ pub async fn get_instance_tasks(
 
 /// POST /api/open/instances/tasks/result
 /// Agent回传任务执行结果
+#[utoipa::path(
+    post,
+    path = "/api/open/instances/tasks/result",
+    request_body = TaskResultSubmitRequest,
+    responses(
+        (status = 200, description = "任务结果接收成功", body = TaskResultSubmitResponse),
+        (status = 400, description = "请求参数错误"),
+        (status = 404, description = "任务记录不存在"),
+        (status = 500, description = "服务器错误")
+    ),
+    tag = "Instance Tasks"
+)]
 pub async fn submit_task_result(
     db: web::Data<DatabaseConnection>,
     request: web::Json<TaskResultSubmitRequest>,

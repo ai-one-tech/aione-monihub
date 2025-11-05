@@ -1,6 +1,6 @@
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
+use utoipa::ToSchema;
 
 // ===================================================================
 // 任务类型枚举
@@ -67,7 +67,7 @@ impl TaskStatus {
 // ===================================================================
 
 /// 创建任务请求
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct TaskCreateRequest {
     pub task_name: String,
     pub task_type: String,
@@ -82,7 +82,7 @@ pub struct TaskCreateRequest {
 }
 
 /// 任务响应
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct TaskResponse {
     pub id: String,
     pub task_name: String,
@@ -98,7 +98,7 @@ pub struct TaskResponse {
 }
 
 /// 任务列表响应
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct TaskListResponse {
     pub data: Vec<TaskResponse>,
     pub pagination: Pagination,
@@ -166,7 +166,7 @@ pub struct TaskRecordListQuery {
 }
 
 /// 结果回传请求
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct TaskResultSubmitRequest {
     pub record_id: String,
     pub instance_id: String,
@@ -184,7 +184,7 @@ pub struct TaskResultSubmitRequest {
 }
 
 /// 结果回传响应
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct TaskResultSubmitResponse {
     pub status: String,
     pub message: String,
@@ -192,14 +192,14 @@ pub struct TaskResultSubmitResponse {
 }
 
 /// 任务下发响应（Agent拉取）
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct TaskDispatchResponse {
     pub tasks: Vec<TaskDispatchItem>,
     pub timestamp: u64,
 }
 
 /// 任务下发项
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct TaskDispatchItem {
     pub task_id: String,
     pub record_id: String,
@@ -213,7 +213,7 @@ pub struct TaskDispatchItem {
 // 分页信息
 // ===================================================================
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Pagination {
     pub page: u32,
     pub limit: u32,

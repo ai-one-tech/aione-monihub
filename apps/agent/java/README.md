@@ -87,7 +87,7 @@ mvn spring-boot:run
 
 ```xml
 <dependency>
-    <groupId>tech.aione</groupId>
+    <groupId>org.aione</groupId>
     <artifactId>aione-monihub-agent-java</artifactId>
     <version>0.1.0</version>
 </dependency>
@@ -166,7 +166,7 @@ Agent使用SLF4J日志框架，建议日志级别：
 ```yaml
 logging:
   level:
-    tech.aione.monihub.agent: DEBUG
+    org.aione.monihub.agent: DEBUG
 ```
 
 ## 故障排查

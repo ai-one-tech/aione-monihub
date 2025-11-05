@@ -1,11 +1,16 @@
-package tech.aione.monihub.agent.service;
+package org.aione.monihub.agent.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
-import tech.aione.monihub.agent.config.AgentProperties;
-import tech.aione.monihub.agent.collector.*;
-import tech.aione.monihub.agent.model.InstanceReportRequest;
+import org.aione.monihub.agent.collector.HardwareInfoCollector;
+import org.aione.monihub.agent.collector.NetworkInfoCollector;
+import org.aione.monihub.agent.collector.RuntimeInfoCollector;
+import org.aione.monihub.agent.collector.SystemInfoCollector;
+import org.aione.monihub.agent.config.AgentProperties;
+import org.aione.monihub.agent.collector.*;
+import org.aione.monihub.agent.model.InstanceReportRequest;
+import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -18,40 +23,45 @@ import java.util.concurrent.TimeUnit;
  * 实例信息上报服务
  */
 @Slf4j
+@Component
+@lombok.Data
 public class InstanceReportService {
     
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     
-    private final AgentProperties properties;
-    private final OkHttpClient httpClient;
-    private final ObjectMapper objectMapper;
-    private final ScheduledExecutorService scheduler;
+    @javax.annotation.Resource
+    private AgentProperties properties;
     
-    private final SystemInfoCollector systemInfoCollector;
-    private final NetworkInfoCollector networkInfoCollector;
-    private final HardwareInfoCollector hardwareInfoCollector;
-    private final RuntimeInfoCollector runtimeInfoCollector;
+    @javax.annotation.Resource
+    private OkHttpClient httpClient;
+    
+    @javax.annotation.Resource
+    private ObjectMapper objectMapper;
+    
+    @javax.annotation.Resource
+    private SystemInfoCollector systemInfoCollector;
+    
+    @javax.annotation.Resource
+    private NetworkInfoCollector networkInfoCollector;
+    
+    @javax.annotation.Resource
+    private HardwareInfoCollector hardwareInfoCollector;
+    
+    @javax.annotation.Resource
+    private RuntimeInfoCollector runtimeInfoCollector;
+    
+    private ScheduledExecutorService scheduler;
     
     private int failureCount = 0;
     private static final int MAX_FAILURES = 3;
     
-    public InstanceReportService(AgentProperties properties, 
-                                 OkHttpClient httpClient, 
-                                 ObjectMapper objectMapper) {
-        this.properties = properties;
-        this.httpClient = httpClient;
-        this.objectMapper = objectMapper;
+    @javax.annotation.PostConstruct
+    public void init() {
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread thread = new Thread(r, "instance-report-scheduler");
             thread.setDaemon(true);
             return thread;
         });
-        
-        // 初始化采集器
-        this.systemInfoCollector = new SystemInfoCollector();
-        this.networkInfoCollector = new NetworkInfoCollector(httpClient);
-        this.hardwareInfoCollector = new HardwareInfoCollector();
-        this.runtimeInfoCollector = new RuntimeInfoCollector();
     }
     
     /**
@@ -59,12 +69,16 @@ public class InstanceReportService {
      */
     public void start() {
         if (!properties.getReport().isEnabled()) {
-            log.info("Instance report is disabled");
+            if (properties.isDebug()) {
+                log.info("Instance report is disabled");
+            }
             return;
         }
         
         long intervalSeconds = properties.getReport().getIntervalSeconds();
-        log.info("Starting instance report service, interval: {} seconds", intervalSeconds);
+        if (properties.isDebug()) {
+            log.info("Starting instance report service, interval: {} seconds", intervalSeconds);
+        }
         
         // 延迟10秒后开始首次上报，然后按固定间隔执行
         scheduler.scheduleAtFixedRate(
@@ -79,7 +93,9 @@ public class InstanceReportService {
      * 停止定时上报
      */
     public void stop() {
-        log.info("Stopping instance report service");
+        if (properties.isDebug()) {
+            log.info("Stopping instance report service");
+        }
         scheduler.shutdown();
         try {
             if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
@@ -96,7 +112,9 @@ public class InstanceReportService {
      */
     private void reportInstance() {
         try {
-            log.debug("Collecting instance information...");
+            if (properties.isDebug()) {
+                log.debug("Collecting instance information...");
+            }
             
             // 采集各类信息
             Map<String, Object> systemInfo = systemInfoCollector.collect();
@@ -114,10 +132,14 @@ public class InstanceReportService {
             
             if (success) {
                 failureCount = 0;
-                log.debug("Instance report sent successfully");
+                if (properties.isDebug()) {
+                    log.debug("Instance report sent successfully");
+                }
             } else {
                 failureCount++;
-                log.warn("Instance report failed, failure count: {}", failureCount);
+                if (properties.isDebug()) {
+                    log.warn("Instance report failed, failure count: {}", failureCount);
+                }
                 
                 if (failureCount >= MAX_FAILURES) {
                     log.error("Instance report failed {} times consecutively", MAX_FAILURES);
@@ -138,9 +160,10 @@ public class InstanceReportService {
             Map<String, Object> networkInfo,
             Map<String, Object> hardwareInfo,
             Map<String, Object> runtimeInfo) {
-        
+
         InstanceReportRequest request = new InstanceReportRequest();
         request.setInstanceId(properties.getInstanceId());
+        request.setApplicationCode(properties.getApplicationCode());
         request.setAgentType(properties.getAgentType());
         request.setAgentVersion(properties.getAgentVersion());
         
@@ -193,7 +216,7 @@ public class InstanceReportService {
             String json = objectMapper.writeValueAsString(request);
             String url = properties.getServerUrl() + "/api/open/instances/report";
             
-            RequestBody body = RequestBody.create(json, JSON);
+            RequestBody body = RequestBody.create(JSON, json);
             Request httpRequest = new Request.Builder()
                 .url(url)
                 .post(body)
@@ -201,10 +224,14 @@ public class InstanceReportService {
             
             try (Response response = httpClient.newCall(httpRequest).execute()) {
                 if (response.isSuccessful()) {
-                    log.trace("Report response: {}", response.body().string());
+                    if (properties.isDebug()) {
+                        log.trace("Report response: {}", response.body().string());
+                    }
                     return true;
                 } else {
-                    log.warn("Report failed with status: {}", response.code());
+                    if (properties.isDebug()) {
+                        log.warn("Report failed with status: {}", response.code());
+                    }
                     return false;
                 }
             }

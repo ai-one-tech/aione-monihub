@@ -31,7 +31,7 @@ import {
 import type { TaskCreateRequest } from '../data/api-schema'
 import {
   TASK_TYPES,
-  TASK_TYPE_CONFIGS,
+  TASK_TYPE_OPTIONS,
   executeCommandSchema,
   restartServiceSchema,
   collectLogsSchema,
@@ -179,7 +179,7 @@ export function ApplicationTaskForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {Object.values(TASK_TYPE_CONFIGS).map((config) => (
+                      {TASK_TYPE_OPTIONS.map((config) => (
                         <SelectItem key={config.value} value={config.value}>
                           <div className="flex items-center gap-2">
                             <config.icon className="h-4 w-4" />

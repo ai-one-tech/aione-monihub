@@ -1,4 +1,4 @@
-package tech.aione.monihub.agent;
+package org.aione.monihub.agent;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -6,8 +6,10 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import tech.aione.monihub.agent.service.InstanceReportService;
-import tech.aione.monihub.agent.service.InstanceTaskService;
+import org.aione.monihub.agent.service.InstanceReportService;
+import org.aione.monihub.agent.service.InstanceTaskService;
+
+import javax.annotation.Resource;
 
 /**
  * Agent应用主类
@@ -24,12 +26,20 @@ public class AgentApplication {
      * 应用启动后自动启动Agent服务
      */
     @Bean
-    public ApplicationRunner agentRunner(InstanceReportService reportService,
-                                        InstanceTaskService taskService) {
+    public ApplicationRunner agentRunner() {
         return new ApplicationRunner() {
+            
+            @Resource
+            private InstanceReportService reportService;
+            
+            @Resource
+            private InstanceTaskService taskService;
+            
             @Override
             public void run(ApplicationArguments args) throws Exception {
-                log.info("Starting AiOne MoniHub Agent...");
+                if (reportService.getProperties().isDebug()) {
+                    log.info("Starting AiOne MoniHub Agent...");
+                }
                 
                 // 启动上报服务
                 reportService.start();
@@ -37,14 +47,20 @@ public class AgentApplication {
                 // 启动任务服务
                 taskService.start();
                 
-                log.info("Agent started successfully");
+                if (reportService.getProperties().isDebug()) {
+                    log.info("Agent started successfully");
+                }
                 
                 // 注册关闭钩子
                 Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                    log.info("Shutting down Agent...");
+                    if (reportService.getProperties().isDebug()) {
+                        log.info("Shutting down Agent...");
+                    }
                     reportService.stop();
                     taskService.stop();
-                    log.info("Agent stopped");
+                    if (reportService.getProperties().isDebug()) {
+                        log.info("Agent stopped");
+                    }
                 }));
             }
         };

@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-tech.aione.monihub.agent.config.AgentAutoConfiguration
+org.aione.monihub.agent.config.AgentAutoConfiguration

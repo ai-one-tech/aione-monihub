@@ -59,7 +59,9 @@ use aione_monihub_server::{DatabaseManager, WsServer};
         aione_monihub_server::configs::handlers::get_config_by_code,
         aione_monihub_server::configs::handlers::get_config_by_code_and_environment,
         aione_monihub_server::configs::handlers::get_config_by_code_env_and_version,
-        aione_monihub_server::configs::handlers::delete_config
+        aione_monihub_server::configs::handlers::delete_config,
+        aione_monihub_server::instance_tasks::handlers::get_instance_tasks,
+        aione_monihub_server::instance_tasks::handlers::submit_task_result
     ),
     components(
         schemas(
@@ -107,7 +109,15 @@ use aione_monihub_server::{DatabaseManager, WsServer};
             aione_monihub_server::permissions::models::UserMenuResponse,
             aione_monihub_server::users::models::UserRoleAssignRequest,
             aione_monihub_server::users::models::UserRoleResponse,
-            aione_monihub_server::users::models::UserRoleListResponse
+            aione_monihub_server::users::models::UserRoleListResponse,
+            aione_monihub_server::instance_tasks::models::TaskCreateRequest,
+            aione_monihub_server::instance_tasks::models::TaskResponse,
+            aione_monihub_server::instance_tasks::models::TaskListResponse,
+            aione_monihub_server::instance_tasks::models::TaskResultSubmitRequest,
+            aione_monihub_server::instance_tasks::models::TaskResultSubmitResponse,
+            aione_monihub_server::instance_tasks::models::TaskDispatchResponse,
+            aione_monihub_server::instance_tasks::models::TaskDispatchItem,
+            aione_monihub_server::instance_tasks::models::Pagination
         )
     ),
     info(
@@ -131,7 +141,8 @@ use aione_monihub_server::{DatabaseManager, WsServer};
         (name = "Roles", description = "角色管理相关接口"),
         (name = "Permissions", description = "权限管理相关接口"),
         (name = "Authentication", description = "认证相关接口"),
-        (name = "Configs", description = "配置管理相关接口")
+        (name = "Configs", description = "配置管理相关接口"),
+        (name = "Instance Tasks", description = "实例任务管理相关接口")
     )
 )]
 struct ApiDoc;
@@ -155,10 +166,14 @@ use aione_monihub_server::applications::routes::application_routes;
 use aione_monihub_server::auth::routes::auth_routes;
 use aione_monihub_server::configs::routes::config_routes;
 use aione_monihub_server::health::routes::health_routes;
-use aione_monihub_server::instance_reports::routes::{instance_report_routes, open_instance_report_routes};
-use aione_monihub_server::instance_tasks::routes::{instance_task_routes, open_instance_task_routes};
-use aione_monihub_server::logs::routes::log_routes;
+use aione_monihub_server::instance_reports::routes::{
+    instance_report_routes, open_instance_report_routes,
+};
+use aione_monihub_server::instance_tasks::routes::{
+    instance_task_routes, open_instance_task_routes,
+};
 use aione_monihub_server::instances::routes::instance_routes;
+use aione_monihub_server::logs::routes::log_routes;
 use aione_monihub_server::permissions::routes::permission_routes;
 use aione_monihub_server::projects::routes::project_routes;
 use aione_monihub_server::roles::routes::role_routes;
@@ -215,25 +230,29 @@ async fn main() -> io::Result<()> {
                 SwaggerUi::new("/swagger-ui/{_:.*}")
                     .url("/api-docs/openapi.json", ApiDoc::openapi()),
             )
-            // 注册所有模块的路由
+            // Health check (outside /api scope)
             .configure(health_routes)
-            .configure(auth_routes)
-            .configure(project_routes)
-            .configure(application_routes)
-            .configure(user_routes)
-            .configure(role_routes)
-            .configure(permission_routes)
-            .configure(instance_routes)
-            .configure(instance_report_routes)
-            .configure(instance_task_routes)
-            .configure(config_routes)
-            .configure(websocket_routes)
-            .configure(log_routes)
-            // 开放 API 路由（无需认证）
+            // API routes (all under /api scope)
             .service(
                 web::scope("/api")
-                    .configure(open_instance_report_routes)
-                    .configure(open_instance_task_routes)
+                    .configure(auth_routes)
+                    .configure(project_routes)
+                    .configure(application_routes)
+                    .configure(user_routes)
+                    .configure(role_routes)
+                    .configure(permission_routes)
+                    .configure(instance_routes)
+                    .configure(instance_report_routes)
+                    .configure(instance_task_routes)
+                    .configure(config_routes)
+                    .configure(websocket_routes)
+                    .configure(log_routes)
+                    // Open API routes (no authentication required)
+                    .service(
+                        web::scope("/open/instances")
+                            .configure(open_instance_report_routes)
+                            .configure(open_instance_task_routes),
+                    ),
             )
     })
     .bind(&bind_address)?

@@ -1,10 +1,9 @@
-package tech.aione.monihub.agent.model;
+package org.aione.monihub.agent.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * 任务下发响应模型

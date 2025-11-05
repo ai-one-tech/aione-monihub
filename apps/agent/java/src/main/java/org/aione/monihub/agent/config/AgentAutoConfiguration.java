@@ -1,14 +1,13 @@
-package tech.aione.monihub.agent.config;
+package org.aione.monihub.agent.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import tech.aione.monihub.agent.service.InstanceReportService;
+import org.springframework.context.annotation.ComponentScan;
 
 import java.util.concurrent.TimeUnit;
 
@@ -18,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Configuration
 @EnableConfigurationProperties(AgentProperties.class)
+@ComponentScan(basePackages = "org.aione.monihub.agent")
 public class AgentAutoConfiguration {
     
     /**
@@ -41,19 +41,5 @@ public class AgentAutoConfiguration {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         return mapper;
-    }
-    
-    /**
-     * 配置实例上报服务
-     */
-    @Bean
-    @ConditionalOnProperty(prefix = "monihub.agent.report", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public InstanceReportService instanceReportService(
-            AgentProperties properties,
-            OkHttpClient httpClient,
-            ObjectMapper objectMapper) {
-        
-        log.info("Initializing InstanceReportService");
-        return new InstanceReportService(properties, httpClient, objectMapper);
     }
 }

@@ -3,7 +3,7 @@
 monihub:
   agent:
     # 实例ID（必填，需要先在服务端创建实例）
-    instance-id: your-instance-id-here
+    application-code: 3ASDFASDF
     
     # 服务端URL
     server-url: http://localhost:9080
@@ -40,6 +40,9 @@ monihub:
       upload-dir: /tmp/monihub/uploads
       # 最大上传大小（MB）
       max-upload-size-mb: 100
+    
+    # Debug模式，开启后会打印详细日志，默认关闭
+    debug: false
 
 # Spring Boot 配置
 spring:
@@ -50,6 +53,6 @@ spring:
 logging:
   level:
     root: INFO
-    tech.aione.monihub.agent: DEBUG
+    org.aione.monihub.agent: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

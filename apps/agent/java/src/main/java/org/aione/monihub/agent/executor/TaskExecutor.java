@@ -1,13 +1,14 @@
-package tech.aione.monihub.agent.executor;
+package org.aione.monihub.agent.executor;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.aione.monihub.agent.config.AgentProperties;
+import org.aione.monihub.agent.handler.TaskHandler;
+import org.aione.monihub.agent.model.TaskDispatchItem;
+import org.aione.monihub.agent.model.TaskResult;
 import org.springframework.stereotype.Component;
-import tech.aione.monihub.agent.handler.TaskHandler;
-import tech.aione.monihub.agent.model.TaskDispatchItem;
-import tech.aione.monihub.agent.model.TaskResult;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 
-import javax.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,16 +18,20 @@ import java.util.concurrent.*;
  * 任务执行器
  */
 @Slf4j
-@Component
+@Component("agentTaskExecutor")
 public class TaskExecutor {
     
     private final Map<String, TaskHandler> handlers = new HashMap<>();
-    private final ExecutorService executorService;
+    private ExecutorService executorService;
     
-    @Autowired(required = false)
+    @javax.annotation.Resource
+    private AgentProperties properties;
+    
+    @javax.annotation.Resource
     private List<TaskHandler> taskHandlers;
     
-    public TaskExecutor() {
+    @javax.annotation.PostConstruct
+    public void init() {
         // 创建线程池，最多并发执行3个任务
         this.executorService = new ThreadPoolExecutor(
             3,
@@ -45,16 +50,21 @@ public class TaskExecutor {
             },
             new ThreadPoolExecutor.CallerRunsPolicy()
         );
+        // 注册所有任务处理器
+        initHandlers();
     }
     
-    @PostConstruct
-    public void init() {
-        // 注册所有任务处理器
-        if (taskHandlers != null) {
+    /**
+     * 初始化任务处理器
+     */
+    private void initHandlers() {
+        if (taskHandlers != null && !taskHandlers.isEmpty()) {
             for (TaskHandler handler : taskHandlers) {
                 String taskType = handler.getTaskType();
                 handlers.put(taskType, handler);
-                log.info("Registered task handler: {}", taskType);
+                if (properties.isDebug()) {
+                    log.info("Registered task handler: {}", taskType);
+                }
             }
         }
     }

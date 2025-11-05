@@ -1,4 +1,4 @@
-package tech.aione.monihub.agent.model;
+package org.aione.monihub.agent.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
@@ -13,6 +13,9 @@ public class InstanceReportRequest {
     
     @JsonProperty("instance_id")
     private String instanceId;
+
+    @JsonProperty("application_code")
+    private String applicationCode;
     
     @JsonProperty("agent_type")
     private String agentType;

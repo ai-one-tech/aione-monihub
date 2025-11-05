@@ -1,4 +1,4 @@
-package tech.aione.monihub.agent.model;
+package org.aione.monihub.agent.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;

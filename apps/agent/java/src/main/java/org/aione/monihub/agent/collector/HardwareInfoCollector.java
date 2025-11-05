@@ -1,18 +1,21 @@
-package tech.aione.monihub.agent.collector;
+package org.aione.monihub.agent.collector;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 import oshi.SystemInfo;
 import oshi.hardware.*;
+import oshi.software.os.OSFileStore;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 硬件信息采集器
- * 采集CPU、内存、磁盘使用情况
+ * 硅件信息采集器
+ * 采集CPU、内存、约盘使用情况
  */
 @Slf4j
+@Component
 public class HardwareInfoCollector {
     
     private final SystemInfo systemInfo;

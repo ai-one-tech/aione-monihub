@@ -1,8 +1,9 @@
-package tech.aione.monihub.agent.handler;
+package org.aione.monihub.agent.handler;
 
 import lombok.extern.slf4j.Slf4j;
+import org.aione.monihub.agent.config.AgentProperties;
 import org.springframework.stereotype.Component;
-import tech.aione.monihub.agent.model.TaskResult;
+import org.aione.monihub.agent.model.TaskResult;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -19,6 +20,9 @@ public class ExecuteCommandHandler implements TaskHandler {
     
     private static final String TASK_TYPE = "execute_command";
     
+    @javax.annotation.Resource
+    private AgentProperties properties;
+    
     @Override
     public TaskResult execute(Map<String, Object> taskContent) throws Exception {
         String command = (String) taskContent.get("command");
@@ -26,7 +30,9 @@ public class ExecuteCommandHandler implements TaskHandler {
             return TaskResult.failure("Command is empty");
         }
         
-        log.info("Executing command: {}", command);
+        if (properties.isDebug()) {
+            log.info("Executing command: {}", command);
+        }
         
         ProcessBuilder processBuilder = new ProcessBuilder();
         

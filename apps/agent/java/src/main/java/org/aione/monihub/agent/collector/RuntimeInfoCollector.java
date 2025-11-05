@@ -1,6 +1,7 @@
-package tech.aione.monihub.agent.collector;
+package org.aione.monihub.agent.collector;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
@@ -13,6 +14,7 @@ import java.util.Map;
  * 采集进程ID、运行时长、线程数等信息
  */
 @Slf4j
+@Component
 public class RuntimeInfoCollector {
     
     private final RuntimeMXBean runtimeMXBean;

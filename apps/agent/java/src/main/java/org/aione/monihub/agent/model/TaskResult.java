@@ -1,4 +1,4 @@
-package tech.aione.monihub.agent.model;
+package org.aione.monihub.agent.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
