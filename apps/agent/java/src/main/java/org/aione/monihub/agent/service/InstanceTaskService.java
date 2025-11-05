@@ -3,12 +3,12 @@ package org.aione.monihub.agent.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
 import org.aione.monihub.agent.config.AgentConfig;
-import org.aione.monihub.agent.executor.TaskExecutor;
+import org.aione.monihub.agent.executor.AgentTaskExecutor;
 import org.aione.monihub.agent.model.TaskDispatchItem;
 import org.aione.monihub.agent.model.TaskDispatchResponse;
 import org.aione.monihub.agent.model.TaskResultSubmitRequest;
 import org.aione.monihub.agent.util.AgentLogger;
-import org.slf4j.LoggerFactory;
+import org.aione.monihub.agent.util.AgentLoggerFactory;
 
 import java.net.SocketTimeoutException;
 import java.time.ZonedDateTime;
@@ -35,8 +35,8 @@ public class InstanceTaskService {
     @javax.annotation.Resource
     private ObjectMapper objectMapper;
 
-    @javax.annotation.Resource(name = "agentTaskExecutor")
-    private TaskExecutor taskExecutor;
+    @javax.annotation.Resource
+    private AgentTaskExecutor agentTaskExecutor;
 
     private ScheduledExecutorService scheduler;
 
@@ -46,7 +46,7 @@ public class InstanceTaskService {
 
     @javax.annotation.PostConstruct
     public void init() {
-        this.log = new AgentLogger(LoggerFactory.getLogger(InstanceTaskService.class), properties);
+        this.log = AgentLoggerFactory.getLogger(InstanceTaskService.class);
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread thread = new Thread(r, "task-poller");
             thread.setDaemon(true);
@@ -94,7 +94,7 @@ public class InstanceTaskService {
             Thread.currentThread().interrupt();
         }
 
-        taskExecutor.shutdown();
+        agentTaskExecutor.shutdown();
     }
 
     /**
@@ -156,7 +156,7 @@ public class InstanceTaskService {
         scheduler.execute(() -> {
             try {
                 // 执行任务
-                TaskExecutor.TaskExecutionResult result = taskExecutor.execute(task);
+                AgentTaskExecutor.TaskExecutionResult result = agentTaskExecutor.execute(task);
 
                 // 提交结果
                 submitResult(task, result);
@@ -166,7 +166,7 @@ public class InstanceTaskService {
 
                 // 提交失败结果
                 try {
-                    TaskExecutor.TaskExecutionResult failedResult = new TaskExecutor.TaskExecutionResult(
+                    AgentTaskExecutor.TaskExecutionResult failedResult = new AgentTaskExecutor.TaskExecutionResult(
                             "failed",
                             1,
                             e.getMessage(),
@@ -187,7 +187,7 @@ public class InstanceTaskService {
     /**
      * 提交任务结果
      */
-    private void submitResult(TaskDispatchItem task, TaskExecutor.TaskExecutionResult result) {
+    private void submitResult(TaskDispatchItem task, AgentTaskExecutor.TaskExecutionResult result) {
         int maxRetries = 3;
         int retryCount = 0;
 

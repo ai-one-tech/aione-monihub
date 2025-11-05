@@ -4,22 +4,14 @@ import org.aione.monihub.agent.config.AgentConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Resource;
-
 /**
  * AgentLogger工厂类
  * 用于创建带有debug控制的日志对象
  */
 public class AgentLoggerFactory {
 
-    private static AgentConfig staticProperties;
-
-    @Resource
-    private AgentConfig properties;
-
-    @javax.annotation.PostConstruct
-    public void init() {
-        staticProperties = properties;
+    private static AgentConfig getAgentConfig() {
+        return SpringContextUtils.getBean(AgentConfig.class);
     }
 
     /**
@@ -30,7 +22,7 @@ public class AgentLoggerFactory {
      */
     public static AgentLogger getLogger(Class<?> clazz) {
         Logger logger = LoggerFactory.getLogger(clazz);
-        return new AgentLogger(logger, staticProperties);
+        return new AgentLogger(logger, getAgentConfig());
     }
 
     /**
@@ -41,6 +33,6 @@ public class AgentLoggerFactory {
      */
     public static AgentLogger getLogger(String name) {
         Logger logger = LoggerFactory.getLogger(name);
-        return new AgentLogger(logger, staticProperties);
+        return new AgentLogger(logger, getAgentConfig());
     }
 }

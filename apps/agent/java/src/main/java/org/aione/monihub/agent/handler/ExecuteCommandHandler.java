@@ -3,7 +3,7 @@ package org.aione.monihub.agent.handler;
 import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.model.TaskResult;
 import org.aione.monihub.agent.util.AgentLogger;
-import org.slf4j.LoggerFactory;
+import org.aione.monihub.agent.util.AgentLoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -25,7 +25,7 @@ public class ExecuteCommandHandler implements TaskHandler {
 
     @javax.annotation.PostConstruct
     public void init() {
-        this.log = new AgentLogger(LoggerFactory.getLogger(ExecuteCommandHandler.class), properties);
+        this.log = AgentLoggerFactory.getLogger(ExecuteCommandHandler.class);
     }
 
     @Override

@@ -7,13 +7,11 @@ import org.aione.monihub.agent.collector.HardwareInfoCollector;
 import org.aione.monihub.agent.collector.NetworkInfoCollector;
 import org.aione.monihub.agent.collector.RuntimeInfoCollector;
 import org.aione.monihub.agent.collector.SystemInfoCollector;
-import org.aione.monihub.agent.executor.TaskExecutor;
+import org.aione.monihub.agent.executor.AgentTaskExecutor;
 import org.aione.monihub.agent.handler.ExecuteCommandHandler;
 import org.aione.monihub.agent.service.InstanceReportService;
 import org.aione.monihub.agent.service.InstanceTaskService;
-import org.aione.monihub.agent.util.AgentLoggerFactory;
 import org.aione.monihub.agent.util.SpringContextUtils;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -23,8 +21,17 @@ import java.util.concurrent.TimeUnit;
  * Agent自动配置类
  */
 @Configuration
-@EnableConfigurationProperties(AgentConfig.class)
 public class AgentAutoConfiguration {
+
+    @Bean
+    public SpringContextUtils springContextUtils() {
+        return new SpringContextUtils();
+    }
+
+    @Bean
+    public AgentConfig agentConfig() {
+        return new AgentConfig();
+    }
 
     /**
      * 配置OkHttpClient
@@ -100,9 +107,9 @@ public class AgentAutoConfiguration {
     /**
      * 任务执行器
      */
-    @Bean(name = "agentTaskExecutor")
-    public TaskExecutor taskExecutor() {
-        return new TaskExecutor();
+    @Bean
+    public AgentTaskExecutor agentTaskExecutor() {
+        return new AgentTaskExecutor();
     }
 
     /**
@@ -113,19 +120,4 @@ public class AgentAutoConfiguration {
         return new ExecuteCommandHandler();
     }
 
-    /**
-     * Agent日志工厂
-     */
-    @Bean
-    public AgentLoggerFactory agentLoggerFactory() {
-        return new AgentLoggerFactory();
-    }
-
-    /**
-     * Spring上下文工具类
-     */
-    @Bean
-    public SpringContextUtils springContextUtils() {
-        return new SpringContextUtils();
-    }
 }

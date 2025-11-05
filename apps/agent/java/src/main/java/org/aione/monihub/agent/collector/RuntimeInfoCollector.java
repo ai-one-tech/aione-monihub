@@ -4,10 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.MapType;
 import org.aione.monihub.agent.config.AgentConfig;
-import org.aione.monihub.agent.executor.TaskExecutor;
 import org.aione.monihub.agent.model.RuntimeInfo;
 import org.aione.monihub.agent.util.AgentLogger;
-import org.slf4j.LoggerFactory;
+import org.aione.monihub.agent.util.AgentLoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.lang.management.ManagementFactory;
@@ -40,7 +39,7 @@ public class RuntimeInfoCollector {
     @javax.annotation.PostConstruct
     public void init() {
         // 初始化日志
-        this.log = new AgentLogger(LoggerFactory.getLogger(TaskExecutor.class), agentConfig);
+        this.log = AgentLoggerFactory.getLogger(RuntimeInfoCollector.class);
     }
 
     public RuntimeInfoCollector() {

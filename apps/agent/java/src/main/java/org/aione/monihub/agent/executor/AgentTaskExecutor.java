@@ -5,7 +5,7 @@ import org.aione.monihub.agent.handler.TaskHandler;
 import org.aione.monihub.agent.model.TaskDispatchItem;
 import org.aione.monihub.agent.model.TaskResult;
 import org.aione.monihub.agent.util.AgentLogger;
-import org.slf4j.LoggerFactory;
+import org.aione.monihub.agent.util.AgentLoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -15,7 +15,7 @@ import java.util.concurrent.*;
 /**
  * 任务执行器
  */
-public class TaskExecutor {
+public class AgentTaskExecutor {
 
     private AgentLogger log;
 
@@ -31,7 +31,7 @@ public class TaskExecutor {
     @javax.annotation.PostConstruct
     public void init() {
         // 初始化日志
-        this.log = new AgentLogger(LoggerFactory.getLogger(TaskExecutor.class), properties);
+        this.log = AgentLoggerFactory.getLogger(AgentTaskExecutor.class);
 
         // 创建线程池，最多并发执行3个任务
         this.executorService = new ThreadPoolExecutor(

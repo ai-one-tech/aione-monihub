@@ -9,7 +9,7 @@ import org.aione.monihub.agent.collector.SystemInfoCollector;
 import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.model.*;
 import org.aione.monihub.agent.util.AgentLogger;
-import org.slf4j.LoggerFactory;
+import org.aione.monihub.agent.util.AgentLoggerFactory;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -55,7 +55,7 @@ public class InstanceReportService {
 
     @javax.annotation.PostConstruct
     public void init() {
-        this.log = new AgentLogger(LoggerFactory.getLogger(InstanceReportService.class), properties);
+        this.log = AgentLoggerFactory.getLogger(InstanceReportService.class);
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread thread = new Thread(r, "instance-report-scheduler");
             thread.setDaemon(true);
@@ -209,14 +209,14 @@ public class InstanceReportService {
         try {
             String json = objectMapper.writeValueAsString(request);
             String url = properties.getServerUrl() + "/api/open/instances/report";
-            
+
             log.info("Sending report request to {}: {}", url, json);
-            
+
             RequestBody body = RequestBody.create(JSON, json);
             Request httpRequest = new Request.Builder()
-                .url(url)
-                .post(body)
-                .build();
+                    .url(url)
+                    .post(body)
+                    .build();
 
             try (Response response = httpClient.newCall(httpRequest).execute()) {
                 if (response.isSuccessful()) {

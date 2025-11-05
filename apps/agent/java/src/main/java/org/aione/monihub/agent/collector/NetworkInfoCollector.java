@@ -6,8 +6,8 @@ import okhttp3.Response;
 import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.model.NetworkInfo;
 import org.aione.monihub.agent.util.AgentLogger;
+import org.aione.monihub.agent.util.AgentLoggerFactory;
 import org.apache.logging.log4j.util.Strings;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.net.Inet4Address;
@@ -55,7 +55,7 @@ public class NetworkInfoCollector {
 
     @javax.annotation.PostConstruct
     public void init() {
-        this.log = new AgentLogger(LoggerFactory.getLogger(NetworkInfoCollector.class), agentConfig);
+        this.log = AgentLoggerFactory.getLogger(NetworkInfoCollector.class);
 
         try {
             Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();

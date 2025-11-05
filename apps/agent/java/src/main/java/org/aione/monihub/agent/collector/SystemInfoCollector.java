@@ -1,9 +1,8 @@
 package org.aione.monihub.agent.collector;
 
 import org.aione.monihub.agent.config.AgentConfig;
-import org.aione.monihub.agent.executor.TaskExecutor;
 import org.aione.monihub.agent.util.AgentLogger;
-import org.slf4j.LoggerFactory;
+import org.aione.monihub.agent.util.AgentLoggerFactory;
 import oshi.software.os.OperatingSystem;
 
 import java.net.InetAddress;
@@ -25,7 +24,7 @@ public class SystemInfoCollector {
     @javax.annotation.PostConstruct
     public void init() {
         // 初始化日志
-        this.log = new AgentLogger(LoggerFactory.getLogger(TaskExecutor.class), properties);
+        this.log = AgentLoggerFactory.getLogger(SystemInfoCollector.class);
     }
 
     public SystemInfoCollector() {

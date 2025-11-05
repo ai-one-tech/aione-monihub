@@ -1,10 +1,9 @@
 package org.aione.monihub.agent.collector;
 
 import org.aione.monihub.agent.config.AgentConfig;
-import org.aione.monihub.agent.executor.TaskExecutor;
 import org.aione.monihub.agent.model.HardwareInfo;
 import org.aione.monihub.agent.util.AgentLogger;
-import org.slf4j.LoggerFactory;
+import org.aione.monihub.agent.util.AgentLoggerFactory;
 import oshi.SystemInfo;
 import oshi.hardware.CentralProcessor;
 import oshi.hardware.GlobalMemory;
@@ -32,7 +31,7 @@ public class HardwareInfoCollector {
     @javax.annotation.PostConstruct
     public void init() {
         // 初始化日志
-        this.log = new AgentLogger(LoggerFactory.getLogger(TaskExecutor.class), properties);
+        this.log = AgentLoggerFactory.getLogger(HardwareInfoCollector.class);
     }
 
     public HardwareInfoCollector() {
