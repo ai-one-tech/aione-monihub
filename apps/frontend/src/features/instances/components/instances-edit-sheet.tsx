@@ -29,7 +29,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { useInstancesProvider } from './instances-provider'
-import { useCreateInstance, useUpdateInstance, useInstanceQuery } from '../hooks/use-instances-query'
+import { useInstanceQuery } from '../hooks/use-instances-query'
 import { CreateInstanceRequest, createInstanceRequestSchema, INSTANCE_STATUS_OPTIONS, INSTANCE_ENVIRONMENT_OPTIONS, OS_TYPE_OPTIONS } from '../data/api-schema'
 import { toast } from 'sonner'
 
@@ -42,12 +42,9 @@ export function InstancesEditSheet() {
   } = useInstancesProvider()
 
   const { data: instanceDetail, isLoading: isLoadingInstance } = useInstanceQuery(selectedInstanceId || '')
-  const createInstanceMutation = useCreateInstance()
-  const updateInstanceMutation = useUpdateInstance()
 
-  const isCreateMode = sheetMode === 'create'
-  const isEditMode = sheetMode === 'edit'
-  const isViewMode = sheetMode === 'view'
+  // 移除创建和编辑模式，只保留查看模式
+  const isViewMode = sheetMode === 'view' || sheetMode === 'create' || sheetMode === 'edit'
 
   const form = useForm<CreateInstanceRequest>({
     resolver: zodResolver(createInstanceRequestSchema),
@@ -69,7 +66,7 @@ export function InstancesEditSheet() {
   })
 
   useEffect(() => {
-    if ((isEditMode || isViewMode) && instanceDetail) {
+    if (instanceDetail) {
       form.reset({
         name: instanceDetail.name,
         instance_type: instanceDetail.instance_type,
@@ -83,40 +80,8 @@ export function InstancesEditSheet() {
         os_version: instanceDetail.os_version,
         custom_fields: instanceDetail.custom_fields,
       })
-    } else if (isCreateMode) {
-      form.reset({
-        name: '',
-        instance_type: '',
-        status: 'active',
-        application_id: '',
-        mac_address: '',
-        public_ip: '',
-        port: undefined,
-        program_path: '',
-        os_type: '',
-        os_version: '',
-        custom_fields: {},
-      })
     }
-  }, [instanceDetail, form, isEditMode, isCreateMode, isViewMode])
-
-  const onSubmit = async (data: CreateInstanceRequest) => {
-    try {
-      if (isCreateMode) {
-        await createInstanceMutation.mutateAsync(data)
-        toast.success('实例创建成功')
-      } else if (isEditMode && selectedInstanceId) {
-        await updateInstanceMutation.mutateAsync({ instanceId: selectedInstanceId, data })
-        toast.success('实例更新成功')
-      }
-
-      handleClose()
-    } catch (error) {
-      console.error('保存实例失败:', error)
-    }
-  }
-
-  const isLoading = createInstanceMutation.isPending || updateInstanceMutation.isPending
+  }, [instanceDetail, form])
 
   const handleClose = () => {
     setIsSheetOpen(false)
@@ -124,14 +89,10 @@ export function InstancesEditSheet() {
   }
 
   const getSheetTitle = () => {
-    if (isCreateMode) return '新增实例'
-    if (isEditMode) return '编辑实例'
     return '查看实例'
   }
 
   const getSheetDescription = () => {
-    if (isCreateMode) return '填写实例信息以创建新的实例'
-    if (isEditMode) return '修改实例信息'
     return '查看实例详细信息'
   }
 
@@ -146,14 +107,14 @@ export function InstancesEditSheet() {
             </SheetDescription>
           </SheetHeader>
 
-          {((isEditMode || isViewMode) && isLoadingInstance) ? (
+          {(isLoadingInstance) ? (
             <div className='flex-1 flex items-center justify-center'>
               <div className='text-sm text-muted-foreground'>加载实例信息中...</div>
             </div>
           ) : (
             <div className='flex-1 overflow-y-auto px-6 py-4'>
               <Form {...form}>
-                <form id='instance-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
+                <form className='space-y-4'>
                   {/* 基础字段 */}
                   <FormField
                     control={form.control}
@@ -345,13 +306,8 @@ export function InstancesEditSheet() {
           <SheetFooter>
             <div className='flex justify-end space-x-3 w-full'>
               <Button type='button' variant='outline' onClick={handleClose}>
-                取消
+                关闭
               </Button>
-              {!isViewMode && (
-                <Button type='submit' form='instance-form' disabled={isLoading || !form.formState.isValid}>
-                  {isLoading ? '保存中...' : '保存'}
-                </Button>
-              )}
             </div>
           </SheetFooter>
         </SheetContent>

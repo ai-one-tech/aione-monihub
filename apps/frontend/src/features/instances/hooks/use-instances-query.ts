@@ -35,9 +35,8 @@ export function useInstanceQuery(instanceId: string) {
   })
 }
 
-/**
- * 创建实例 Hook
- */
+// 移除创建实例 Hook
+/*
 export function useCreateInstance() {
   const queryClient = useQueryClient()
 
@@ -62,10 +61,10 @@ export function useCreateInstance() {
     },
   })
 }
+*/
 
-/**
- * 更新实例 Hook
- */
+// 移除更新实例 Hook
+/*
 export function useUpdateInstance() {
   const queryClient = useQueryClient()
 
@@ -92,6 +91,7 @@ export function useUpdateInstance() {
     },
   })
 }
+*/
 
 /**
  * 删除实例 Hook

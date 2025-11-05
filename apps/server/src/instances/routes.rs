@@ -3,12 +3,12 @@ use actix_web::web;
 
 pub fn instance_routes(cfg: &mut web::ServiceConfig) {
     cfg.route("/instances", web::get().to(handlers::get_instances))
-        .route("/instances", web::post().to(handlers::create_instance))
+        //.route("/instances", web::post().to(handlers::create_instance))
         .route("/instances/{id}", web::get().to(handlers::get_instance))
-        .route(
-            "/instances/{id}",
-            web::put().to(handlers::update_instance),
-        )
+        //.route(
+        //    "/instances/{id}",
+        //    web::put().to(handlers::update_instance),
+        //)
         .route(
             "/instances/{id}/enable",
             web::post().to(handlers::enable_instance),

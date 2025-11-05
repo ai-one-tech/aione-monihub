@@ -60,21 +60,21 @@ class InstancesApi {
     return response.data
   }
 
-  /**
-   * 创建实例
-   */
+  // 移除创建实例方法
+  /*
   async createInstance(instanceData: CreateInstanceRequest): Promise<InstanceDetailResponse> {
     const response = await apiClient.post<InstanceDetailResponse>('/api/instances', instanceData)
     return response.data
   }
+  */
 
-  /**
-   * 更新实例
-   */
+  // 移除更新实例方法
+  /*
   async updateInstance(instanceId: string, instanceData: UpdateInstanceRequest): Promise<InstanceDetailResponse> {
     const response = await apiClient.put<InstanceDetailResponse>(`/api/instances/${instanceId}`, instanceData)
     return response.data
   }
+  */
 
   /**
    * 删除实例

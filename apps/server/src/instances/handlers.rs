@@ -1,9 +1,8 @@
 use crate::instances::models::{
-    InstanceCreateRequest, InstanceListQuery, InstanceListResponse, InstanceMonitoringDataResponse,
+    InstanceListQuery, InstanceListResponse, InstanceMonitoringDataResponse,
     InstanceResponse, Pagination,
 };
 use crate::shared::error::ApiError;
-use crate::shared::status::is_valid_status;
 use crate::shared::generate_snowflake_id;
 use crate::entities::instances::{Entity as Instances, ActiveModel};
 use actix_web::{web, HttpResponse, Result, HttpRequest};
@@ -96,33 +95,6 @@ pub async fn get_instances(
     Ok(HttpResponse::Ok().json(response))
 }
 
-pub async fn create_instance(
-    db: web::Data<DatabaseConnection>,
-    instance: web::Json<InstanceCreateRequest>,
-) -> Result<HttpResponse, ApiError> {
-    // 生成雪花ID
-    let instance_id = generate_snowflake_id();
-
-    // 当前用户ID（从认证中间件获取，这里暂时使用系统用户）
-    let current_user_id = "system".to_string();
-
-    // 校验状态
-    if !is_valid_status(instance.status.as_str()) {
-        return Err(ApiError::BadRequest("Invalid status; must be 'active' or 'disabled'".to_string()));
-    }
-
-    // 转换为数据库实体
-    let instance_data = instance.to_active_model(instance_id.clone(), current_user_id);
-
-    // 保存到数据库
-    let saved_instance = instance_data.insert(&**db).await?;
-
-    // 转换为响应格式
-    let response = InstanceResponse::from_entity(saved_instance);
-
-    Ok(HttpResponse::Ok().json(response))
-}
-
 pub async fn get_instance(
     db: web::Data<DatabaseConnection>,
     path: web::Path<String>
@@ -144,6 +116,7 @@ pub async fn get_instance(
     }
 }
 
+/*
 pub async fn update_instance(
     db: web::Data<DatabaseConnection>,
     path: web::Path<String>,
@@ -194,6 +167,7 @@ pub async fn update_instance(
 
     Ok(HttpResponse::Ok().json(response))
 }
+*/
 
 pub async fn delete_instance(
     db: web::Data<DatabaseConnection>,
@@ -229,6 +203,35 @@ pub async fn delete_instance(
 
     Ok(HttpResponse::Ok().json("实例删除成功"))
 }
+
+/*
+pub async fn create_instance(
+    db: web::Data<DatabaseConnection>,
+    instance: web::Json<InstanceCreateRequest>,
+) -> Result<HttpResponse, ApiError> {
+    // 生成雪花ID
+    let instance_id = generate_snowflake_id();
+
+    // 当前用户ID（从认证中间件获取，这里暂时使用系统用户）
+    let current_user_id = "system".to_string();
+
+    // 校验状态
+    if !is_valid_status(instance.status.as_str()) {
+        return Err(ApiError::BadRequest("Invalid status; must be 'active' or 'disabled'".to_string()));
+    }
+
+    // 转换为数据库实体
+    let instance_data = instance.to_active_model(instance_id.clone(), current_user_id);
+
+    // 保存到数据库
+    let saved_instance = instance_data.insert(&**db).await?;
+
+    // 转换为响应格式
+    let response = InstanceResponse::from_entity(saved_instance);
+
+    Ok(HttpResponse::Ok().json(response))
+}
+*/
 
 pub async fn enable_instance(
     db: web::Data<DatabaseConnection>,

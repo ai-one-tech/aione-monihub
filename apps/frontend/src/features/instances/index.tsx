@@ -47,11 +47,14 @@ function InstancesContent() {
 
   const { data, isLoading, error, refetch } = useInstancesQuery(apiParams)
 
+  // 移除创建实例功能
+  /*
   const handleCreateInstance = () => {
     setSelectedInstanceId(null)
     setSheetMode('create')
     setIsSheetOpen(true)
   }
+  */
 
   return (
     <>
@@ -72,6 +75,7 @@ function InstancesContent() {
               管理系统中的所有实例信息
             </p>
           </div>
+          {/* 移除创建实例按钮 */}
           {/* <Button onClick={handleCreateInstance} size='sm'>
             <Plus className='h-4 w-4 mr-2' />
             新增实例

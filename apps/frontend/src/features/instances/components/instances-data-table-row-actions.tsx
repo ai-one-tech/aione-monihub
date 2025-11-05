@@ -1,5 +1,5 @@
 import { type Row } from '@tanstack/react-table'
-import { Eye, Edit, Trash2, Power, PowerOff, FileText } from 'lucide-react'
+import { Eye, Trash2, Power, PowerOff, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { type InstanceResponse } from '../data/api-schema'
@@ -34,11 +34,14 @@ export function InstancesDataTableRowActions({
     setIsSheetOpen(true)
   }
 
+  // 移除编辑功能
+  /*
   const handleEdit = () => {
     setSelectedInstanceId(instance.id)
     setSheetMode('edit')
     setIsSheetOpen(true)
   }
+  */
 
   const handleDelete = () => {
     setDeletingInstanceId(instance.id)
@@ -92,6 +95,8 @@ export function InstancesDataTableRowActions({
         </Tooltip>
       </TooltipProvider>
 
+      {/* 移除编辑按钮 */}
+      {/* 
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -104,6 +109,7 @@ export function InstancesDataTableRowActions({
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
+      */}
 
       {isActive ? (
         <TooltipProvider>
