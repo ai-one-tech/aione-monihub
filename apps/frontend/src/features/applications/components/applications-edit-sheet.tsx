@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -27,8 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
+// 移除未使用的 Badge 与 Separator
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Command, CommandInput, CommandEmpty, CommandGroup, CommandList, CommandItem } from '@/components/ui/command'
 import { CheckIcon, CaretSortIcon } from '@radix-ui/react-icons'
@@ -37,7 +36,6 @@ import { useCreateApplication, useUpdateApplication, useApplicationQuery } from 
 import {
   createApplicationRequestSchema,
   type CreateApplicationRequest,
-  APPLICATION_STATUS_LABELS,
   APPLICATION_STATUS_OPTIONS,
 } from '../data/api-schema'
 import { toast } from 'sonner'
@@ -81,27 +79,57 @@ export function ApplicationsEditSheet() {
   const { data: selectedProject } = useProjectQuery(selectedProjectId || '')
   const { data: projectsList } = useProjectsQuery({ page: 1, limit: 10, search: debouncedProjectSearch })
 
+  // 将后端返回的状态值归一化为表单允许的字面量类型
+  const normalizeStatus = (s: unknown): CreateApplicationRequest['status'] => {
+    return s === 'disabled' ? 'disabled' : 'active'
+  }
+
   // 当应用数据加载完成时，更新表单
   useEffect(() => {
     if ((isEditMode || isViewMode) && applicationDetail) {
-      
-      Promise.resolve(() => {
-        form.reset({
+      // 微任务中重置，避免下拉等绑定的时机问题，并加守卫避免闪烁
+      Promise.resolve().then(() => {
+        const current = form.getValues()
+        const target = {
           project_id: applicationDetail.project_id,
           name: applicationDetail.name,
           code: applicationDetail.code,
           description: applicationDetail.description,
-          status: applicationDetail.status,
-        })
-      }).then();
+          status: normalizeStatus(applicationDetail.status),
+        }
+        const needReset = (
+          current.project_id !== target.project_id ||
+          current.name !== target.name ||
+          current.code !== target.code ||
+          current.description !== target.description ||
+          current.status !== target.status
+        )
+        if (needReset) {
+          form.reset(target)
+        }
+      })
 
     } else if (isCreateMode) {
-      form.reset({
-        project_id: '',
-        name: '',
-        code: '',
-        description: '',
-        status: 'active',
+      // 新建模式统一微任务重置并加守卫
+      Promise.resolve().then(() => {
+        const current = form.getValues()
+        const defaults = {
+          project_id: '',
+          name: '',
+          code: '',
+          description: '',
+          status: 'active',
+        }
+        const needReset = (
+          current.project_id !== defaults.project_id ||
+          current.name !== defaults.name ||
+          current.code !== defaults.code ||
+          current.description !== defaults.description ||
+          current.status !== defaults.status
+        )
+        if (needReset) {
+          form.reset(defaults)
+        }
       })
     }
   }, [applicationDetail, form, isEditMode, isCreateMode, isViewMode])
@@ -167,12 +195,20 @@ export function ApplicationsEditSheet() {
                     render={({ field }) => (
                       <FormItem className='flex flex-col'>
                         <FormLabel>所属项目 *</FormLabel>
-                        <Popover open={projectPopoverOpen} onOpenChange={setProjectPopoverOpen}>
+                        <Popover
+                          open={projectPopoverOpen && !isViewMode}
+                          onOpenChange={(open) => {
+                            if (!isViewMode) {
+                              setProjectPopoverOpen(open)
+                            }
+                          }}
+                        >
                           <PopoverTrigger asChild>
                             <FormControl>
                               <Button
                                 variant='outline'
                                 role='combobox'
+                                disabled={isViewMode}
                                 className={cn('justify-between', !field.value && 'text-muted-foreground')}
                               >
                                 {field.value
@@ -189,6 +225,7 @@ export function ApplicationsEditSheet() {
                               <CommandInput
                                 placeholder='搜索项目...'
                                 onValueChange={setProjectSearch}
+                                disabled={isViewMode}
                               />
                               <CommandEmpty>未找到项目</CommandEmpty>
                               <CommandGroup>
@@ -198,8 +235,10 @@ export function ApplicationsEditSheet() {
                                       key={project.id}
                                       value={project.name}
                                       onSelect={() => {
-                                        form.setValue('project_id', project.id, { shouldValidate: true })
-                                        setProjectPopoverOpen(false)
+                                        if (!isViewMode) {
+                                          form.setValue('project_id', project.id, { shouldValidate: true })
+                                          setProjectPopoverOpen(false)
+                                        }
                                       }}
                                     >
                                       <CheckIcon
@@ -228,7 +267,7 @@ export function ApplicationsEditSheet() {
                       <FormItem>
                         <FormLabel>应用名称 *</FormLabel>
                         <FormControl>
-                          <Input placeholder='请输入应用名称' {...field} />
+                          <Input placeholder='请输入应用名称' {...field} disabled={isViewMode} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -242,7 +281,7 @@ export function ApplicationsEditSheet() {
                       <FormItem>
                         <FormLabel>应用代码 *</FormLabel>
                         <FormControl>
-                          <Input placeholder='请输入应用代码' {...field} />
+                          <Input placeholder='请输入应用代码' {...field} disabled={isViewMode} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -257,7 +296,7 @@ export function ApplicationsEditSheet() {
                         <FormLabel>应用状态 * </FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger disabled={isViewMode}>
                               <SelectValue placeholder='请选择应用状态' />
                             </SelectTrigger>
                           </FormControl>
@@ -285,6 +324,7 @@ export function ApplicationsEditSheet() {
                             placeholder='请输入应用描述'
                             className='min-h-[100px]'
                             {...field}
+                            disabled={isViewMode}
                           />
                         </FormControl>
                         <FormMessage />
