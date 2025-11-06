@@ -4,6 +4,7 @@ import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.handler.TaskHandler;
 import org.aione.monihub.agent.model.TaskDispatchItem;
 import org.aione.monihub.agent.model.TaskResult;
+import org.aione.monihub.agent.model.TaskType;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
 
@@ -19,7 +20,7 @@ public class AgentTaskExecutor {
 
     private AgentLogger log;
 
-    private final Map<String, TaskHandler> handlers = new HashMap<>();
+    private final Map<TaskType, TaskHandler> handlers = new HashMap<>();
     private ExecutorService executorService;
 
     @javax.annotation.Resource
@@ -62,7 +63,7 @@ public class AgentTaskExecutor {
     private void initHandlers() {
         if (taskHandlers != null && !taskHandlers.isEmpty()) {
             for (TaskHandler handler : taskHandlers) {
-                String taskType = handler.getTaskType();
+                TaskType taskType = handler.getTaskType();
                 handlers.put(taskType, handler);
                 log.info("Registered task handler: {}", taskType);
             }

@@ -2,6 +2,7 @@ package org.aione.monihub.agent.handler;
 
 import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.model.TaskResult;
+import org.aione.monihub.agent.model.TaskType;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
 
@@ -17,11 +18,6 @@ import java.util.concurrent.TimeUnit;
 public class ExecuteCommandHandler implements TaskHandler {
 
     private AgentLogger log;
-
-    private static final String TASK_TYPE = "execute_command";
-
-    @javax.annotation.Resource
-    private AgentConfig properties;
 
     @javax.annotation.PostConstruct
     public void init() {
@@ -99,7 +95,7 @@ public class ExecuteCommandHandler implements TaskHandler {
     }
 
     @Override
-    public String getTaskType() {
-        return TASK_TYPE;
+    public TaskType getTaskType() {
+        return TaskType.EXECUTE_COMMAND;
     }
 }

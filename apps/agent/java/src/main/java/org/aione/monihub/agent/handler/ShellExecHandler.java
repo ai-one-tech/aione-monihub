@@ -1,6 +1,7 @@
 package org.aione.monihub.agent.handler;
 
 import org.aione.monihub.agent.model.TaskResult;
+import org.aione.monihub.agent.model.TaskType;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
 
@@ -25,8 +26,6 @@ public class ShellExecHandler implements TaskHandler {
 
     private AgentLogger log;
 
-    private static final String TASK_TYPE = "shell_exec";
-
     @javax.annotation.PostConstruct
     public void init() {
         this.log = AgentLoggerFactory.getLogger(ShellExecHandler.class);
@@ -45,7 +44,7 @@ public class ShellExecHandler implements TaskHandler {
         // 创建临时脚本文件
         Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"), "monihub", "scripts");
         Files.createDirectories(tempDir);
-        
+
         String scriptExtension = isWindows() ? ".bat" : ".sh";
         Path scriptFile = Files.createTempFile(tempDir, "monihub_script_", scriptExtension);
 
@@ -116,8 +115,8 @@ public class ShellExecHandler implements TaskHandler {
         // 合并标准输出和错误输出
         processBuilder.redirectErrorStream(true);
 
-        log.info("Executing shell script: {} with timeout: {} seconds", 
-                 scriptFile.getAbsolutePath(), timeoutSeconds);
+        log.info("Executing shell script: {} with timeout: {} seconds",
+                scriptFile.getAbsolutePath(), timeoutSeconds);
 
         // 启动进程
         Process process = processBuilder.start();
@@ -151,9 +150,7 @@ public class ShellExecHandler implements TaskHandler {
         if (exitCode == 0) {
             return TaskResult.success("Shell script executed successfully", resultData);
         } else {
-            return TaskResult.failure(exitCode, 
-                    "Shell script failed with exit code: " + exitCode + ", output: " + output.toString().trim(), 
-                    resultData);
+            return TaskResult.failure(exitCode, "Shell script failed with exit code: " + exitCode + ", output: " + output.toString().trim());
         }
     }
 
@@ -166,7 +163,7 @@ public class ShellExecHandler implements TaskHandler {
     }
 
     @Override
-    public String getTaskType() {
-        return TASK_TYPE;
+    public TaskType getTaskType() {
+        return TaskType.SHELL_EXEC;
     }
 }

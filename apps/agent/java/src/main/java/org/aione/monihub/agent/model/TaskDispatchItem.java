@@ -18,7 +18,7 @@ public class TaskDispatchItem {
     private String recordId;
 
     @JsonProperty("task_type")
-    private String taskType;
+    private TaskType taskType;
 
     @JsonProperty("task_content")
     private Map<String, Object> taskContent;

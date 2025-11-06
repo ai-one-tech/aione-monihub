@@ -1,6 +1,7 @@
 package org.aione.monihub.agent.handler;
 
 import org.aione.monihub.agent.model.TaskResult;
+import org.aione.monihub.agent.model.TaskType;
 
 import java.util.Map;
 
@@ -23,5 +24,5 @@ public interface TaskHandler {
      *
      * @return 任务类型
      */
-    String getTaskType();
+    TaskType getTaskType();
 }

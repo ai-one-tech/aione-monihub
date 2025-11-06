@@ -1,6 +1,7 @@
 package org.aione.monihub.agent.handler;
 
 import org.aione.monihub.agent.model.TaskResult;
+import org.aione.monihub.agent.model.TaskType;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
 
@@ -23,7 +24,6 @@ public class FileManagerHandler implements TaskHandler {
 
     private AgentLogger log;
 
-    private static final String TASK_TYPE = "file_manager";
     private static final String OPERATION_TYPE = "operation_type";
 
     // 文件操作类型定义
@@ -451,7 +451,7 @@ public class FileManagerHandler implements TaskHandler {
     }
 
     @Override
-    public String getTaskType() {
-        return TASK_TYPE;
+    public TaskType getTaskType() {
+        return TaskType.FILE_MANAGER;
     }
 }
