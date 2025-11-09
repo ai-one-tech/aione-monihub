@@ -72,7 +72,7 @@ export function TasksMutateDrawer({
       }}
     >
       <SheetContent className='flex flex-col'>
-        <SheetHeader className='text-start'>
+        <SheetHeader className='px-6 pt-6 text-start'>
           <SheetTitle>{isUpdate ? 'Update' : 'Create'} Task</SheetTitle>
           <SheetDescription>
             {isUpdate

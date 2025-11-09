@@ -51,7 +51,7 @@ export function InstanceReportDrawer({ instance, open, onOpenChange }: InstanceR
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side='right' className='sm:max-w-2xl w-full'>
-        <SheetHeader>
+        <SheetHeader className='px-6 pt-6'>
           <SheetTitle>实例上报记录 - {instance?.name}</SheetTitle>
           <SheetDescription>
             查看实例的历史数据上报记录，共 {instance?.report_count || 0} 次上报

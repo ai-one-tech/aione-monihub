@@ -153,7 +153,7 @@ export function SystemRolesEditSheet() {
   return (
     <Sheet open={isSheetOpen} onOpenChange={handleClose}>
       <SheetContent side='right' className='!w-[500px] !max-w-[500px]'>
-        <SheetHeader>
+        <SheetHeader className='px-6 pt-6'>
           <SheetTitle>{getSheetTitle()}</SheetTitle>
           <SheetDescription>
             {getSheetDescription()}

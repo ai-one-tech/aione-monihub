@@ -100,11 +100,11 @@ export function InstancesEditSheet() {
     <>
       <Sheet open={isSheetOpen} onOpenChange={handleClose}>
         <SheetContent side='right' className='sm:max-w-xl'>
-          <SheetHeader>
-            <SheetTitle>{getSheetTitle()}</SheetTitle>
-            <SheetDescription>
-              {getSheetDescription()}
-            </SheetDescription>
+          <SheetHeader className='px-6 pt-6'>
+          <SheetTitle>{getSheetTitle()}</SheetTitle>
+          <SheetDescription>
+            {getSheetDescription()}
+          </SheetDescription>
           </SheetHeader>
 
           {(isLoadingInstance) ? (

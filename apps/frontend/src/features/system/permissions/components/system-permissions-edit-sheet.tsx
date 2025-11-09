@@ -213,7 +213,7 @@ export function SystemPermissionsEditSheet() {
   return (
     <Sheet open={isPermissionSheetOpen} onOpenChange={setIsPermissionSheetOpen}>
       <SheetContent side='right' className='!w-[500px] !max-w-[500px]'>
-        <SheetHeader>
+        <SheetHeader className='px-6 pt-6'>
           <SheetTitle>{getSheetTitle()}</SheetTitle>
           <SheetDescription>{getSheetDescription()}</SheetDescription>
         </SheetHeader>

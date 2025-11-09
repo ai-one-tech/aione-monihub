@@ -48,6 +48,11 @@ pub async fn report_instance_info(
         .one(&**db)
         .await?;
 
+    // 增加对实例状态的判断，如果是禁用，则不允许更新
+    if instance.as_ref().map(|i| i.status.as_str()) != Some("active") {
+        return Err(ApiError::BadRequest("Instance is disabled".to_string()));
+    }
+
     let instance = if instance.is_none() {
         // 自动创建新实例
         let new_instance = instances::ActiveModel {

@@ -179,7 +179,7 @@ export function SystemUsersEditSheet() {
   return (
     <Sheet open={isUserSheetOpen} onOpenChange={setIsUserSheetOpen}>
       <SheetContent side='right' className='!w-[450px] !max-w-[450px]'>
-        <SheetHeader>
+        <SheetHeader className='px-6 pt-6'>
           <SheetTitle>{isCreateMode ? '新增用户' : '编辑用户'}</SheetTitle>
           <SheetDescription>
             {isCreateMode ? '填写用户信息以创建新的系统用户账户' : '修改用户信息'}

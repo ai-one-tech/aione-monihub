@@ -130,11 +130,11 @@ export function ProjectsEditSheet() {
       {/* 编辑/新增/查看项目抽屉 */}
       <Sheet open={isSheetOpen} onOpenChange={handleClose}>
         <SheetContent side='right'>
-          <SheetHeader>
-            <SheetTitle>{getSheetTitle()}</SheetTitle>
-            <SheetDescription>
-              {getSheetDescription()}
-            </SheetDescription>
+          <SheetHeader className='px-6 pt-6'>
+          <SheetTitle>{getSheetTitle()}</SheetTitle>
+          <SheetDescription>
+            {getSheetDescription()}
+          </SheetDescription>
           </SheetHeader>
 
           {((isEditMode || isViewMode) && isLoadingProject) ? (

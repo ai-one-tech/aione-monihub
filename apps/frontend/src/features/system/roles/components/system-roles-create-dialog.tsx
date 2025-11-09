@@ -164,7 +164,7 @@ export function SystemRolesCreateDialog() {
   return (
     <Sheet open={isSheetOpen} onOpenChange={handleClose}>
       <SheetContent side='right' className='!w-[1000px] !max-w-[1000px]'>
-        <SheetHeader>
+        <SheetHeader className='px-6 pt-6'>
           <SheetTitle>{getSheetTitle()}</SheetTitle>
           <SheetDescription>
             {getSheetDescription()}

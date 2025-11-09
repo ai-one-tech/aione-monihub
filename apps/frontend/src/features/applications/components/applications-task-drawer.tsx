@@ -81,7 +81,7 @@ export function ApplicationTaskDrawer({ application, open, onOpenChange }: Appli
         className='w-[80vw] max-w-[80vw] flex flex-col'
         onInteractOutside={(e) => e.preventDefault()}
       >
-        <SheetHeader>
+        <SheetHeader className='px-6 pt-6'>
           <SheetTitle>创建实例任务 - {application?.name}</SheetTitle>
           <SheetDescription>
             系统将自动选择所有在线实例进行任务下发
