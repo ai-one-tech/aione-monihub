@@ -7,6 +7,7 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { UserInfoBadge } from '@/components/user-info-badge'
 import { LoginDialog } from '@/components/auth/login-dialog'
+import { NetworkErrorDialog } from '@/components/network-error-dialog'
 import { useAuthCheck } from '@/hooks/use-auth-check'
 import { Loader2 } from 'lucide-react'
 
@@ -20,8 +21,11 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     isAuthenticated,
     isLoading,
     showLoginDialog,
+    showNetworkError,
     setShowLoginDialog,
-    handleLoginSuccess
+    setShowNetworkError,
+    handleLoginSuccess,
+    retryNetwork
   } = useAuthCheck()
 
   // 显示加载状态
@@ -41,32 +45,33 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       <LayoutProvider>
         <SidebarProvider defaultOpen={defaultOpen}>
           <AppSidebar />
-          <SidebarInset
-            className={cn(
-              // Set content container, so we can use container queries
-              '@container/content',
-
-              // If layout is fixed, set the height
-              // to 100svh to prevent overflow
-              'has-[[data-layout=fixed]]:h-svh',
-
-              // If layout is fixed and sidebar is inset,
-              // set the height to 100svh - spacing (total margins) to prevent overflow
-              'peer-data-[variant=inset]:has-[[data-layout=fixed]]:h-[calc(100svh-(var(--spacing)*4))]'
-            )}
-          >
-            {children ?? <Outlet />}
-            {/* 右下角用户信息徽章 */}
+          <SidebarInset>
+            <div
+              className={cn(
+                'flex min-h-screen w-full flex-col',
+                'bg-background'
+              )}
+            >
+              {children}
+              <Outlet />
+            </div>
             <UserInfoBadge />
           </SidebarInset>
+          
+          {/* 登录弹窗 */}
+          <LoginDialog 
+            open={showLoginDialog} 
+            onOpenChange={setShowLoginDialog} 
+            onLoginSuccess={handleLoginSuccess} 
+          />
+          
+          {/* 网络错误弹窗 */}
+          <NetworkErrorDialog
+            open={showNetworkError}
+            onOpenChange={setShowNetworkError}
+            onRetry={retryNetwork}
+          />
         </SidebarProvider>
-        
-        {/* 登录弹窗 */}
-        <LoginDialog
-          open={showLoginDialog}
-          onOpenChange={setShowLoginDialog}
-          onLoginSuccess={handleLoginSuccess}
-        />
       </LayoutProvider>
     </SearchProvider>
   )

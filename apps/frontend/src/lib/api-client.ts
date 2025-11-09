@@ -15,6 +15,7 @@ interface ApiClientConfig {
 interface RequestOptions extends RequestInit {
   timeout?: number
   skipAuth?: boolean
+  disableNetworkErrorHandling?: boolean // 禁用网络错误处理
 }
 
 /**
@@ -154,19 +155,65 @@ class ApiClient {
   async request<T = any>(endpoint: string, options: RequestOptions = {}): Promise<ApiResponse<T>> {
     const url = `${this.config.baseURL}${endpoint}`
 
-    const headers = this.addAuthHeader(
-      { ...this.config.headers, ...options.headers },
-      options.skipAuth
-    )
+    // 合并headers，确保类型正确
+    const headers: Record<string, string> = {}
+    // 添加默认headers
+    Object.entries(this.config.headers).forEach(([key, value]) => {
+      headers[key] = value
+    })
+    // 添加options中的headers
+    if (options.headers) {
+      // 如果是Headers对象，转换为Record
+      if (options.headers instanceof Headers) {
+        options.headers.forEach((value, key) => {
+          headers[key] = value
+        })
+      } else if (typeof options.headers === 'object') {
+        Object.entries(options.headers).forEach(([key, value]) => {
+          if (typeof value === 'string') {
+            headers[key] = value
+          }
+        })
+      }
+    }
+
+    const authHeaders = this.addAuthHeader(headers, options.skipAuth)
 
     const requestOptions: RequestOptions = {
       credentials: 'include', // 包含cookie
       ...options,
-      headers
+      headers: authHeaders
     }
 
-    const response = await this.fetchWithTimeout(url, requestOptions)
-    return this.handleResponse<T>(response)
+    try {
+      const response = await this.fetchWithTimeout(url, requestOptions)
+      return this.handleResponse<T>(response)
+    } catch (error) {
+      // 网络错误处理将在调用API的组件中进行
+      throw error
+    }
+  }
+
+  /**
+   * 检查是否为网络错误
+   */
+  private isNetworkError(error: any): boolean {
+    // TypeError通常是网络错误（如断网、DNS解析失败等）
+    if (error instanceof TypeError) {
+      return true
+    }
+    
+    // AbortError是超时错误
+    if (error instanceof Error && error.name === 'AbortError') {
+      return true
+    }
+    
+    // 自定义的超时错误
+    if (error instanceof ApiError && error.status === 408) {
+      return true
+    }
+    
+    return false
   }
 
   /**
@@ -213,6 +260,17 @@ class ApiClient {
       ...options,
       method: 'PATCH',
       body: data ? JSON.stringify(data) : undefined
+    })
+  }
+
+  /**
+   * 模拟网络错误 - 用于测试
+   */
+  async simulateNetworkError(): Promise<ApiResponse<any>> {
+    return new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new TypeError('Failed to fetch'))
+      }, 1000)
     })
   }
 }

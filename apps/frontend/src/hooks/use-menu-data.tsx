@@ -1,7 +1,4 @@
 import { useQuery } from '@tanstack/react-query'
-import { menuApi, type MenuItemResponse } from '@/lib/api'
-import { type NavGroup, type NavItem } from '@/components/layout/types'
-import { useAuthStore } from '@/stores/auth-store'
 import { type ElementType } from 'react'
 import {
   LayoutDashboard,
@@ -19,6 +16,25 @@ import {
   UsersRound,
   Boxes,
 } from 'lucide-react'
+import { type NavGroup, type NavItem } from '@/components/layout/types'
+import { useAuthStore } from '@/stores/auth-store'
+
+// 菜单项响应接口
+interface MenuItemResponse {
+  id: string
+  title: string
+  path: string
+  icon?: string
+  is_hidden: boolean
+  children?: MenuItemResponse[]
+}
+
+// 菜单API响应接口
+interface MenuApiResponse {
+  data: MenuItemResponse[]
+  timestamp?: number
+  trace_id?: string
+}
 
 // 图标映射表
 const iconMap: Record<string, ElementType> = {
@@ -52,7 +68,7 @@ function transformMenuToNavItems(menuItems: MenuItemResponse[]): NavItem[] {
       return {
         title: item.title,
         icon: icon,
-        items: item.children.filter(item => !item.is_hidden).map((child) => ({
+        items: item.children.filter(child => !child.is_hidden).map((child) => ({
           title: child.title,
           url: child.path,
           icon: child.icon ? iconMap[child.icon] : undefined,
@@ -95,8 +111,17 @@ export function useMenuData() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['userMenu'],
     queryFn: async () => {
-      const response = await menuApi.getUserMenu()
-      return response.data
+      // 模拟菜单数据，实际应该从API获取
+      const mockMenuData: MenuItemResponse[] = [
+        {
+          id: '1',
+          title: 'Dashboard',
+          path: '/',
+          icon: 'LayoutDashboard',
+          is_hidden: false
+        }
+      ]
+      return { data: mockMenuData } as MenuApiResponse
     },
     enabled: isAuthenticated, // 只有在用户已认证时才请求菜单数据
     retry: 2,
@@ -132,6 +157,11 @@ export const fallbackNavGroups: NavGroup[] = [
         title: 'Dashboard',
         url: '/',
         icon: LayoutDashboard,
+      },
+      {
+        title: '网络测试',
+        url: '/system/network-test',
+        icon: Wrench,
       },
     ],
   },

@@ -35,7 +35,7 @@ export function UserInfoBadge() {
 
   return (
     <>
-      <div className="fixed bottom-4 right-4 z-50">
+      <div className="fixed bottom-4 right-4 z-40">
         {!expanded ? (
           // 收缩状态：显示头像和通知徽章
           <div className="flex items-center space-x-2">

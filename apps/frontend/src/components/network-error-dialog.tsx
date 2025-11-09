@@ -1,0 +1,133 @@
+import { useState, useRef } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { AlertTriangle, RefreshCw } from 'lucide-react'
+
+interface NetworkErrorDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onRetry: () => Promise<void>
+}
+
+export function NetworkErrorDialog({ open, onOpenChange, onRetry }: NetworkErrorDialogProps) {
+  const navigate = useNavigate()
+  const [isRetrying, setIsRetrying] = useState(false)
+  const retryCountRef = useRef(0)
+  const maxRetries = 3
+
+  const handleRetry = async () => {
+    if (retryCountRef.current >= maxRetries) {
+      // 超过最大重试次数，显示错误信息
+      return
+    }
+    
+    setIsRetrying(true)
+    try {
+      await onRetry()
+      retryCountRef.current = 0 // 重置重试计数
+    } catch (error) {
+      retryCountRef.current++
+      console.error('Retry failed:', error)
+    } finally {
+      setIsRetrying(false)
+    }
+  }
+
+  const handleCancel = () => {
+    retryCountRef.current = 0
+    onOpenChange(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleCancel}>
+      <DialogContent 
+        onPointerDownOutside={(e) => e.preventDefault()} // 禁用点击外部关闭
+        onEscapeKeyDown={(e) => e.preventDefault()} // 禁用ESC键关闭
+      >
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            网络连接异常
+          </DialogTitle>
+          <DialogDescription>
+            无法连接到服务器，请检查您的网络连接或稍后重试。
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="flex flex-col gap-4 py-4">
+          <div className="flex justify-center">
+            <div className="text-center text-sm text-muted-foreground">
+              <p>可能的原因：</p>
+              <ul className="mt-1 text-left list-disc list-inside">
+                <li>网络连接不稳定</li>
+                <li>服务器暂时不可用</li>
+                <li>防火墙或代理设置问题</li>
+              </ul>
+            </div>
+          </div>
+          
+          {retryCountRef.current > 0 && (
+            <div className="text-center text-sm text-yellow-600">
+              重试 {retryCountRef.current}/{maxRetries}
+            </div>
+          )}
+          
+          {retryCountRef.current >= maxRetries ? (
+            <div className="flex flex-col gap-2">
+              <div className="text-center text-sm text-destructive">
+                已达到最大重试次数，请检查网络连接后重试
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate({ to: '/' })}
+                  className="flex-1"
+                >
+                  返回首页
+                </Button>
+                <Button 
+                  onClick={() => {
+                    retryCountRef.current = 0
+                    handleRetry()
+                  }}
+                  className="flex-1"
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  重新尝试
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-2 mt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate({ to: '/' })}
+                className="flex-1"
+              >
+                返回首页
+              </Button>
+              <Button 
+                onClick={handleRetry}
+                disabled={isRetrying}
+                className="flex-1"
+              >
+                {isRetrying ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    重试中...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    重新加载
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}

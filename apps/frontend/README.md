@@ -18,6 +18,7 @@ I've been creating dashboard UIs at work and for my personal projects. I always 
 - 10+ pages
 - Extra custom components
 - RTL support
+- Global network error handling
 
 <details>
 <summary>Customized Components (click to expand)</summary>
@@ -64,6 +65,8 @@ If you want to update components using the Shadcn CLI (e.g., `npx shadcn@latest 
 
 **Routing:** [TanStack Router](https://tanstack.com/router/latest)
 
+**State Management:** [TanStack Query](https://tanstack.com/query/latest)
+
 **Type Checking:** [TypeScript](https://www.typescriptlang.org/)
 
 **Linting/Formatting:** [Eslint](https://eslint.org/) & [Prettier](https://prettier.io/)
@@ -71,6 +74,18 @@ If you want to update components using the Shadcn CLI (e.g., `npx shadcn@latest 
 **Icons:** [Lucide Icons](https://lucide.dev/icons/), [Tabler Icons](https://tabler.io/icons) (Brand icons only)
 
 **Auth (partial):** [Clerk](https://go.clerk.com/GttUAaK)
+
+## Network Error Handling
+
+This project includes a global network error handling mechanism that automatically catches and handles network connection exceptions. Key features:
+
+- Automatic detection of network errors across all API requests
+- Global error dialog with retry functionality
+- Support for concurrent API requests on the same page
+- Integration with TanStack Query for automatic error handling
+- Custom hook for manual API calls with error handling
+
+For detailed implementation and usage instructions, see [NETWORK_ERROR_HANDLING.md](NETWORK_ERROR_HANDLING.md)
 
 ## Run Locally
 
@@ -100,7 +115,7 @@ Start the server
 
 ## Sponsoring this project ❤️
 
-If you find this project helpful or use this in your own work, consider [sponsoring me](https://github.com/sponsors/satnaing) to support development and maintenance. You can [buy me a coffee](https://buymeacoffee.com/satnaing) as well. Don’t worry, every penny helps. Thank you! 🙏
+If you find this project helpful or use this in your own work, consider [sponsoring me](https://github.com/sponsors/satnaing) to support development and maintenance. You can [buy me a coffee](https://buymeacoffee.com/satnaing) as well. Don't worry, every penny helps. Thank you! 🙏
 
 For questions or sponsorship inquiries, feel free to reach out at [contact@satnaing.dev](mailto:contact@satnaing.dev).
 

@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
+import { NetworkErrorDialog } from '@/components/network-error-dialog'
 
 const formSchema = z.object({
   username: z.string().min(1, '请输入用户名'),
@@ -38,6 +39,7 @@ export function UserAuthForm({
   ...props
 }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const [showNetworkError, setShowNetworkError] = useState(false)
   const navigate = useNavigate()
   const { auth } = useAuthStore()
   
@@ -52,6 +54,15 @@ export function UserAuthForm({
     },
   })
 
+  const retryNetwork = async () => {
+    setShowNetworkError(false)
+    // 重新提交表单
+    const values = form.getValues()
+    if (values.username && values.password) {
+      onSubmit(values)
+    }
+  }
+
   function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true)
 
@@ -60,106 +71,115 @@ export function UserAuthForm({
       password: data.password,
     }
 
-    toast.promise(
-      authApi.login(loginRequest),
-      {
-        loading: '登录中...',
-        success: (response) => {
-          setIsLoading(false)
-          const { token, user } = response.data
+    // 使用普通Promise处理而不是toast.promise，避免在网络错误时同时显示弹窗和toast
+    authApi.login(loginRequest)
+      .then((response) => {
+        setIsLoading(false)
+        const { token, user } = response.data
 
-          // 使用新的setLoginData方法一次性设置用户和token
-          const userData = {
-            accountNo: user.id,
-            email: user.email,
-            role: user.roles,
-            exp: Date.now() + 24 * 60 * 60 * 1000, // 24小时后过期
+        // 使用新的setLoginData方法一次性设置用户和token
+        const userData = {
+          accountNo: user.id,
+          email: user.email,
+          role: user.roles,
+          exp: Date.now() + 24 * 60 * 60 * 1000, // 24小时后过期
+        }
+        
+        auth.setLoginData(token, userData)
+        
+        // 如果是在弹窗中，通知父窗口登录成功并关闭当前窗口
+        if (isInPopup && window.opener) {
+          try {
+            window.opener.postMessage(
+              { type: 'LOGIN_SUCCESS', user, token },
+              window.location.origin
+            )
+            window.close()
+            toast.success(`登录成功！窗口即将关闭...`)
+            return
+          } catch (error) {
+            console.error('通知父窗口失败:', error)
           }
-          
-          auth.setLoginData(token, userData)
-          
-          // 如果是在弹窗中，通知父窗口登录成功并关闭当前窗口
-          if (isInPopup && window.opener) {
-            try {
-              window.opener.postMessage(
-                { type: 'LOGIN_SUCCESS', user, token },
-                window.location.origin
-              )
-              window.close()
-              return `登录成功！窗口即将关闭...`
-            } catch (error) {
-              console.error('通知父窗口失败:', error)
-            }
-          }
+        }
 
-          // 重定向到存储的位置或默认仪表盘
-          const targetPath = redirectTo || '/'
-          navigate({ to: targetPath, replace: true })
+        // 重定向到存储的位置或默认仪表盘
+        const targetPath = redirectTo || '/'
+        navigate({ to: targetPath, replace: true })
 
-          return `欢迎回来，${user.username}！`
-        },
-        error: (error) => {
-          setIsLoading(false)
-          
-          // 处理登录错误
-          if (error.response?.status === 401) {
-            return '用户名或密码错误'
-          } else if (error.response?.status === 400) {
-            return '请输入用户名和密码'
-          } else {
-            return '登录失败，请重试'
-          }
-        },
-      }
-    )
+        toast.success(`欢迎回来，${user.username}！`)
+      })
+      .catch((error) => {
+        setIsLoading(false)
+        
+        // 处理登录错误
+        if (error.code === 'ECONNABORTED' || !error.response) {
+          // 网络错误或超时 - 显示网络错误弹窗，不显示toast
+          setShowNetworkError(true)
+        } else if (error.response?.status === 401) {
+          toast.error('用户名或密码错误')
+        } else if (error.response?.status === 400) {
+          toast.error('请输入用户名和密码')
+        } else {
+          toast.error('登录失败，请重试')
+        }
+      })
   }
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className={cn('grid gap-3', className)}
-        {...props}
-      >
-        <FormField
-          control={form.control}
-          name='username'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>用户名</FormLabel>
-              <FormControl>
-                <Input placeholder='请输入用户名' {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name='password'
-          render={({ field }) => (
-            <FormItem className='relative'>
-              <FormLabel>密码</FormLabel>
-              <FormControl>
-                <PasswordInput placeholder='请输入密码' {...field} />
-              </FormControl>
-              <FormMessage />
-              {/* <Link
-                to='/forgot-password'
-                className='text-muted-foreground absolute end-0 -top-0.5 text-sm font-medium hover:opacity-75'
-              >
-                忘记密码？
-              </Link> */}
-            </FormItem>
-          )}
-        />
-        <Button className='mt-2' disabled={isLoading}>
-          {isLoading ? <Loader2 className='animate-spin' /> : <LogIn />}
-          登录
-        </Button>
+    <>
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className={cn('grid gap-3', className)}
+          {...props}
+        >
+          <FormField
+            control={form.control}
+            name='username'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>用户名</FormLabel>
+                <FormControl>
+                  <Input placeholder='请输入用户名' {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name='password'
+            render={({ field }) => (
+              <FormItem className='relative'>
+                <FormLabel>密码</FormLabel>
+                <FormControl>
+                  <PasswordInput placeholder='请输入密码' {...field} />
+                </FormControl>
+                <FormMessage />
+                {/* <Link
+                  to='/forgot-password'
+                  className='text-muted-foreground absolute end-0 -top-0.5 text-sm font-medium hover:opacity-75'
+                >
+                  忘记密码？
+                </Link> */}
+              </FormItem>
+            )}
+          />
+          <Button className='mt-2' disabled={isLoading}>
+            {isLoading ? <Loader2 className='animate-spin' /> : <LogIn />}
+            登录
+          </Button>
 
-        {/* 移除第三方登录选项 */}
-      </form>
-    </Form>
+          {/* 移除第三方登录选项 */}
+        </form>
+      </Form>
+      
+      {/* 网络错误弹窗 */}
+      <NetworkErrorDialog
+        open={showNetworkError}
+        onOpenChange={setShowNetworkError}
+        onRetry={retryNetwork}
+      />
+    </>
   )
 }

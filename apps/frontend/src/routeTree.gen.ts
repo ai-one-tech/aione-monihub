@@ -40,6 +40,7 @@ import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-
 import { Route as AuthenticatedSystemUsersRouteImport } from './routes/_authenticated/system/users'
 import { Route as AuthenticatedSystemRolesRouteImport } from './routes/_authenticated/system/roles'
 import { Route as AuthenticatedSystemPermissionsRouteImport } from './routes/_authenticated/system/permissions'
+import { Route as AuthenticatedSystemNetworkTestRouteImport } from './routes/_authenticated/system/network-test'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
@@ -206,6 +207,12 @@ const AuthenticatedSystemPermissionsRoute =
     path: '/system/permissions',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSystemNetworkTestRoute =
+  AuthenticatedSystemNetworkTestRouteImport.update({
+    id: '/system/network-test',
+    path: '/system/network-test',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsNotificationsRoute =
   AuthenticatedSettingsNotificationsRouteImport.update({
     id: '/notifications',
@@ -259,6 +266,7 @@ export interface FileRoutesByFullPath {
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/system/network-test': typeof AuthenticatedSystemNetworkTestRoute
   '/system/permissions': typeof AuthenticatedSystemPermissionsRoute
   '/system/roles': typeof AuthenticatedSystemRolesRoute
   '/system/users': typeof AuthenticatedSystemUsersRoute
@@ -293,6 +301,7 @@ export interface FileRoutesByTo {
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/system/network-test': typeof AuthenticatedSystemNetworkTestRoute
   '/system/permissions': typeof AuthenticatedSystemPermissionsRoute
   '/system/roles': typeof AuthenticatedSystemRolesRoute
   '/system/users': typeof AuthenticatedSystemUsersRoute
@@ -332,6 +341,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/_authenticated/system/network-test': typeof AuthenticatedSystemNetworkTestRoute
   '/_authenticated/system/permissions': typeof AuthenticatedSystemPermissionsRoute
   '/_authenticated/system/roles': typeof AuthenticatedSystemRolesRoute
   '/_authenticated/system/users': typeof AuthenticatedSystemUsersRoute
@@ -369,6 +379,7 @@ export interface FileRouteTypes {
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
+    | '/system/network-test'
     | '/system/permissions'
     | '/system/roles'
     | '/system/users'
@@ -403,6 +414,7 @@ export interface FileRouteTypes {
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
+    | '/system/network-test'
     | '/system/permissions'
     | '/system/roles'
     | '/system/users'
@@ -441,6 +453,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
     | '/_authenticated/settings/notifications'
+    | '/_authenticated/system/network-test'
     | '/_authenticated/system/permissions'
     | '/_authenticated/system/roles'
     | '/_authenticated/system/users'
@@ -689,6 +702,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSystemPermissionsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/system/network-test': {
+      id: '/_authenticated/system/network-test'
+      path: '/system/network-test'
+      fullPath: '/system/network-test'
+      preLoaderRoute: typeof AuthenticatedSystemNetworkTestRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings/notifications': {
       id: '/_authenticated/settings/notifications'
       path: '/notifications'
@@ -757,6 +777,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
+  AuthenticatedSystemNetworkTestRoute: typeof AuthenticatedSystemNetworkTestRoute
   AuthenticatedSystemPermissionsRoute: typeof AuthenticatedSystemPermissionsRoute
   AuthenticatedSystemRolesRoute: typeof AuthenticatedSystemRolesRoute
   AuthenticatedSystemUsersRoute: typeof AuthenticatedSystemUsersRoute
@@ -774,6 +795,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
+  AuthenticatedSystemNetworkTestRoute: AuthenticatedSystemNetworkTestRoute,
   AuthenticatedSystemPermissionsRoute: AuthenticatedSystemPermissionsRoute,
   AuthenticatedSystemRolesRoute: AuthenticatedSystemRolesRoute,
   AuthenticatedSystemUsersRoute: AuthenticatedSystemUsersRoute,

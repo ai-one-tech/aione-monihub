@@ -1,9 +1,22 @@
 import { AxiosError } from 'axios'
 import { toast } from 'sonner'
 
+// 创建一个全局变量来跟踪网络错误弹窗是否打开
+let isNetworkErrorDialogOpen = false
+
+// 设置网络错误弹窗状态的函数
+export function setNetworkErrorDialogOpen(isOpen: boolean) {
+  isNetworkErrorDialogOpen = isOpen
+}
+
 export function handleServerError(error: unknown) {
   // eslint-disable-next-line no-console
   console.log(error)
+
+  // 如果网络错误弹窗已经打开，则不显示toast
+  if (isNetworkErrorDialogOpen) {
+    return
+  }
 
   let errMsg = 'Something went wrong!'
 
@@ -17,7 +30,7 @@ export function handleServerError(error: unknown) {
   }
 
   if (error instanceof AxiosError) {
-    errMsg = error.response?.data.title
+    errMsg = error.response?.data.title || errMsg
   }
 
   toast.error(errMsg)

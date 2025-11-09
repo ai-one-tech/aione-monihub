@@ -10,9 +10,12 @@ interface UseAuthCheckResult {
   user: CurrentUserResponse | null
   error: string | null
   showLoginDialog: boolean
+  showNetworkError: boolean
   setShowLoginDialog: (show: boolean) => void
+  setShowNetworkError: (show: boolean) => void
   checkAuth: () => Promise<void>
   handleLoginSuccess: () => void
+  retryNetwork: () => Promise<void>
 }
 
 export function useAuthCheck(): UseAuthCheckResult {
@@ -21,6 +24,7 @@ export function useAuthCheck(): UseAuthCheckResult {
   const [user, setUser] = useState<CurrentUserResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showLoginDialog, setShowLoginDialog] = useState(false)
+  const [showNetworkError, setShowNetworkError] = useState(false)
   const [isPageRefresh, setIsPageRefresh] = useState(true)
   
   const navigate = useNavigate()
@@ -109,8 +113,13 @@ export function useAuthCheck(): UseAuthCheckResult {
         } else {
           setShowLoginDialog(true)
         }
+      } else if (err.code === 'ECONNABORTED' || !err.response) {
+        // 网络错误或超时 - 显示网络错误弹窗
+        console.warn('网络连接错误:', err.message)
+        setShowNetworkError(true)
+        // 保持原有的认证状态
       } else {
-        // 网络错误、超时等其他错误 - 不进行登出，只记录错误
+        // 其他错误 - 不进行登出，只记录错误
         console.warn('非认证错误，保持用户登录状态:', err.message)
         setError(err.message || '身份验证检查失败')
         // 保持原有的认证状态
@@ -122,7 +131,12 @@ export function useAuthCheck(): UseAuthCheckResult {
         setIsPageRefresh(false)
       }
     }
-  }, [])
+  }, [isPageRefresh, location.href, navigate])
+
+  const retryNetwork = useCallback(async () => {
+    setShowNetworkError(false)
+    await checkAuth()
+  }, [checkAuth])
 
   const handleLoginSuccess = useCallback(async () => {
     setShowLoginDialog(false)
@@ -184,8 +198,11 @@ export function useAuthCheck(): UseAuthCheckResult {
     user,
     error,
     showLoginDialog,
+    showNetworkError,
     setShowLoginDialog,
+    setShowNetworkError,
     checkAuth,
-    handleLoginSuccess
+    handleLoginSuccess,
+    retryNetwork
   }
 }

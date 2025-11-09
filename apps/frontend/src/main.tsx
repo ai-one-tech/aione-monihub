@@ -1,4 +1,4 @@
-import { StrictMode } from 'react'
+import { StrictMode, useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import { AxiosError } from 'axios'
 import {
@@ -13,10 +13,15 @@ import { handleServerError } from '@/lib/handle-server-error'
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
 import { ThemeProvider } from './context/theme-provider'
+import { NetworkErrorProvider, useNetworkError } from './context/network-error-context'
 // Generated Routes
 import { routeTree } from './routeTree.gen'
 // Styles
 import './styles/index.css'
+
+// 创建一个全局的网络错误处理函数
+let globalShowNetworkError: ((error: Error, retryFn: () => Promise<any>) => void) | null = null
+let globalIsDialogOpen: boolean | null = null
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,7 +43,17 @@ const queryClient = new QueryClient({
     },
     mutations: {
       onError: (error) => {
-        handleServerError(error)
+        // 检查是否为网络错误并显示全局错误弹窗
+        if (isNetworkError(error) && globalShowNetworkError) {
+          globalShowNetworkError(error, async () => {
+            // 对于mutation，我们无法直接重试，需要用户手动重试
+            toast.info('请手动重试操作')
+          })
+        }
+        // 只有在网络错误弹窗未显示时才显示toast
+        else if (!globalIsDialogOpen) {
+          handleServerError(error)
+        }
 
         if (error instanceof AxiosError) {
           if (error.response?.status === 304) {
@@ -50,18 +65,54 @@ const queryClient = new QueryClient({
   },
   queryCache: new QueryCache({
     onError: (error) => {
-      if (error instanceof AxiosError) {
-        if (error.response?.status === 500) {
-          toast.error('Internal Server Error!')
-          router.navigate({ to: '/500' })
+      // 检查是否为网络错误并显示全局错误弹窗
+      if (isNetworkError(error) && globalShowNetworkError) {
+        // 获取失败的查询信息
+        const queryInfo = queryClient.getQueryCache().getAll().find(q => q.state.error === error)
+        if (queryInfo) {
+          globalShowNetworkError(error, async () => {
+            // 重试查询
+            await queryClient.refetchQueries({ queryKey: queryInfo.queryKey })
+          })
         }
-        if (error.response?.status === 403) {
-          // router.navigate("/forbidden", { replace: true });
+      }
+      // 只有在网络错误弹窗未显示时才显示toast
+      else if (!globalIsDialogOpen) {
+        if (error instanceof AxiosError) {
+          if (error.response?.status === 500) {
+            toast.error('Internal Server Error!')
+            // 不再跳转到500页面，只显示错误提示
+            // router.navigate({ to: '/500' })
+          }
+          if (error.response?.status === 403) {
+            // router.navigate("/forbidden", { replace: true });
+          }
         }
       }
     },
   }),
 })
+
+// 检查是否为网络错误
+function isNetworkError(error: any): boolean {
+  // Axios网络错误
+  if (error instanceof AxiosError) {
+    return !error.response || 
+           error.code === 'ECONNABORTED' || 
+           error.message.includes('Network Error')
+  }
+  
+  // 原生fetch错误
+  if (error instanceof TypeError && error.message.includes('fetch')) {
+    return true
+  }
+  
+  // 其他网络相关错误
+  return error.message?.includes('network') || 
+         error.message?.includes('Network') ||
+         error.message?.includes('timeout') ||
+         error.message?.includes('Timeout')
+}
 
 // Create a new router instance
 const router = createRouter({
@@ -78,6 +129,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+// 全局网络错误处理组件
+function GlobalNetworkErrorHandler() {
+  const { showError, isDialogOpen } = useNetworkError()
+  
+  useEffect(() => {
+    globalShowNetworkError = showError
+    globalIsDialogOpen = isDialogOpen
+  }, [showError, isDialogOpen])
+  
+  return null
+}
+
 // Render the app
 const rootElement = document.getElementById('root')!
 if (!rootElement.innerHTML) {
@@ -85,13 +148,16 @@ if (!rootElement.innerHTML) {
   root.render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <FontProvider>
-            <DirectionProvider>
-              <RouterProvider router={router} />
-            </DirectionProvider>
-          </FontProvider>
-        </ThemeProvider>
+        <NetworkErrorProvider>
+          <GlobalNetworkErrorHandler />
+          <ThemeProvider>
+            <FontProvider>
+              <DirectionProvider>
+                <RouterProvider router={router} />
+              </DirectionProvider>
+            </FontProvider>
+          </ThemeProvider>
+        </NetworkErrorProvider>
       </QueryClientProvider>
     </StrictMode>
   )

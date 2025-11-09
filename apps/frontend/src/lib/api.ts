@@ -1,40 +1,28 @@
-import axios, { AxiosResponse } from 'axios'
+import axios from 'axios'
 import { useAuthStore } from '@/stores/auth-store'
-
-// API 配置
-// 开发环境使用Vite代理，生产环境使用环境变量
-const API_BASE_URL = import.meta.env.DEV 
-  ? '' // 开发环境使用相对路径，由Vite代理处理
-  : (import.meta.env.VITE_API_URL || 'http://127.0.0.1:9080')
+import { getCookie, removeCookie, setCookie } from '@/lib/cookies'
 
 // 创建 axios 实例
 export const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 30000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  // CORS相关配置
-  withCredentials: true, // 支持跨域请求中携带cookies
+  baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:9080',
+  timeout: 10000, // 10秒超时
+  withCredentials: true, // 允许携带cookie
 })
 
-// 请求拦截器：添加认证token和检查token过期
+// 请求拦截器：添加认证头
 apiClient.interceptors.request.use(
   (config) => {
     const authStore = useAuthStore.getState()
-    const { accessToken, isTokenExpired, reset } = authStore.auth
+    const token = authStore.auth.accessToken
     
-    // 检查token是否过期
-    if (accessToken && isTokenExpired()) {
-      console.warn('Token已过期，清除认证状态')
-      reset()
-      // 可以在这里触发重新登录逻辑
-      return Promise.reject(new Error('Token expired'))
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
     }
     
-    // 添加认证头
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`
+    // 添加 CSRF token（如果存在）
+    const csrfToken = getCookie('csrf_token')
+    if (csrfToken) {
+      config.headers['X-CSRF-Token'] = csrfToken
     }
     
     return config
@@ -108,51 +96,48 @@ export interface CurrentUserResponse {
   exp: number
 }
 
-// 菜单项响应接口
-export interface MenuItemResponse {
-  id: string
-  name: string
-  title: string
-  icon?: string
-  path: string
-  sort_order: number
-  is_hidden: boolean
-  children: MenuItemResponse[]
+// 忘记密码请求接口
+export interface ForgotPasswordRequest {
+  email: string
 }
 
-// 用户菜单响应接口
-export interface UserMenuResponse {
-  data: MenuItemResponse[]
-  timestamp: number
-  trace_id: string
+// 重置密码请求接口
+export interface ResetPasswordRequest {
+  token: string
+  newPassword: string
 }
 
-// 登录API
+/**
+ * 认证相关API
+ */
 export const authApi = {
-  login: (credentials: LoginRequest): Promise<AxiosResponse<LoginResponse>> => {
-    return apiClient.post('/api/auth/login', credentials)
-  },
+  /**
+   * 用户登录
+   */
+  login: (data: LoginRequest) => 
+    apiClient.post<LoginResponse>('/api/auth/login', data),
   
-  forgotPassword: (email: string): Promise<AxiosResponse<string>> => {
-    return apiClient.post('/api/auth/forgot-password', { email })
-  },
+  /**
+   * 获取当前用户信息
+   */
+  getCurrentUser: () => 
+    apiClient.get<CurrentUserResponse>('/api/auth/me'),
   
-  resetPassword: (token: string, newPassword: string): Promise<AxiosResponse<string>> => {
-    return apiClient.post('/api/auth/reset-password', { token, new_password: newPassword })
-  },
+  /**
+   * 验证token有效性
+   */
+  validateToken: () => 
+    apiClient.get('/api/auth/validate'),
   
-  validateToken: (): Promise<AxiosResponse<string>> => {
-    return apiClient.get('/api/auth/validate')
-  },
+  /**
+   * 忘记密码
+   */
+  forgotPassword: (data: ForgotPasswordRequest) => 
+    apiClient.post('/api/auth/forgot-password', data),
   
-  getCurrentUser: (): Promise<AxiosResponse<CurrentUserResponse>> => {
-    return apiClient.get('/api/auth/me')
-  }
-}
-
-// 权限菜单API
-export const menuApi = {
-  getUserMenu: (): Promise<AxiosResponse<UserMenuResponse>> => {
-    return apiClient.get('/api/user/menu')
-  }
+  /**
+   * 重置密码
+   */
+  resetPassword: (data: ResetPasswordRequest) => 
+    apiClient.post('/api/auth/reset-password', data),
 }
