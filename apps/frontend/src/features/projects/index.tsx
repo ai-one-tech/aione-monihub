@@ -42,7 +42,7 @@ export function Projects() {
           </div>
           <ProjectsPrimaryButtons />
         </div>
-        <div className='-mx-4 flex-1 min-h-0 overflow-hidden px-4 py-1 lg:flex-row lg:space-y-0 lg:space-x-12'>
+        <div className='flex-1 min-h-0 overflow-hidden px-4 py-1 lg:flex-row lg:space-y-0 lg:space-x-12'>
           {isLoading ? (
             <div className='space-y-4'>
               <Skeleton className='h-10 w-full' />

@@ -75,6 +75,7 @@ pub async fn report_instance_info(
             disk_usage_percent: Set(None),
             process_uptime_seconds: Set(None),
             network_type: Set(request.network_info.network_type.clone()),
+            offline_at: Set(None),
             created_by: Set("system-auto".to_string()),
             updated_by: Set("system-auto".to_string()),
             deleted_at: Set(None),
@@ -150,6 +151,9 @@ pub async fn report_instance_info(
     instance_update.process_uptime_seconds = Set(Some(request.runtime_info.process_uptime_seconds));
     instance_update.network_type = Set(request.network_info.network_type.clone());
     instance_update.last_report_at = Set(Some(Utc::now().into()));
+    // 恢复为 active 并清空 offline_at
+    instance_update.status = Set("active".to_string());
+    instance_update.offline_at = Set(None);
     
     // 更新上报次数
     instance_update.report_count = Set(Some(

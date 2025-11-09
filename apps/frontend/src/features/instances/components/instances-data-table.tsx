@@ -117,9 +117,9 @@ export function InstancesTable({ data = [], totalPages, search, navigate }: Data
           },
         ]}
       />
-      <div className='flex-1 min-h-0 overflow-auto rounded-md border mt-4'>
-        <Table>
-          <TableHeader className='sticky top-0 z-10'>
+      <div className='flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-md border mt-4'>
+        <Table className='w-full min-w-max'>
+          <TableHeader className='sticky top-0 z-20'>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className='group/row'>
                 {headerGroup.headers.map((header) => {

@@ -15,6 +15,7 @@ pub mod roles;
 pub mod shared;
 pub mod users;
 pub mod websocket;
+pub mod maintenance;
 
 // 导出主要的结构体和函数
 pub use shared::database::DatabaseManager;

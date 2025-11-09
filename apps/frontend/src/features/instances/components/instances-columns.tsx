@@ -21,7 +21,7 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
       />
     ),
     meta: {
-      className: cn('sticky md:table-cell start-0 z-10 rounded-tl-[inherit]'),
+      className: cn('sticky md:table-cell start-0 z-10 bg-background rounded-tl-[inherit]'),
     },
     cell: ({ row }) => (
       <Checkbox
@@ -45,19 +45,10 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
     meta: {
       className: cn(
         'drop-shadow-[0_1px_2px_rgb(0_0_0_/_0.1)] dark:drop-shadow-[0_1px_2px_rgb(255_255_255_/_0.1)]',
-        'sticky start-6 @4xl/content:table-cell @4xl/content:drop-shadow-none'
+        'sticky start-6 z-10 bg-background @4xl/content:table-cell @4xl/content:drop-shadow-none'
       ),
     },
     enableHiding: false,
-  },
-  {
-    accessorKey: 'name',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='实例名称' />
-    ),
-    cell: ({ row }) => (
-      <LongText className='max-w-36 font-medium'>{row.getValue('name')}</LongText>
-    ),
   },
   {
     accessorKey: 'hostname',
@@ -65,7 +56,7 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
       <DataTableColumnHeader column={column} title='主机名' />
     ),
     cell: ({ row }) => (
-      <div className='w-fit text-nowrap font-mono text-sm'>{row.getValue('hostname')}</div>
+      <LongText className='w-fit text-nowrap font-mono text-sm'>{row.getValue('hostname')}</LongText>
     ),
   },
   {
@@ -74,7 +65,7 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
       <DataTableColumnHeader column={column} title='内网IP' />
     ),
     cell: ({ row }) => (
-      <div className='w-fit text-nowrap font-mono text-sm'>{row.getValue('ip_address')}</div>
+      <LongText className='max-w-24 font-mono text-sm'>{row.getValue('ip_address')}</LongText>
     ),
   },
   {
@@ -85,9 +76,9 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
     cell: ({ row }) => {
       const publicIp = row.getValue('public_ip') as string | undefined
       return (
-        <div className='w-fit text-nowrap font-mono text-sm text-muted-foreground'>
+        <LongText className='max-w-24 text-nowrap font-mono text-sm text-muted-foreground'>
           {publicIp || '-'}
-        </div>
+        </LongText>
       )
     },
   },
@@ -118,17 +109,6 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
         </div>
       )
     },
-  },
-  {
-    accessorKey: 'instance_type',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='环境类型' />
-    ),
-    cell: ({ row }) => (
-      <div className='w-fit text-nowrap text-sm text-muted-foreground'>
-        {row.getValue('instance_type')}
-      </div>
-    ),
   },
   {
     accessorKey: 'status',
@@ -185,24 +165,50 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
       if (!lastReportAt) return <div className='text-sm text-muted-foreground'>-</div>
       return (
         <div className='w-fit text-nowrap text-sm text-muted-foreground'>
-          {new Date(lastReportAt).toLocaleDateString('zh-CN')}
+          {new Date(lastReportAt).toLocaleString('zh-CN', { hour12: false })}
         </div>
       )
     },
   },
-  {
-    accessorKey: 'created_at',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='创建时间' />
-    ),
-    cell: ({ row }) => (
-      <div className='w-fit text-nowrap text-sm text-muted-foreground'>
-        {new Date(row.getValue('created_at')).toLocaleDateString('zh-CN')}
-      </div>
-    ),
-  },
+  // {
+  //   accessorKey: 'first_report_at',
+  //   header: ({ column }) => (
+  //     <DataTableColumnHeader column={column} title='首次上报时间' />
+  //   ),
+  //   cell: ({ row }) => {
+  //     const firstReportAt = row.getValue('first_report_at') as string | undefined
+  //     if (!firstReportAt) return <div className='text-sm text-muted-foreground'>-</div>
+  //     return (
+  //       <div className='w-fit text-nowrap text-sm text-muted-foreground'>
+  //         {new Date(firstReportAt).toLocaleString('zh-CN', { hour12: false })}
+  //       </div>
+  //     )
+  //   },
+  // },
+  // {
+  //   accessorKey: 'offline_at',
+  //   header: ({ column }) => (
+  //     <DataTableColumnHeader column={column} title='离线时间' />
+  //   ),
+  //   cell: ({ row }) => {
+  //     const offlineAt = row.getValue('offline_at') as string | undefined
+  //     if (!offlineAt) return <div className='text-sm text-muted-foreground'>-</div>
+  //     return (
+  //       <div className='w-fit text-nowrap text-sm text-muted-foreground'>
+  //         {new Date(offlineAt).toLocaleString('zh-CN', { hour12: false })}
+  //       </div>
+  //     )
+  //   },
+  // },
   {
     id: 'actions',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='操作' />
+    ),
     cell: InstancesDataTableRowActions,
+    meta: {
+      className: cn('sticky end-0 z-20 bg-background rounded-tr-[inherit] min-w-[140px]'),
+    },
+    enableHiding: false,
   },
 ]

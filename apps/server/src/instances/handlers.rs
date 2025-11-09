@@ -30,6 +30,7 @@ pub async fn get_instances(
     if let Some(search) = &query.search {
         select = select.filter(
             crate::entities::instances::Column::Hostname.contains(search)
+                .or(crate::entities::instances::Column::Id.contains(search))
                 .or(crate::entities::instances::Column::IpAddress.contains(search))
                 .or(crate::entities::instances::Column::PublicIp.contains(search))
                 .or(crate::entities::instances::Column::ApplicationId.contains(search))

@@ -182,6 +182,7 @@ use aione_monihub_server::users::routes::user_routes;
 // 添加Actor trait导入以使用start方法
 use actix::Actor;
 use aione_monihub_server::websocket::routes::websocket_routes;
+use aione_monihub_server::maintenance::offline_checker::start_offline_checker;
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
@@ -210,6 +211,9 @@ async fn main() -> io::Result<()> {
     println!("服务器将在 http://{} 上启动", bind_address);
 
     let db_connection = db_manager.get_connection().clone();
+
+    // 启动离线巡检后台任务（每分钟执行一次）
+    start_offline_checker(db_connection.clone());
 
     HttpServer::new(move || {
         App::new()

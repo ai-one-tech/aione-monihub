@@ -29,6 +29,7 @@ pub struct Model {
     pub disk_usage_percent: Option<Decimal>,
     pub process_uptime_seconds: Option<i64>,
     pub network_type: Option<String>,
+    pub offline_at: Option<DateTimeWithTimeZone>,
     pub created_by: String,
     pub updated_by: String,
     pub deleted_at: Option<DateTimeWithTimeZone>,

@@ -173,6 +173,7 @@ impl InstanceCreateRequest {
             disk_usage_percent: Set(None),
             process_uptime_seconds: Set(None),
             network_type: Set(None),
+            offline_at: Set(None),
             created_by: Set(user_id.clone()),
             updated_by: Set(user_id),
             deleted_at: Set(None),
