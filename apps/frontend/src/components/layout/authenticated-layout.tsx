@@ -10,6 +10,11 @@ import { LoginDialog } from '@/components/auth/login-dialog'
 import { NetworkErrorDialog } from '@/components/network-error-dialog'
 import { useAuthCheck } from '@/hooks/use-auth-check'
 import { Loader2 } from 'lucide-react'
+import { Header } from '@/components/layout/header'
+import { Search } from '@/components/search'
+import { ThemeSwitch } from '@/components/theme-switch'
+import { ConfigDrawer } from '@/components/config-drawer'
+import { ProfileDropdown } from '@/components/profile-dropdown'
 
 type AuthenticatedLayoutProps = {
   children?: React.ReactNode
@@ -52,6 +57,14 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
                 'bg-background'
               )}
             >
+              <Header fixed>
+                <Search />
+                <div className='ms-auto flex items-center space-x-4'>
+                  <ThemeSwitch />
+                  <ConfigDrawer />
+                  <ProfileDropdown />
+                </div>
+              </Header>
               {children}
               <Outlet />
             </div>

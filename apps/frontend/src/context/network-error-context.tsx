@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react'
 import { NetworkErrorDialog } from '@/components/network-error-dialog'
 import { setNetworkErrorDialogOpen } from '@/lib/handle-server-error'
+import { AxiosError } from 'axios'
+import { ApiError } from '@/lib/api-client'
 
 interface NetworkErrorContextType {
   showError: (error: Error, retryFn: () => Promise<any>) => void
@@ -23,8 +25,8 @@ export function NetworkErrorProvider({ children }: { children: React.ReactNode }
   }, [isOpen])
 
   const showError = useCallback((error: Error, retryFn: () => Promise<any>) => {
-    // 只有在网络错误时才显示弹窗
-    if (isNetworkError(error)) {
+    // 仅在服务器500错误时显示弹窗
+    if (shouldShowErrorDialog(error)) {
       errorRef.current = error
       // 将重试函数添加到待处理列表中
       pendingRetriesRef.current.push(retryFn)
@@ -67,33 +69,15 @@ export function NetworkErrorProvider({ children }: { children: React.ReactNode }
     }
   }, [hideError])
 
-  // 检查是否为网络错误
-  const isNetworkError = (error: Error): boolean => {
-    // Axios错误
-    if ((error as any).isAxiosError) {
-      const axiosError = error as any
-      // 网络错误或超时
-      return !axiosError.response || 
-             axiosError.code === 'ECONNABORTED' || 
-             axiosError.message.includes('Network Error')
+  // 仅在500错误时显示弹窗
+  const shouldShowErrorDialog = (error: Error): boolean => {
+    if (error instanceof AxiosError) {
+      return (error.response?.status ?? 0) === 500
     }
-    
-    // 原生fetch错误
-    if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('Failed to fetch'))) {
-      return true
+    if (error instanceof ApiError) {
+      return error.status === 500
     }
-    
-    // AbortError是超时错误
-    if (error instanceof Error && error.name === 'AbortError') {
-      return true
-    }
-    
-    // 其他网络相关错误
-    return error.message.includes('network') || 
-           error.message.includes('Network') ||
-           error.message.includes('timeout') ||
-           error.message.includes('Timeout') ||
-           error.message.includes('Failed to fetch')
+    return false
   }
 
   // 获取当前错误数量

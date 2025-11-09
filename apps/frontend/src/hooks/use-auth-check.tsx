@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from '@tanstack/react-router'
 import { authApi, CurrentUserResponse } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
 import { AuthUtils } from '@/lib/auth-utils'
+import { useNetworkError } from '@/context/network-error-context'
+import { ApiError } from '@/lib/api-client'
 
 interface UseAuthCheckResult {
   isAuthenticated: boolean
@@ -30,6 +32,7 @@ export function useAuthCheck(): UseAuthCheckResult {
   const navigate = useNavigate()
   const location = useLocation()
   const authStore = useAuthStore()
+  const { showError } = useNetworkError()
 
   const checkAuth = useCallback(async () => {
     setIsLoading(true)
@@ -93,36 +96,32 @@ export function useAuthCheck(): UseAuthCheckResult {
     } catch (err: any) {
       console.error('身份验证检查失败:', err)
       
-      // 只有在明确收到 401 响应时才进行登出
-      if (err.response?.status === 401) {
-        // Token无效或过期
-        setIsAuthenticated(false)
-        setUser(null)
-        setError('身份验证已过期，请重新登录')
-        AuthUtils.logout()
-        
-        // 如果是页面刷新，跳转到登录页面；否则显示弹窗
-        if (isPageRefresh) {
-          const currentPath = location.href
-          navigate({
-            to: '/sign-in',
-            search: { redirect: currentPath },
-            replace: true,
+      if (err instanceof ApiError) {
+        if (err.status === 401) {
+          setIsAuthenticated(false)
+          setUser(null)
+          setError('身份验证已过期，请重新登录')
+          AuthUtils.logout()
+          if (isPageRefresh) {
+            const currentPath = location.href
+            navigate({
+              to: '/sign-in',
+              search: { redirect: currentPath },
+              replace: true,
+            })
+            return
+          } else {
+            setShowLoginDialog(true)
+          }
+        } else if (err.status === 500) {
+          showError(err, async () => {
+            await retryNetwork()
           })
-          return
         } else {
-          setShowLoginDialog(true)
+          setError(err.message || '身份验证检查失败')
         }
-      } else if (err.code === 'ECONNABORTED' || !err.response) {
-        // 网络错误或超时 - 显示网络错误弹窗
-        console.warn('网络连接错误:', err.message)
-        setShowNetworkError(true)
-        // 保持原有的认证状态
       } else {
-        // 其他错误 - 不进行登出，只记录错误
-        console.warn('非认证错误，保持用户登录状态:', err.message)
-        setError(err.message || '身份验证检查失败')
-        // 保持原有的认证状态
+        setError(err?.message || '身份验证检查失败')
       }
     } finally {
       setIsLoading(false)

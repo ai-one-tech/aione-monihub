@@ -1,6 +1,7 @@
 import { StrictMode, useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import { AxiosError } from 'axios'
+import { ApiError } from '@/lib/api-client'
 import {
   QueryCache,
   QueryClient,
@@ -43,15 +44,13 @@ const queryClient = new QueryClient({
     },
     mutations: {
       onError: (error) => {
-        // 检查是否为网络错误并显示全局错误弹窗
-        if (isNetworkError(error) && globalShowNetworkError) {
-          globalShowNetworkError(error, async () => {
+        // 仅在500错误时显示全局错误弹窗，其余错误使用toast
+        if (shouldShowErrorDialog(error) && globalShowNetworkError) {
+          globalShowNetworkError(error as Error, async () => {
             // 对于mutation，我们无法直接重试，需要用户手动重试
             toast.info('请手动重试操作')
           })
-        }
-        // 只有在网络错误弹窗未显示时才显示toast
-        else if (!globalIsDialogOpen) {
+        } else if (!globalIsDialogOpen) {
           handleServerError(error)
         }
 
@@ -65,53 +64,42 @@ const queryClient = new QueryClient({
   },
   queryCache: new QueryCache({
     onError: (error) => {
-      // 检查是否为网络错误并显示全局错误弹窗
-      if (isNetworkError(error) && globalShowNetworkError) {
+      // 仅在500错误时显示全局错误弹窗，其余错误使用toast
+      if (shouldShowErrorDialog(error) && globalShowNetworkError) {
         // 获取失败的查询信息
         const queryInfo = queryClient.getQueryCache().getAll().find(q => q.state.error === error)
         if (queryInfo) {
-          globalShowNetworkError(error, async () => {
+          globalShowNetworkError(error as Error, async () => {
             // 重试查询
             await queryClient.refetchQueries({ queryKey: queryInfo.queryKey })
           })
         }
-      }
-      // 只有在网络错误弹窗未显示时才显示toast
-      else if (!globalIsDialogOpen) {
-        if (error instanceof AxiosError) {
-          if (error.response?.status === 500) {
-            toast.error('Internal Server Error!')
-            // 不再跳转到500页面，只显示错误提示
-            // router.navigate({ to: '/500' })
-          }
-          if (error.response?.status === 403) {
-            // router.navigate("/forbidden", { replace: true });
-          }
+      } else if (!globalIsDialogOpen) {
+        // 401处理：清理认证并通知显示登录弹窗
+        if (error instanceof AxiosError ? error.response?.status === 401 : (error as any)?.status === 401) {
+          try {
+            const store = useAuthStore.getState()
+            store.auth.reset()
+          } catch {}
+          window.dispatchEvent(new CustomEvent('api-auth-error', {
+            detail: { status: 401, message: '身份验证已过期，请重新登录' }
+          }))
         }
+        handleServerError(error)
       }
     },
   }),
 })
 
-// 检查是否为网络错误
-function isNetworkError(error: any): boolean {
-  // Axios网络错误
+// 仅在500错误时显示弹窗
+function shouldShowErrorDialog(error: any): boolean {
   if (error instanceof AxiosError) {
-    return !error.response || 
-           error.code === 'ECONNABORTED' || 
-           error.message.includes('Network Error')
+    return (error.response?.status ?? 0) === 500
   }
-  
-  // 原生fetch错误
-  if (error instanceof TypeError && error.message.includes('fetch')) {
-    return true
+  if (error instanceof ApiError) {
+    return error.status === 500
   }
-  
-  // 其他网络相关错误
-  return error.message?.includes('network') || 
-         error.message?.includes('Network') ||
-         error.message?.includes('timeout') ||
-         error.message?.includes('Timeout')
+  return false
 }
 
 // Create a new router instance

@@ -1,5 +1,6 @@
 import { useAuthStore } from '@/stores/auth-store'
 import { authApi } from '@/lib/api'
+import { ApiError } from '@/lib/api-client'
 
 /**
  * 认证工具类
@@ -109,9 +110,16 @@ export class AuthUtils {
       return false
     } catch (error: any) {
       console.error('刷新用户信息失败:', error)
-      // 只有401错误才需要登出。其他错误（如网络错误）不转变为登出
-      if (error.response?.status === 401) {
-        this.logout()
+      // 401：登出并返回失败；500：上抛给调用方走全局弹窗；其他：返回失败
+      if (error instanceof ApiError) {
+        if (error.status === 401) {
+          this.logout()
+          return false
+        }
+        if (error.status === 500) {
+          throw error
+        }
+        return false
       }
       return false
     }

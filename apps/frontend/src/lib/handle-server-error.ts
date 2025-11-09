@@ -1,4 +1,5 @@
 import { AxiosError } from 'axios'
+import { ApiError } from '@/lib/api-client'
 import { toast } from 'sonner'
 
 // 创建一个全局变量来跟踪网络错误弹窗是否打开
@@ -30,7 +31,11 @@ export function handleServerError(error: unknown) {
   }
 
   if (error instanceof AxiosError) {
-    errMsg = error.response?.data.title || errMsg
+    errMsg = (error.response?.data as any)?.title || errMsg
+  }
+
+  if (error instanceof ApiError) {
+    errMsg = error.message || errMsg
   }
 
   toast.error(errMsg)

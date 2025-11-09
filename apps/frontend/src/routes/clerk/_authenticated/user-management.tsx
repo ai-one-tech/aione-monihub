@@ -5,15 +5,12 @@ import {
   useNavigate,
   useRouter,
 } from '@tanstack/react-router'
-import { SignedIn, useAuth, UserButton } from '@clerk/clerk-react'
+import { SignedIn, useAuth } from '@clerk/clerk-react'
 import { ExternalLink, Loader2 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { Button } from '@/components/ui/button'
-import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { LearnMore } from '@/components/learn-more'
-import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
 import { UsersDialogs } from '@/features/users/components/users-dialogs'
 import { UsersPrimaryButtons } from '@/features/users/components/users-primary-buttons'
 import { UsersProvider } from '@/features/users/components/users-provider'
@@ -47,14 +44,6 @@ function UserManagement() {
     <>
       <SignedIn>
         <UsersProvider>
-          <Header fixed>
-            <Search />
-            <div className='ms-auto flex items-center space-x-4'>
-              <ThemeSwitch />
-              <UserButton />
-            </div>
-          </Header>
-
           <Main>
             <div className='mb-2 flex flex-wrap items-center justify-between space-y-2'>
               <div>

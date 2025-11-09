@@ -48,10 +48,10 @@ export function NetworkErrorDialog({ open, onOpenChange, onRetry }: NetworkError
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-destructive" />
-            网络连接异常
+            服务器内部错误
           </DialogTitle>
           <DialogDescription>
-            无法连接到服务器，请检查您的网络连接或稍后重试。
+            服务器暂时不可用或出现错误，请稍后重试。
           </DialogDescription>
         </DialogHeader>
         
@@ -60,9 +60,9 @@ export function NetworkErrorDialog({ open, onOpenChange, onRetry }: NetworkError
             <div className="text-center text-sm text-muted-foreground">
               <p>可能的原因：</p>
               <ul className="mt-1 text-left list-disc list-inside">
-                <li>网络连接不稳定</li>
-                <li>服务器暂时不可用</li>
-                <li>防火墙或代理设置问题</li>
+                <li>后端服务故障或重启</li>
+                <li>服务异常导致请求失败</li>
+                <li>临时维护或高负载</li>
               </ul>
             </div>
           </div>

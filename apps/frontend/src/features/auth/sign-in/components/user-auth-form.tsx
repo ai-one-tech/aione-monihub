@@ -20,7 +20,8 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
-import { NetworkErrorDialog } from '@/components/network-error-dialog'
+import { useNetworkError } from '@/context/network-error-context'
+import { ApiError } from '@/lib/api-client'
 
 const formSchema = z.object({
   username: z.string().min(1, '请输入用户名'),
@@ -39,9 +40,9 @@ export function UserAuthForm({
   ...props
 }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const [showNetworkError, setShowNetworkError] = useState(false)
   const navigate = useNavigate()
   const { auth } = useAuthStore()
+  const { showError, isDialogOpen } = useNetworkError()
   
   // 检查是否在弹窗中打开
   const isInPopup = window.opener !== null
@@ -54,8 +55,7 @@ export function UserAuthForm({
     },
   })
 
-  const retryNetwork = async () => {
-    setShowNetworkError(false)
+  const retryLogin = async () => {
     // 重新提交表单
     const values = form.getValues()
     if (values.username && values.password) {
@@ -111,15 +111,16 @@ export function UserAuthForm({
       .catch((error) => {
         setIsLoading(false)
         
-        // 处理登录错误
-        if (error.code === 'ECONNABORTED' || !error.response) {
-          // 网络错误或超时 - 显示网络错误弹窗，不显示toast
-          setShowNetworkError(true)
-        } else if (error.response?.status === 401) {
+        // 仅在500错误时显示弹窗，其余错误使用toast
+        if (error instanceof ApiError && error.status === 500) {
+          showError(error as Error, async () => {
+            await retryLogin()
+          })
+        } else if ((error as any)?.response?.status === 401) {
           toast.error('用户名或密码错误')
-        } else if (error.response?.status === 400) {
+        } else if ((error as any)?.response?.status === 400) {
           toast.error('请输入用户名和密码')
-        } else {
+        } else if (!isDialogOpen) {
           toast.error('登录失败，请重试')
         }
       })
@@ -174,12 +175,7 @@ export function UserAuthForm({
         </form>
       </Form>
       
-      {/* 网络错误弹窗 */}
-      <NetworkErrorDialog
-        open={showNetworkError}
-        onOpenChange={setShowNetworkError}
-        onRetry={retryNetwork}
-      />
+      {/* 登录失败时仅在500错误使用全局弹窗，其他错误使用toast */}
     </>
   )
 }
