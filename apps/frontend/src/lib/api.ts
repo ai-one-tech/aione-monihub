@@ -4,7 +4,8 @@ import { getCookie, removeCookie, setCookie } from '@/lib/cookies'
 
 // 创建 axios 实例
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:9080',
+  // 使用同源，相对路径通过 Vite 代理到后端，避免跨域
+  baseURL: '',
   timeout: 10000, // 10秒超时
   withCredentials: true, // 允许携带cookie
 })

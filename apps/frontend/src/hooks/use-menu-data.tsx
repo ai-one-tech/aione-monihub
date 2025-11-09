@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { type NavGroup, type NavItem } from '@/components/layout/types'
 import { useAuthStore } from '@/stores/auth-store'
+import { apiClient } from '@/lib/api-client'
 
 // 菜单项响应接口
 interface MenuItemResponse {
@@ -111,22 +112,15 @@ export function useMenuData() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['userMenu'],
     queryFn: async () => {
-      // 模拟菜单数据，实际应该从API获取
-      const mockMenuData: MenuItemResponse[] = [
-        {
-          id: '1',
-          title: 'Dashboard',
-          path: '/',
-          icon: 'LayoutDashboard',
-          is_hidden: false
-        }
-      ]
-      return { data: mockMenuData } as MenuApiResponse
+      // 通过后端接口获取用户菜单
+      const response = await apiClient.get<MenuApiResponse>('/api/user/menu')
+      return response.data
     },
     enabled: isAuthenticated, // 只有在用户已认证时才请求菜单数据
     retry: 2,
     staleTime: 5 * 60 * 1000, // 5分钟缓存
     gcTime: 10 * 60 * 1000, // 10分钟垃圾回收
+    refetchOnWindowFocus: false,
   })
 
   // 将API响应转换为前端菜单格式

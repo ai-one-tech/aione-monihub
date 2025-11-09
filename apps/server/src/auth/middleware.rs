@@ -3,6 +3,7 @@ use actix_web::{
     error::ErrorUnauthorized,
     Error, HttpMessage, HttpRequest,
 };
+use actix_web::http::Method;
 use futures_util::future::{ready, LocalBoxFuture, Ready};
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use std::rc::Rc;
@@ -57,6 +58,11 @@ where
         let service = self.service.clone();
 
         Box::pin(async move {
+            // 放行 CORS 预检请求
+            if req.method() == Method::OPTIONS {
+                return service.call(req).await;
+            }
+
             let path = req.path();
 
             // 允许的公开路径（不需要认证）
