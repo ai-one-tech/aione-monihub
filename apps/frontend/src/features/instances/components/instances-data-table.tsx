@@ -57,7 +57,7 @@ export function InstancesTable({ data = [], totalPages, search, navigate }: Data
     pagination: { defaultPage: 1, defaultPageSize: 10 },
     globalFilter: { enabled: false },
     columnFilters: [
-      { columnId: 'name', searchKey: 'search', type: 'string' },
+      { columnId: 'hostname', searchKey: 'search', type: 'string' },
       { columnId: 'status', searchKey: 'status', type: 'array' },
       { columnId: 'online_status', searchKey: 'online_status', type: 'array' },
     ],
@@ -95,8 +95,8 @@ export function InstancesTable({ data = [], totalPages, search, navigate }: Data
     <div className='flex flex-col h-full min-h-0 max-sm:has-[div[role="toolbar"]]:mb-16'>
       <DataTableToolbar
         table={table}
-        searchPlaceholder='按名称、应用、内网IP、公网IP、计算机名搜索...'
-        searchKey='name'
+        searchPlaceholder='按主机名、应用、内网IP、公网IP搜索...'
+        searchKey='hostname'
         filters={[
           {
             columnId: 'status',
