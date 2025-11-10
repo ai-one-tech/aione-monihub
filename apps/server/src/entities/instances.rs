@@ -1,4 +1,5 @@
 use sea_orm::entity::prelude::*;
+use crate::shared::enums::{Status, AgentType, OsType, OnlineStatus};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
@@ -8,7 +9,8 @@ pub struct Model {
     pub id: String,
     pub hostname: String,
     pub ip_address: String,
-    pub status: String,
+    pub status: Status,
+    pub online_status: OnlineStatus,
     pub environment: Option<Json>,
     pub application_id: String,
     pub mac_address: Option<String>,
@@ -16,13 +18,13 @@ pub struct Model {
     pub port: Option<i32>,
     pub program_path: Option<String>,
     pub profiles: Option<String>,
-    pub os_type: Option<String>,
+    pub os_type: Option<OsType>,
     pub os_version: Option<String>,
     pub first_report_at: Option<DateTimeWithTimeZone>,
     pub last_report_at: Option<DateTimeWithTimeZone>,
     pub report_count: Option<i32>,
     pub custom_fields: Option<Json>,
-    pub agent_type: Option<String>,
+    pub agent_type: Option<AgentType>,
     pub agent_version: Option<String>,
     pub cpu_usage_percent: Option<Decimal>,
     pub memory_usage_percent: Option<Decimal>,

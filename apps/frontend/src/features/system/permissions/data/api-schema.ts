@@ -5,7 +5,7 @@ export const apiPermissionResponseSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().nullable(),
-  action: z.string(),
+  action: z.string().nullable().optional(),
   permission_type: z.string(),
   menu_path: z.string().nullable(),
   menu_icon: z.string().nullable(),
@@ -45,7 +45,7 @@ export type GetPermissionsParams = z.infer<typeof getPermissionsParamsSchema>
 export const createPermissionRequestSchema = z.object({
   name: z.string(),
   description: z.string().optional().nullable(),
-  action: z.string(),
+  action: z.string().optional().nullable(),
   permission_type: z.string(),
   menu_path: z.string().optional().nullable(),
   menu_icon: z.string().optional().nullable(),
@@ -60,7 +60,7 @@ export type CreatePermissionRequest = z.infer<typeof createPermissionRequestSche
 export const updatePermissionRequestSchema = z.object({
   name: z.string(),
   description: z.string().optional().nullable(),
-  action: z.string(),
+  action: z.string().optional().nullable(),
   permission_type: z.string(),
   menu_path: z.string().optional().nullable(),
   menu_icon: z.string().optional().nullable(),

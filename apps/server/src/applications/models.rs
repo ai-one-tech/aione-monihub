@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
+use crate::shared::enums::Status;
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Application {
@@ -8,7 +9,7 @@ pub struct Application {
     pub project_id: String,
     pub name: String,
     pub code: String,
-    pub status: String,
+    pub status: Status,
     pub description: String,
     pub created_by: String,
     pub updated_by: String,
@@ -24,7 +25,7 @@ pub struct ApplicationResponse {
     pub project_id: String,
     pub name: String,
     pub code: String,
-    pub status: String,
+    pub status: Status,
     pub description: String,
     pub created_at: String,
     pub updated_at: String,

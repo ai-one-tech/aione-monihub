@@ -110,6 +110,7 @@ export function SystemPermissionsEditSheet() {
       Promise.resolve().then(() => {
         form.setValue('name', permissionDetail.name)
         form.setValue('description', permissionDetail.description || '')
+        // 兼容后端 snake_case，回填 UI 直接用原值
         form.setValue('action', permissionDetail.action || '')
         form.setValue('permission_type', permissionDetail.permission_type || '')
         form.setValue('menu_path', permissionDetail.menu_path || '')
@@ -161,7 +162,8 @@ export function SystemPermissionsEditSheet() {
     const submitData = {
       name: data.name,
       description: data.description || null,
-      action: data.action,
+      // 将操作类型转换为后端枚举格式 snake_case
+      action: data.action ? data.action.toLowerCase() : '',
       permission_type: data.permission_type,
       menu_path: data.menu_path || null,
       menu_icon: data.menu_icon || null,
@@ -171,6 +173,7 @@ export function SystemPermissionsEditSheet() {
     }
 
     if (submitData.permission_type !== 'Action') {
+      // 非操作类型不传动作，兼容后端允许空
       submitData.action = ''
     }
 

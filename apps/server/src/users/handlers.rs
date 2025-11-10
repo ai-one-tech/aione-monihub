@@ -2,6 +2,7 @@ use crate::auth::middleware::get_user_id_from_request;
 use crate::entities::users::Model as UserModel;
 use crate::entities::users::{ActiveModel, Entity as Users};
 use crate::permissions::handlers::{get_user_permission_by_name};
+use crate::shared::enums::UserStatus;
 
 use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
@@ -18,6 +19,7 @@ use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter,
     QueryOrder, QuerySelect, Set,
 };
+use sqlx::types::uuid::Version::Nil;
 
 #[utoipa::path(
     get,
@@ -61,9 +63,7 @@ pub async fn get_users(
 
     // 状态过滤
     if let Some(status) = &query.status {
-        if !status.trim().is_empty() {
-            select = select.filter(crate::entities::users::Column::Status.eq(status));
-        }
+        select = select.filter(crate::entities::users::Column::Status.eq(status.clone()));
     }
 
     // 排序
@@ -530,7 +530,7 @@ pub async fn disable_user(
     // 禁用用户
     let disabled_user = ActiveModel {
         id: Set(user_id),
-        status: Set("disabled".to_string()),
+        status: Set(UserStatus::Disabled),
         updated_by: Set(current_user_id.to_string()),
         revision: Set(existing_user.revision + 1),
         updated_at: Set(Utc::now().into()),
@@ -589,7 +589,7 @@ pub async fn enable_user(
     // 启用用户
     let enabled_user = ActiveModel {
         id: Set(user_id),
-        status: Set("active".to_string()),
+        status: Set(UserStatus::Active),
         updated_by: Set(current_user_id.to_string()),
         revision: Set(existing_user.revision + 1),
         updated_at: Set(Utc::now().into()),

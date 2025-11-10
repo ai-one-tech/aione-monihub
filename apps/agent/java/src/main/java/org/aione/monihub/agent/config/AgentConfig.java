@@ -1,6 +1,7 @@
 package org.aione.monihub.agent.config;
 
 import lombok.Data;
+import org.aione.monihub.agent.util.LocalConfigUtil;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -20,10 +21,19 @@ public class AgentConfig {
 
     public String getInstanceId() {
         if (Strings.isEmpty(instanceId)) {
-            UUID uuid = UUID.randomUUID();
-            instanceId = uuid.toString();
+            // 读取本地文件的实例ID
+            LocalConfig config = LocalConfigUtil.getConfig();
+            if (config != null && Strings.isNotEmpty(config.getInstanceId())) {
+                instanceId = config.getInstanceId();
+            }
+
+            if (Strings.isEmpty(instanceId)) {
+                UUID uuid = UUID.randomUUID();
+                instanceId = uuid.toString();
+                LocalConfigUtil.updateConfig(new LocalConfig().setInstanceId(instanceId));
+            }
         }
-        return instanceId;
+         return instanceId;
     }
 
     /**

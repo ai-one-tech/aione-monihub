@@ -28,6 +28,9 @@ class InstancesApi {
     if (params.status) {
       searchParams.append('status', params.status)
     }
+    if (params.online_status) {
+      searchParams.append('online_status', params.online_status)
+    }
     if (params.application_id) {
       searchParams.append('application_id', params.application_id)
     }

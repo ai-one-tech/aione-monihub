@@ -1,20 +1,20 @@
-use crate::entities::projects::{ActiveModel, Entity as Projects};
+use crate::auth::middleware::get_user_id_from_request;
 use crate::entities::applications::Entity as Applications;
+use crate::entities::projects::{ActiveModel, Entity as Projects};
+use crate::permissions::handlers::get_user_permission_by_name;
 use crate::projects::models::{
     Pagination, ProjectCreateRequest, ProjectListQuery, ProjectListResponse, ProjectResponse,
 };
+use crate::shared::enums;
 use crate::shared::error::ApiError;
-use crate::shared::status::is_valid_status;
 use crate::shared::snowflake::generate_snowflake_id;
-use crate::auth::middleware::get_user_id_from_request;
-use crate::permissions::handlers::{get_user_permission_by_name};
 use actix_web::{web, HttpRequest, HttpResponse, Result};
 use chrono::Utc;
-use serde_json::json;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter,
     QueryOrder, QuerySelect, Set,
 };
+use serde_json::json;
 
 #[utoipa::path(
     get,
@@ -59,11 +59,7 @@ pub async fn get_projects(
 
     // 如果有状态筛选，按状态过滤
     if let Some(status) = &query.status {
-        if !status.is_empty() {
-            select = select.filter(
-                crate::entities::projects::Column::Status.eq(status)
-            );
-        }
+        select = select.filter(crate::entities::projects::Column::Status.eq(status.clone()));
     }
 
     // 按创建时间倒序排列
@@ -86,7 +82,7 @@ pub async fn get_projects(
             id: project.id,
             name: project.name,
             code: project.code,
-            status: project.status,
+            status: Some(project.status),
             description: project.description.unwrap_or_default(),
             created_at: project.created_at.to_rfc3339(),
             updated_at: project.updated_at.to_rfc3339(),
@@ -140,11 +136,6 @@ pub async fn create_project(
     // 从JWT中获取当前用户ID
     let current_user_id = get_user_id_from_request(&req)?;
 
-    // 校验状态值
-    if !is_valid_status(project.status.as_str()) {
-        return Err(ApiError::BadRequest("Invalid status; must be 'active' or 'disabled'".to_string()));
-    }
-
     // 生成雪花ID
     let project_id = generate_snowflake_id();
 
@@ -153,7 +144,7 @@ pub async fn create_project(
         id: Set(project_id.clone()),
         name: Set(project.name.clone()),
         code: Set(project.code.clone()),
-        status: Set(project.status.clone()),
+        status: Set(project.status.clone().unwrap_or(enums::Status::Active)),
         description: Set(Some(project.description.clone())),
         created_by: Set(current_user_id.to_string()),
         updated_by: Set(current_user_id.to_string()),
@@ -169,7 +160,7 @@ pub async fn create_project(
         id: saved_project.id,
         name: saved_project.name,
         code: saved_project.code,
-        status: saved_project.status,
+        status: Some(saved_project.status),
         description: saved_project.description.unwrap_or_default(),
         created_at: saved_project.created_at.to_rfc3339(),
         updated_at: saved_project.updated_at.to_rfc3339(),
@@ -197,9 +188,7 @@ pub async fn get_project(
 ) -> Result<HttpResponse, ApiError> {
     let project_id = path.into_inner();
 
-    let project = Projects::find_by_id(project_id)
-        .one(&**db)
-        .await?;
+    let project = Projects::find_by_id(project_id).one(&**db).await?;
 
     match project {
         Some(project) => {
@@ -207,7 +196,7 @@ pub async fn get_project(
                 id: project.id,
                 name: project.name,
                 code: project.code,
-                status: project.status,
+                status: Some(project.status),
                 description: project.description.unwrap_or_default(),
                 created_at: project.created_at.to_rfc3339(),
                 updated_at: project.updated_at.to_rfc3339(),
@@ -242,9 +231,7 @@ pub async fn update_project(
     let project_id = path.into_inner();
 
     // 查找项目
-    let existing_project = Projects::find_by_id(&project_id)
-        .one(&**db)
-        .await?;
+    let existing_project = Projects::find_by_id(&project_id).one(&**db).await?;
 
     let _existing_project = match existing_project {
         Some(project) => project,
@@ -257,13 +244,9 @@ pub async fn update_project(
         .filter(crate::entities::projects::Column::Id.ne(&project_id))
         .filter(crate::entities::projects::Column::DeletedAt.is_null())
         .one(&**db)
-        .await? {
+        .await?
+    {
         return Err(ApiError::BadRequest(format!("项目代码已存在：{}", p.name)));
-    }
-
-    // 校验状态值
-    if !is_valid_status(project.status.as_str()) {
-        return Err(ApiError::BadRequest("Invalid status; must be 'active' or 'disabled'".to_string()));
     }
 
     // 从JWT中获取当前用户ID
@@ -274,7 +257,7 @@ pub async fn update_project(
         id: Set(project_id),
         name: Set(project.name.clone()),
         code: Set(project.code.clone()),
-        status: Set(project.status.clone()),
+        status: Set(project.status.clone().unwrap_or(enums::Status::Active)),
         description: Set(Some(project.description.clone())),
         updated_by: Set(current_user_id.to_string()),
         updated_at: Set(Utc::now().into()),
@@ -287,7 +270,7 @@ pub async fn update_project(
         id: saved_project.id,
         name: saved_project.name,
         code: saved_project.code,
-        status: saved_project.status,
+        status: Some(saved_project.status),
         description: saved_project.description.unwrap_or_default(),
         created_at: saved_project.created_at.to_rfc3339(),
         updated_at: saved_project.updated_at.to_rfc3339(),
@@ -317,9 +300,7 @@ pub async fn delete_project(
     let project_id = path.into_inner();
 
     // 查找项目
-    let existing_project = Projects::find_by_id(&project_id)
-        .one(&**db)
-        .await?;
+    let existing_project = Projects::find_by_id(&project_id).one(&**db).await?;
 
     let _existing_project = match existing_project {
         Some(project) => project,
@@ -371,16 +352,20 @@ pub async fn enable_project(
     let user_id = get_user_id_from_request(&req)?;
 
     // 权限检查：需要具有 project_management.enable 权限
-    let permission = get_user_permission_by_name(&user_id.to_string(), "project_management.enable", &db).await?;
+    let permission =
+        get_user_permission_by_name(&user_id.to_string(), "project_management.enable", &db).await?;
     if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限启用项目".to_string()));
     }
 
     let existing = Projects::find_by_id(&project_id).one(&**db).await?;
-    let project = match existing { Some(p) => p, None => return Err(ApiError::NotFound("项目不存在".to_string())) };
+    let project = match existing {
+        Some(p) => p,
+        None => return Err(ApiError::NotFound("项目不存在".to_string())),
+    };
 
     let mut active: ActiveModel = project.into();
-    active.status = Set("active".to_string());
+    active.status = Set(enums::Status::Active);
     active.updated_by = Set(user_id.to_string());
     active.updated_at = Set(Utc::now().into());
     let saved = active.update(&**db).await?;
@@ -389,7 +374,7 @@ pub async fn enable_project(
         id: saved.id,
         name: saved.name,
         code: saved.code,
-        status: saved.status,
+        status: Some(saved.status),
         description: saved.description.unwrap_or_default(),
         created_at: saved.created_at.to_rfc3339(),
         updated_at: saved.updated_at.to_rfc3339(),
@@ -413,16 +398,21 @@ pub async fn disable_project(
     let user_id = get_user_id_from_request(&req)?;
 
     // 权限检查：需要具有 project_management.disable 权限
-    let permission = get_user_permission_by_name(&user_id.to_string(), "project_management.disable", &db).await?;
+    let permission =
+        get_user_permission_by_name(&user_id.to_string(), "project_management.disable", &db)
+            .await?;
     if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限禁用项目".to_string()));
     }
 
     let existing = Projects::find_by_id(&project_id).one(&**db).await?;
-    let project = match existing { Some(p) => p, None => return Err(ApiError::NotFound("项目不存在".to_string())) };
+    let project = match existing {
+        Some(p) => p,
+        None => return Err(ApiError::NotFound("项目不存在".to_string())),
+    };
 
     let mut active: ActiveModel = project.into();
-    active.status = Set("disabled".to_string());
+    active.status = Set(enums::Status::Disabled);
     active.updated_by = Set(user_id.to_string());
     active.updated_at = Set(Utc::now().into());
     let saved = active.update(&**db).await?;
@@ -431,7 +421,7 @@ pub async fn disable_project(
         id: saved.id,
         name: saved.name,
         code: saved.code,
-        status: saved.status,
+        status: Some(saved.status),
         description: saved.description.unwrap_or_default(),
         created_at: saved.created_at.to_rfc3339(),
         updated_at: saved.updated_at.to_rfc3339(),

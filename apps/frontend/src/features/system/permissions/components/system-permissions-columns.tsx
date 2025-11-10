@@ -110,7 +110,9 @@ export const systemPermissionsColumns: ColumnDef<ApiPermissionResponse>[] = [
           </Badge>
         )
       }
-      const actionInfo = ACTION_MAP[action] || { label: action, variant: 'outline' as const }
+      // 兼容大小写（后端为 snake_case）
+      const key = action.toLowerCase()
+      const actionInfo = ACTION_MAP[key] || { label: action, variant: 'outline' as const }
       return (
         <Badge variant={actionInfo.variant} className='text-xs'>
           {actionInfo.label}

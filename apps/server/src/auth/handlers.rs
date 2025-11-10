@@ -3,6 +3,7 @@ use crate::auth::models::{
     ResetPasswordRequest, UserResponse,
 };
 use crate::entities::users;
+use crate::shared::enums::UserStatus;
 use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
 use crate::users::UsersModule;
@@ -48,8 +49,8 @@ pub async fn login(
         .await
     {
         Ok(Some(user)) => {
-            // 检查用户状态
-            if user.status != "active" {
+            // 检查用户状态（枚举比较）
+            if user.status != UserStatus::Active {
                 return Ok(HttpResponse::Unauthorized().json("用户账户已被禁用"));
             }
 

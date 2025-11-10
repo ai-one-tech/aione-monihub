@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
+use crate::shared::enums::{PermissionAction, PermissionType};
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Role {
@@ -56,8 +57,8 @@ pub struct RolePermissionResponse {
     pub id: String,
     pub name: String,
     pub description: Option<String>,
-    pub action: String,
-    pub permission_type: String,
+    pub action: Option<PermissionAction>,
+    pub permission_type: PermissionType,
     pub created_at: String,
 }
 

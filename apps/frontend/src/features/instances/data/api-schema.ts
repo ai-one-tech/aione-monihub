@@ -1,8 +1,12 @@
 import { z } from 'zod'
 
 // 实例状态枚举
-export const instanceStatusSchema = z.enum(['active', 'disabled', 'offline'])
+export const instanceStatusSchema = z.enum(['active', 'disabled'])
 export type InstanceStatus = z.infer<typeof instanceStatusSchema>
+
+// 在线状态枚举
+export const onlineStatusSchema = z.enum(['online', 'offline'])
+export type OnlineStatus = z.infer<typeof onlineStatusSchema>
 
 // 分页信息
 export const paginationSchema = z.object({
@@ -17,11 +21,11 @@ export type Pagination = z.infer<typeof paginationSchema>
 // 实例响应数据
 export const instanceResponseSchema = z.object({
   id: z.string(),
-  name: z.string(),
   hostname: z.string(),
   ip_address: z.string(),
   instance_type: z.string(),
   status: instanceStatusSchema,
+  online_status: onlineStatusSchema,
   application_id: z.string(),
   mac_address: z.string().optional(),
   public_ip: z.string().optional(),
@@ -55,7 +59,6 @@ export type InstanceDetailResponse = z.infer<typeof instanceDetailResponseSchema
 
 // 创建实例请求
 export const createInstanceRequestSchema = z.object({
-  name: z.string().min(1, '实例名称不能为空'),
   instance_type: z.string().min(1, '实例类型不能为空'),
   status: instanceStatusSchema,
   application_id: z.string().min(1, '应用ID不能为空'),
@@ -80,6 +83,7 @@ export const getInstancesParamsSchema = z.object({
   limit: z.number().optional(),
   search: z.string().optional(),
   status: instanceStatusSchema.optional(),
+  online_status: onlineStatusSchema.optional(),
   application_id: z.string().optional(),
   ip_address: z.string().optional(),
   public_ip: z.string().optional(),
@@ -97,14 +101,12 @@ export const INSTANCE_STATUS_OPTIONS = [
   { value: 'all', label: '全部状态' },
   { value: 'active', label: '正常' },
   { value: 'disabled', label: '已禁用' },
-  { value: 'offline', label: '离线' },
 ] as const
 
 // 实例状态标签映射
 export const INSTANCE_STATUS_LABELS: Record<InstanceStatus, string> = {
   active: '正常',
   disabled: '已禁用',
-  offline: '离线',
 }
 
 // 实例环境类型选项
@@ -125,6 +127,11 @@ export const OS_TYPE_OPTIONS = [
 // 实例上报记录相关类型定义
 // ===================================================================
 
+// 网络类型枚举选项与模式（保持前后端兼容）
+export const NETWORK_TYPE_OPTIONS = ['wired', 'wifi', 'cellular', 'unknown'] as const
+export const networkTypeSchema = z.enum(NETWORK_TYPE_OPTIONS)
+export type NetworkType = z.infer<typeof networkTypeSchema>
+
 // 实例上报记录响应
 export const instanceReportRecordSchema = z.object({
   id: z.string(),
@@ -137,7 +144,8 @@ export const instanceReportRecordSchema = z.object({
   ip_address: z.string().optional(),
   public_ip: z.string().optional(),
   mac_address: z.string().optional(),
-  network_type: z.string().optional(),
+  // 兼容后端返回的单值或数组格式
+  network_type: z.union([z.string(), z.array(networkTypeSchema)]).optional(),
   cpu_model: z.string().optional(),
   cpu_cores: z.number().optional(),
   cpu_usage_percent: z.string().optional(),

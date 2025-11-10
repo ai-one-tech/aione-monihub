@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use crate::shared::snowflake::generate_snowflake_id;
+use crate::shared::enums::{Status, OsType, OnlineStatus};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Instance {
@@ -9,7 +10,7 @@ pub struct Instance {
     pub hostname: String,
     pub ip_address: String,
     pub environment: String,
-    pub status: String,
+    pub status: Status,
     pub application_id: String,
     pub specs: Option<JsonValue>,
     pub created_by: String,
@@ -26,7 +27,8 @@ pub struct InstanceResponse {
     pub hostname: String,
     pub ip_address: String,
     pub environment: Option<JsonValue>,
-    pub status: String,
+    pub status: Status,
+    pub online_status: OnlineStatus,
     pub application_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<String>,
@@ -37,7 +39,9 @@ pub struct InstanceResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub program_path: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub os_type: Option<String>,
+    pub network_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub os_type: Option<OsType>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub os_version: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -55,7 +59,7 @@ pub struct InstanceResponse {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InstanceCreateRequest {
     pub environment: Option<JsonValue>,
-    pub status: String,
+    pub status: Status,
     pub application_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<String>,
@@ -67,7 +71,7 @@ pub struct InstanceCreateRequest {
     pub program_path: Option<String>,
     pub profiles: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub os_type: Option<String>,
+    pub os_type: Option<OsType>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub os_version: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -78,7 +82,7 @@ pub struct InstanceCreateRequest {
 pub struct InstanceUpdateRequest {
     pub name: String,
     pub environment: String,
-    pub status: String,
+    pub status: Option<Status>,
     pub application_id: String,
 }
 
@@ -109,6 +113,7 @@ pub struct InstanceListQuery {
     pub limit: Option<u32>,
     pub search: Option<String>,
     pub status: Option<String>,
+    pub online_status: Option<String>,
     pub application_id: Option<String>,
     pub ip_address: Option<String>,
     pub public_ip: Option<String>,
@@ -126,11 +131,13 @@ impl InstanceResponse {
             ip_address: entity.ip_address,
             environment: entity.environment,
             status: entity.status,
+            online_status: entity.online_status,
             application_id: entity.application_id,
             mac_address: entity.mac_address,
             public_ip: entity.public_ip,
             port: entity.port,
             program_path: entity.program_path,
+            network_type: entity.network_type,
             os_type: entity.os_type,
             os_version: entity.os_version,
             first_report_at: entity.first_report_at.map(|v| v.to_rfc3339()),
@@ -153,6 +160,7 @@ impl InstanceCreateRequest {
             hostname: Set(format!("host-{}", generate_snowflake_id())),
             ip_address: Set("0.0.0.0".to_string()),
             status: Set(self.status.clone()),
+            online_status: Set(OnlineStatus::Offline),
             environment: Set(self.environment.clone()),
             application_id: Set(self.application_id.clone()),
             mac_address: Set(self.mac_address.clone()),

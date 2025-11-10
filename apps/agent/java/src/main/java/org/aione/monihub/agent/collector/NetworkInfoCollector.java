@@ -77,7 +77,7 @@ public class NetworkInfoCollector {
                 } else if (name.contains("wlan") || name.contains("wifi") || name.contains("wlp")) {
                     networkType = "wifi"; // 无线网络
                 } else if (name.contains("ppp") || name.contains("wwan")) {
-                    networkType = "mobile"; // 移动网络
+                    networkType = "cellular"; // 蜂窝网络
                 }
                 if (networkType == null) {
                     continue;

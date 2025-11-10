@@ -4,8 +4,9 @@ use crate::entities::roles::Entity as Roles;
 use crate::entities::user_roles::Entity as UserRoles;
 use crate::permissions::models::{
     MenuItemResponse, PermissionAssignRequest, PermissionCreateRequest, PermissionListResponse,
-    PermissionResponse, PermissionType, PermissionUpdateRequest, UserMenuResponse,
+    PermissionResponse, PermissionUpdateRequest, UserMenuResponse,
 };
+use crate::shared::enums::PermissionType;
 use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
 use actix_web::{web, HttpRequest, HttpResponse, Result};
@@ -71,8 +72,7 @@ pub async fn get_permissions(
     // 添加权限类型筛选
     if let Some(permission_type) = &query.permission_type {
         if !permission_type.is_empty() {
-            query_builder =
-                query_builder.filter(Column::PermissionType.eq(permission_type));
+            query_builder = query_builder.filter(Column::PermissionType.eq(permission_type));
         }
     }
 
@@ -167,6 +167,7 @@ pub async fn create_permission(
         id: Set(permission_id.clone()),
         name: Set(permission.name.clone()),
         description: Set(permission.description.clone()),
+        // 将字符串动作转换为枚举类型
         permission_action: Set(permission.action.clone()),
         permission_type: Set(permission.permission_type.clone()),
         menu_path: Set(permission.menu_path.clone()),
@@ -315,6 +316,7 @@ pub async fn update_permission(
         existing_permission.into();
     permission_active.name = Set(permission.name.clone());
     permission_active.description = Set(permission.description.clone());
+    // 将字符串动作转换为枚举类型
     permission_active.permission_action = Set(permission.action.clone());
     permission_active.permission_type = Set(permission.permission_type.clone());
     permission_active.menu_path = Set(permission.menu_path.clone());
@@ -417,8 +419,12 @@ pub async fn get_user_menu(
     let user_id = get_user_id_from_request(&req)?;
 
     // 根据当前用户的角色获取权限菜单
-    let menu_permissions: Vec<PermissionModel> =
-        get_user_permissions_by_type(&user_id.to_string(), Vec::from([PermissionType::Menu, PermissionType::Page]), &**db).await?;
+    let menu_permissions: Vec<PermissionModel> = get_user_permissions_by_type(
+        &user_id.to_string(),
+        Vec::from([PermissionType::Menu, PermissionType::Page]),
+        &**db,
+    )
+    .await?;
 
     // 构建菜单树
     let menu_items = build_menu_tree(menu_permissions);
@@ -456,7 +462,11 @@ pub async fn is_admin_user(user_id: &str, db: &DatabaseConnection) -> Result<boo
     Ok(false)
 }
 
-pub async fn get_role_permissions_list_by_user(user_id: &str, role_id: &str, db: &DatabaseConnection) -> Result<Vec<PermissionModel>, sea_orm::DbErr> {
+pub async fn get_role_permissions_list_by_user(
+    user_id: &str,
+    role_id: &str,
+    db: &DatabaseConnection,
+) -> Result<Vec<PermissionModel>, sea_orm::DbErr> {
     // 检查用户是否是管理员
     let is_admin = is_admin_user(user_id, db).await?;
 
@@ -489,7 +499,10 @@ pub async fn get_role_permissions_list_by_user(user_id: &str, role_id: &str, db:
     }
 }
 
-pub async fn get_role_permissions_list(role_id: &str, db: &DatabaseConnection) -> Result<Vec<PermissionModel>, sea_orm::DbErr> {
+pub async fn get_role_permissions_list(
+    role_id: &str,
+    db: &DatabaseConnection,
+) -> Result<Vec<PermissionModel>, sea_orm::DbErr> {
     // 检查用户是否是管理员
     let is_admin = is_admin_role(role_id, db).await?;
 
@@ -531,16 +544,13 @@ pub async fn get_user_permissions_by_type(
     // 检查用户是否是管理员
     let is_admin = is_admin_user(user_id, db).await?;
 
-    let permission_type_str_list: Vec<String> = permission_types.iter()
-        .map(|permission_type| {permission_type.to_string()})
-        .collect();
+    // 直接使用枚举类型进行筛选与比较
+    let permission_type_list: Vec<PermissionType> = permission_types.clone();
 
     // 如果是管理员，返回所有指定类型的权限
     let permissions = Permissions::find()
         .filter(Column::DeletedAt.is_null())
-        .filter(
-            Column::PermissionType.is_in(permission_type_str_list.clone()),
-        )
+        .filter(Column::PermissionType.is_in(permission_type_list.clone()))
         .order_by_desc(Column::SortOrder)
         .all(db)
         .await?;
@@ -572,14 +582,18 @@ pub async fn get_user_permissions_by_type(
         .all(db)
         .await?
         .into_iter()
-        .map(| p| p.permission_id )
+        .map(|p| p.permission_id)
         .collect();
 
     // 返回指定类型的权限
     let result = permissions
         .into_iter()
         .filter(|p| user_permissions.contains(&p.id))
-        .filter(|p| permission_type_str_list.clone().contains(&p.permission_type))
+        .filter(|p| {
+            permission_type_list
+                .clone()
+                .contains(&p.permission_type)
+        })
         .collect();
 
     Ok(result)
@@ -596,10 +610,7 @@ pub async fn get_user_permission_by_name(
     // 查找权限
     let permission = Permissions::find()
         .filter(Column::DeletedAt.is_null())
-        .filter(
-            Column::PermissionType
-                .eq(PermissionType::Action.to_string()),
-        )
+        .filter(Column::PermissionType.eq(PermissionType::Action))
         .filter(Column::Name.eq(name))
         .order_by_asc(Column::SortOrder)
         .order_by_asc(Column::Name)

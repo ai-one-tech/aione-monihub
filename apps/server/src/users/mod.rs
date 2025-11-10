@@ -5,6 +5,7 @@ pub mod routes;
 use crate::entities::{users, Roles, Users, PasswordResetTokens};
 use crate::entities::password_reset_tokens;
 use crate::shared::generate_snowflake_id;
+use crate::shared::enums::UserStatus;
 use bcrypt::{hash, verify, DEFAULT_COST};
 use sea_orm::{ActiveValue, ColumnTrait, DatabaseConnection, QueryFilter, ActiveModelTrait};
 use chrono::{Utc, Duration};
@@ -24,7 +25,7 @@ impl UsersModule {
         username: String,
         email: String,
         password: String,
-        status: Option<String>,
+        status: Option<UserStatus>,
         created_by: String,
     ) -> Result<users::Model, sea_orm::DbErr> {
         use sea_orm::ActiveModelTrait;
@@ -43,7 +44,7 @@ impl UsersModule {
             username: ActiveValue::Set(username),
             email: ActiveValue::Set(email),
             password_hash: ActiveValue::Set(password_hash),
-            status: ActiveValue::Set(status.unwrap_or_else(|| "active".to_string())),
+            status: ActiveValue::Set(status.clone().unwrap_or(UserStatus::Active)),
             created_by: ActiveValue::Set(created_by.clone()),
             updated_by: ActiveValue::Set(created_by),
             deleted_at: ActiveValue::Set(None),

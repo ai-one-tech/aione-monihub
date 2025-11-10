@@ -59,6 +59,7 @@ export function InstancesTable({ data = [], totalPages, search, navigate }: Data
     columnFilters: [
       { columnId: 'name', searchKey: 'search', type: 'string' },
       { columnId: 'status', searchKey: 'status', type: 'array' },
+      { columnId: 'online_status', searchKey: 'online_status', type: 'array' },
     ],
   })
 
@@ -106,6 +107,14 @@ export function InstancesTable({ data = [], totalPages, search, navigate }: Data
                 label: option.label,
                 value: option.value,
               })),
+          },
+          {
+            columnId: 'online_status',
+            title: '在线状态',
+            options: [
+              { label: '在线', value: 'online' },
+              { label: '离线', value: 'offline' },
+            ],
           },
           {
             columnId: 'os_type',

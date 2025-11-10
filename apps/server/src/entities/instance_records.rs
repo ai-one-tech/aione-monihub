@@ -1,4 +1,5 @@
 use sea_orm::entity::prelude::*;
+use crate::shared::enums::{AgentType, OsType, NetworkType};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
@@ -9,11 +10,11 @@ pub struct Model {
     pub instance_id: String,
     
     // Agent 信息
-    pub agent_type: String,
+    pub agent_type: AgentType,
     pub agent_version: Option<String>,
     
     // 系统信息
-    pub os_type: Option<String>,
+    pub os_type: Option<OsType>,
     pub os_version: Option<String>,
     pub hostname: Option<String>,
     

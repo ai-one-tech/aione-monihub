@@ -59,13 +59,13 @@ public class SystemInfoCollector {
 
         // 转换为标准类型
         if (family.toLowerCase().contains("windows")) {
-            return "Windows";
+            return "windows";
         } else if (family.toLowerCase().contains("mac")) {
-            return "macOS";
+            return "macos";
         } else if (family.toLowerCase().contains("linux")) {
-            return "Linux";
+            return "linux";
         } else {
-            return family;
+            return "unknown";
         }
     }
 

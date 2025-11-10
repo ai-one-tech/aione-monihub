@@ -1,6 +1,7 @@
 use crate::auth::middleware::get_user_id_from_request;
 use crate::entities::{instance_task_records, instance_tasks, instances};
 use crate::instance_tasks::models::*;
+use crate::shared::enums::{TaskStatus, TaskType};
 use crate::shared::error::ApiError;
 use crate::shared::generate_snowflake_id;
 use actix_web::{web, HttpRequest, HttpResponse, Result};
@@ -65,7 +66,7 @@ pub async fn create_task(
             id: Set(record_id),
             task_id: Set(task_id.clone()),
             instance_id: Set(instance_id.clone()),
-            status: Set("pending".to_string()),
+            status: Set(TaskStatus::Dispatched),
             dispatch_time: Set(None),
             start_time: Set(None),
             end_time: Set(None),
@@ -210,13 +211,13 @@ pub async fn cancel_task(
     // 将所有pending和dispatched状态的记录更新为cancelled
     let records = instance_task_records::Entity::find()
         .filter(instance_task_records::Column::TaskId.eq(&task_id))
-        .filter(instance_task_records::Column::Status.is_in(vec!["pending", "dispatched"]))
+        .filter(instance_task_records::Column::Status.is_in(vec![TaskStatus::Dispatched, TaskStatus::Dispatched]))
         .all(&**db)
         .await?;
 
     for record in records {
         let mut active: instance_task_records::ActiveModel = record.into();
-        active.status = Set("cancelled".to_string());
+        active.status = Set(TaskStatus::Cancelled);
         active.updated_at = Set(Utc::now().into());
         active.update(&**db).await?;
     }
@@ -303,14 +304,14 @@ pub async fn retry_task_record(
 
     match record {
         Some(record) => {
-            if record.status != "failed" && record.status != "timeout" {
+            if record.status != TaskStatus::Failed && record.status != TaskStatus::Timeout {
                 return Err(ApiError::BadRequest(
                     "Only failed or timeout tasks can be retried".to_string(),
                 ));
             }
 
             let mut active: instance_task_records::ActiveModel = record.into();
-            active.status = Set("pending".to_string());
+            active.status = Set(TaskStatus::Dispatched);
             active.retry_attempt = Set(Some(active.retry_attempt.unwrap().unwrap_or(0) + 1));
             active.updated_at = Set(Utc::now().into());
             active.update(&**db).await?;
@@ -390,7 +391,7 @@ pub async fn get_instance_tasks(
         // 查询pending状态的任务
         let records = instance_task_records::Entity::find()
             .filter(instance_task_records::Column::InstanceId.eq(&instance_id))
-            .filter(instance_task_records::Column::Status.eq("pending"))
+            .filter(instance_task_records::Column::Status.eq(TaskStatus::Dispatched))
             .order_by_asc(instance_task_records::Column::CreatedAt)
             .all(&**db)
             .await?;
@@ -418,7 +419,7 @@ pub async fn get_instance_tasks(
 
                     // 更新记录状态为dispatched
                     let mut active: instance_task_records::ActiveModel = record.into();
-                    active.status = Set("dispatched".to_string());
+                    active.status = Set(TaskStatus::Dispatched);
                     active.dispatch_time = Set(Some(Utc::now().into()));
                     active.updated_at = Set(Utc::now().into());
                     active.update(&**db).await?;

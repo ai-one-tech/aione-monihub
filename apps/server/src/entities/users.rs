@@ -1,4 +1,5 @@
 use sea_orm::entity::prelude::*;
+use crate::shared::enums::UserStatus;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
@@ -11,7 +12,7 @@ pub struct Model {
     #[sea_orm(unique)]
     pub email: String,
     pub password_hash: String,
-    pub status: String,
+    pub status: UserStatus,
     pub created_by: String,
     pub updated_by: String,
     pub deleted_at: Option<DateTimeWithTimeZone>,

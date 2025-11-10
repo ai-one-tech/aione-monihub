@@ -1,66 +1,19 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use utoipa::ToSchema;
+use crate::shared::enums::{TaskType, TaskStatus};
 
 // ===================================================================
 // 任务类型枚举
 // ===================================================================
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "snake_case")]
-pub enum TaskType {
-    ShellExec,      // Shell命令执行
-    InternalCmd,    // 内部命令
-    FileUpload,     // 文件上传
-    FileDownload,   // 文件下载
-    FileBrowse,     // 文件浏览
-    FileView,       // 文件查看
-    FileDelete,     // 文件删除
-}
-
-impl TaskType {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            TaskType::ShellExec => "shell_exec",
-            TaskType::InternalCmd => "internal_cmd",
-            TaskType::FileUpload => "file_upload",
-            TaskType::FileDownload => "file_download",
-            TaskType::FileBrowse => "file_browse",
-            TaskType::FileView => "file_view",
-            TaskType::FileDelete => "file_delete",
-        }
-    }
-}
+// 统一移至 shared::enums::TaskType
 
 // ===================================================================
 // 任务状态枚举
 // ===================================================================
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "snake_case")]
-pub enum TaskStatus {
-    Pending,     // 待下发
-    Dispatched,  // 已下发
-    Running,     // 执行中
-    Success,     // 执行成功
-    Failed,      // 执行失败
-    Timeout,     // 执行超时
-    Cancelled,   // 已取消
-}
-
-impl TaskStatus {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            TaskStatus::Pending => "pending",
-            TaskStatus::Dispatched => "dispatched",
-            TaskStatus::Running => "running",
-            TaskStatus::Success => "success",
-            TaskStatus::Failed => "failed",
-            TaskStatus::Timeout => "timeout",
-            TaskStatus::Cancelled => "cancelled",
-        }
-    }
-}
+// 统一移至 shared::enums::TaskStatus
 
 // ===================================================================
 // 任务管理请求/响应模型
@@ -70,7 +23,7 @@ impl TaskStatus {
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct TaskCreateRequest {
     pub task_name: String,
-    pub task_type: String,
+    pub task_type: TaskType,
     pub target_instances: Vec<String>, // 实例ID数组
     pub task_content: JsonValue,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -86,7 +39,7 @@ pub struct TaskCreateRequest {
 pub struct TaskResponse {
     pub id: String,
     pub task_name: String,
-    pub task_type: String,
+    pub task_type: TaskType,
     pub target_instances: JsonValue,
     pub task_content: JsonValue,
     pub priority: i32,
@@ -126,7 +79,7 @@ pub struct TaskRecordResponse {
     pub id: String,
     pub task_id: String,
     pub instance_id: String,
-    pub status: String,
+    pub status: TaskStatus,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dispatch_time: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -170,7 +123,7 @@ pub struct TaskRecordListQuery {
 pub struct TaskResultSubmitRequest {
     pub record_id: String,
     pub instance_id: String,
-    pub status: String,
+    pub status: TaskStatus,
     pub result_code: i32,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub result_message: Option<String>,
@@ -203,7 +156,7 @@ pub struct TaskDispatchResponse {
 pub struct TaskDispatchItem {
     pub task_id: String,
     pub record_id: String,
-    pub task_type: String,
+    pub task_type: TaskType,
     pub task_content: JsonValue,
     pub timeout_seconds: i32,
     pub priority: i32,

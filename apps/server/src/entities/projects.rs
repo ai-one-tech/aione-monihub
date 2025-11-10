@@ -1,4 +1,5 @@
 use sea_orm::entity::prelude::*;
+use crate::shared::enums::Status;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
@@ -8,7 +9,7 @@ pub struct Model {
     pub id: String,
     pub name: String,
     pub code: String,
-    pub status: String,
+    pub status: Status,
     pub description: Option<String>,
     pub created_by: String,
     pub updated_by: String,

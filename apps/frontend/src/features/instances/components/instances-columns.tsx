@@ -142,6 +142,38 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
     enableHiding: false,
   },
   {
+    accessorKey: 'online_status',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='在线状态' />
+    ),
+    cell: ({ row }) => {
+      const onlineStatus = row.getValue('online_status') as string
+      const statusConfig = {
+        online: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+        offline: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+      }
+      const statusLabels = {
+        online: '在线',
+        offline: '离线',
+      }
+      return (
+        <div className='w-fit'>
+          <span
+            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+              statusConfig[onlineStatus as keyof typeof statusConfig]
+            }`}
+          >
+            {statusLabels[onlineStatus as keyof typeof statusLabels]}
+          </span>
+        </div>
+      )
+    },
+    filterFn: (row, id, value) => {
+      const onlineStatus = row.getValue(id) as string
+      return value.includes(onlineStatus)
+    },
+  },
+  {
     accessorKey: 'report_count',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='上报次数' />

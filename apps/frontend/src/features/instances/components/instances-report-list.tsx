@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Eye, Cpu, HardDrive, Activity } from 'lucide-react'
-import { type InstanceReportRecord } from '../data/api-schema'
+import { type InstanceReportRecord, type NetworkType } from '../data/api-schema'
 import { InstanceReportDetailDialog } from './instances-report-detail-dialog'
 import { DataTablePagination } from '@/components/data-table'
 
@@ -119,11 +119,18 @@ export function InstanceReportList({
             </div>
 
             {/* 网络信息 */}
-            {(report.ip_address || report.public_ip) && (
+            {(report.ip_address || report.public_ip || report.network_type) && (
               <div className='mt-3 pt-3 border-t'>
                 <div className='flex flex-wrap gap-2 text-xs text-muted-foreground'>
                   {report.ip_address && <span>内网: {report.ip_address}</span>}
                   {report.public_ip && <span>公网: {report.public_ip}</span>}
+                  {report.network_type && (
+                    <span>
+                      网络类型: {Array.isArray(report.network_type)
+                        ? (report.network_type as NetworkType[]).join(', ')
+                        : report.network_type}
+                    </span>
+                  )}
                 </div>
               </div>
             )}

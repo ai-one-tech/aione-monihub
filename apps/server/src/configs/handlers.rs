@@ -1,4 +1,5 @@
 use crate::entities::configs::{ActiveModel, Column, Entity as Configs};
+use crate::shared::enums::{Environment, ConfigType};
 use crate::shared::error::ApiError;
 use crate::shared::generate_snowflake_id;
 use actix_web::{web, HttpResponse};
@@ -163,9 +164,25 @@ pub async fn create_config(
     let config_model = ActiveModel {
         id: Set(id.clone()),
         code: Set(config.code.clone()),
-        environment: Set(config.environment.clone()),
+        environment: Set(match config.environment.to_lowercase().as_str() {
+            "dev" | "development" => Environment::Dev,
+            "test" => Environment::Test,
+            "staging" => Environment::Staging,
+            "prod" | "production" => Environment::Prod,
+            _ => {
+                return Err(ApiError::ValidationError("Invalid environment".to_string()));
+            }
+        }),
         name: Set(config.name.clone()),
-        config_type: Set(config.config_type.clone()),
+        config_type: Set(match config.config_type.to_lowercase().as_str() {
+            "json" => ConfigType::Json,
+            "yaml" | "yml" => ConfigType::Yaml,
+            "env" => ConfigType::Env,
+            "properties" => ConfigType::Properties,
+            _ => {
+                return Err(ApiError::ValidationError("Invalid config_type".to_string()));
+            }
+        }),
         content: Set(config.content.clone()),
         description: Set(Some(config.description.clone())),
         version: Set(version),

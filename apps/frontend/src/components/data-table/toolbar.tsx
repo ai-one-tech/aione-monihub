@@ -77,7 +77,7 @@ export function DataTableToolbar<TData>({
             setLocalValue(finalValue)
             debouncedApply(finalValue)
           }}
-          className='h-8 w-[150px] lg:w-[250px]'
+          className='h-8 w-[150px] lg:w-[350px]'
         />
         <div className='flex gap-x-2'>
           {filters.map((filter) => {

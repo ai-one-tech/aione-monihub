@@ -5,6 +5,7 @@ use crate::instance_reports::models::{
 use crate::shared::error::ApiError;
 use crate::shared::generate_snowflake_id;
 use crate::entities::{instance_records, instances, applications};
+use crate::shared::enums::{Status, OnlineStatus, NetworkType};
 use actix_web::{web, HttpResponse, Result};
 use chrono::Utc;
 use sea_orm::{
@@ -41,25 +42,22 @@ pub async fn report_instance_info(
         }
     };
 
-    // 4. 验证实例是否存在，如果不存在则自动创建
+    // 5. 验证实例是否存在，如果不存在则自动创建
     let instance = instances::Entity::find()
         .filter(instances::Column::Id.eq(&request.instance_id))
         .filter(instances::Column::DeletedAt.is_null())
         .one(&**db)
         .await?;
 
-    // 增加对实例状态的判断，如果是禁用，则不允许更新
-    if instance.as_ref().map(|i| i.status.as_str()) != Some("active") {
-        return Err(ApiError::BadRequest("Instance is disabled".to_string()));
-    }
-
     let instance = if instance.is_none() {
         // 自动创建新实例
+        
         let new_instance = instances::ActiveModel {
             id: Set(request.instance_id.clone()),
             hostname: Set(request.system_info.hostname.clone().unwrap_or_default()),
             ip_address: Set(request.network_info.ip_address.clone().unwrap_or_default()),
-            status: Set("active".to_string()),
+            status: Set(Status::Active),
+            online_status: Set(OnlineStatus::Online),
             environment: Set(request.environment.clone()),
             application_id: Set(application_id.clone()),
             mac_address: Set(request.network_info.mac_address.clone()),
@@ -90,6 +88,14 @@ pub async fn report_instance_info(
         };
         new_instance.insert(&**db).await?
     } else {
+        // 增加对实例状态的判断，如果是禁用，则不允许更新（避免移动，使用引用比较）
+        if instance
+            .as_ref()
+            .map(|i| i.status.clone())
+            != Some(Status::Active)
+        {
+            return Err(ApiError::BadRequest("Instance is disabled".to_string()));
+        }
         instance.unwrap()
     };
 
@@ -156,8 +162,9 @@ pub async fn report_instance_info(
     instance_update.process_uptime_seconds = Set(Some(request.runtime_info.process_uptime_seconds));
     instance_update.network_type = Set(request.network_info.network_type.clone());
     instance_update.last_report_at = Set(Some(Utc::now().into()));
-    // 恢复为 active 并清空 offline_at
-    instance_update.status = Set("active".to_string());
+    // 恢复为 Active 并清空 offline_at
+    instance_update.status = Set(Status::Active);
+    instance_update.online_status = Set(OnlineStatus::Online);
     instance_update.offline_at = Set(None);
     
     // 更新上报次数

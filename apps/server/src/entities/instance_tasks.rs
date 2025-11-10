@@ -1,4 +1,5 @@
 use sea_orm::entity::prelude::*;
+use crate::shared::enums::TaskType;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
@@ -7,7 +8,7 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String,
     pub task_name: String,
-    pub task_type: String,
+    pub task_type: TaskType,
     pub target_instances: Json,
     pub task_content: Json,
     pub priority: Option<i32>,

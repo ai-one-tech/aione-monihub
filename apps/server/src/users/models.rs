@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
+use crate::shared::enums::UserStatus;
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct User {
@@ -8,7 +9,7 @@ pub struct User {
     pub username: String,
     pub email: String,
     pub password_hash: String,
-    pub status: String,
+    pub status: UserStatus,
     pub created_by: String,
     pub updated_by: String,
     pub deleted_at: Option<DateTime<Utc>>,
@@ -28,7 +29,7 @@ pub struct UserResponse {
     pub id: String,
     pub username: String,
     pub email: String,
-    pub status: String,
+    pub status: UserStatus,
     pub roles: Vec<RoleInfo>,
     pub created_at: String,
     pub updated_at: String,
@@ -39,14 +40,14 @@ pub struct UserCreateRequest {
     pub username: String,
     pub email: String,
     pub password: String,
-    pub status: String,
+    pub status: UserStatus,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct UserUpdateRequest {
     pub username: String,
     pub email: String,
-    pub status: String,
+    pub status: UserStatus,
     /// 角色名称列表（可选）。如果提供，将以名称匹配角色并更新用户角色。
     pub roles: Option<Vec<String>>, 
 }
@@ -96,5 +97,5 @@ pub struct UserListQuery {
     pub page: Option<u64>,
     pub limit: Option<u64>,
     pub search: Option<String>,
-    pub status: Option<String>,
+    pub status: Option<UserStatus>,
 }

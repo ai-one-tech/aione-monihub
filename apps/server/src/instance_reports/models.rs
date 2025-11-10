@@ -1,3 +1,5 @@
+use crate::shared::enums::{AgentType, NetworkType, OsType};
+use serde::de::{self, Deserializer};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 
@@ -12,7 +14,7 @@ pub struct InstanceReportRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub program_path: Option<String>,
     pub profiles: Option<String>,
-    pub agent_type: String,
+    pub agent_type: AgentType,
     pub agent_version: Option<String>,
     pub application_code: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -31,7 +33,7 @@ pub struct InstanceReportRequest {
 /// 系统信息
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SystemInfo {
-    pub os_type: String,
+    pub os_type: OsType,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub os_version: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -48,9 +50,9 @@ pub struct NetworkInfo {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub network_type: Option<String>,
+    pub network_type: Option<String>, // 支持多枚举值
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub port: Option<i32>
+    pub port: Option<i32>,
 }
 
 /// 硬件信息
@@ -97,18 +99,18 @@ pub struct InstanceReportResponse {
 pub struct InstanceRecordResponse {
     pub id: String,
     pub instance_id: String,
-    pub agent_type: String,
+    pub agent_type: AgentType,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub agent_version: Option<String>,
-    
+
     // 系统信息
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub os_type: Option<String>,
+    pub os_type: Option<OsType>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub os_version: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hostname: Option<String>,
-    
+
     // 网络信息
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
@@ -118,7 +120,7 @@ pub struct InstanceRecordResponse {
     pub mac_address: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub network_type: Option<String>,
-    
+
     // 硬件资源信息
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cpu_model: Option<String>,
@@ -138,7 +140,7 @@ pub struct InstanceRecordResponse {
     pub disk_used_gb: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub disk_usage_percent: Option<String>,
-    
+
     // 运行状态
     #[serde(skip_serializing_if = "Option::is_none")]
     pub process_id: Option<i32>,
@@ -146,11 +148,11 @@ pub struct InstanceRecordResponse {
     pub process_uptime_seconds: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub thread_count: Option<i32>,
-    
+
     // 扩展信息
     #[serde(skip_serializing_if = "Option::is_none")]
     pub custom_metrics: Option<JsonValue>,
-    
+
     pub report_timestamp: String,
     pub received_at: String,
     pub created_at: String,
@@ -217,5 +219,95 @@ impl InstanceRecordResponse {
             received_at: entity.received_at.to_rfc3339(),
             created_at: entity.created_at.to_rfc3339(),
         }
+    }
+}
+
+// 兼容字符串或数组的反序列化，将其解析为 Vec<NetworkType>
+fn deserialize_network_types<'de, D>(deserializer: D) -> Result<Option<Vec<NetworkType>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    // 接收任意 JSON 值
+    let value: Option<serde_json::Value> = Option::deserialize(deserializer)?;
+    if value.is_none() {
+        return Ok(None);
+    }
+
+    let value = value.unwrap();
+    match value {
+        serde_json::Value::String(s) => {
+            // 逗号分隔字符串，去重并解析枚举
+            let mut seen = std::collections::HashSet::new();
+            let mut out = Vec::new();
+            for part in s.split(',') {
+                let key = part.trim().to_lowercase();
+                if key.is_empty() {
+                    continue;
+                }
+                let nt = match key.as_str() {
+                    "wired" => NetworkType::Wired,
+                    "wifi" => NetworkType::Wifi,
+                    "cellular" => NetworkType::Cellular,
+                    _ => NetworkType::Unknown,
+                };
+                // 使用枚举字符串值进行去重键
+                let k = match nt {
+                    NetworkType::Wired => "wired",
+                    NetworkType::Wifi => "wifi",
+                    NetworkType::Cellular => "cellular",
+                    NetworkType::Unknown => "unknown",
+                };
+                if seen.insert(k.to_string()) {
+                    out.push(nt);
+                }
+            }
+            Ok(if out.is_empty() { None } else { Some(out) })
+        }
+        serde_json::Value::Array(arr) => {
+            let mut seen = std::collections::HashSet::new();
+            let mut out = Vec::new();
+            for item in arr {
+                match item {
+                    serde_json::Value::String(s) => {
+                        let key = s.trim().to_lowercase();
+                        let nt = match key.as_str() {
+                            "wired" => NetworkType::Wired,
+                            "wifi" => NetworkType::Wifi,
+                            "cellular" => NetworkType::Cellular,
+                            _ => NetworkType::Unknown,
+                        };
+                        let k = match nt {
+                            NetworkType::Wired => "wired",
+                            NetworkType::Wifi => "wifi",
+                            NetworkType::Cellular => "cellular",
+                            NetworkType::Unknown => "unknown",
+                        };
+                        if seen.insert(k.to_string()) {
+                            out.push(nt);
+                        }
+                    }
+                    // 允许对象形式或枚举序列化形式，尽可能解析
+                    other => {
+                        // 尝试从值反序列化为枚举
+                        let nt: Result<NetworkType, _> = serde_json::from_value(other);
+                        if let Ok(nt) = nt {
+                            let k = match nt {
+                                NetworkType::Wired => "wired",
+                                NetworkType::Wifi => "wifi",
+                                NetworkType::Cellular => "cellular",
+                                NetworkType::Unknown => "unknown",
+                            };
+                            if seen.insert(k.to_string()) {
+                                out.push(nt);
+                            }
+                        }
+                    }
+                }
+            }
+            Ok(if out.is_empty() { None } else { Some(out) })
+        }
+        _ => Err(de::Error::custom(
+            "invalid network_type format, expected string or array",
+        )),
     }
 }

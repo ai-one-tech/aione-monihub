@@ -1,4 +1,5 @@
 use sea_orm::entity::prelude::*;
+use crate::shared::enums::{Environment, ConfigType};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
@@ -7,9 +8,9 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String,  // 改为String支持雪花ID
     pub code: String,
-    pub environment: String,
+    pub environment: Environment,
     pub name: String,
-    pub config_type: String,  // 修改字段名
+    pub config_type: ConfigType,  // 修改字段名
     pub content: String,
     pub description: Option<String>,
     pub version: i32,

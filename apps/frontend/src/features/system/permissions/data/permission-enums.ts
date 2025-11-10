@@ -8,14 +8,13 @@ export type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline'
 /**
  * 权限操作类型映射
  */
+// 与后端枚举保持一致（snake_case）
 export const ACTION_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
-  Manage: { label: '管理', variant: 'default' },
-  Read: { label: '读取', variant: 'secondary' },
-  Create: { label: '创建', variant: 'secondary' },
-  Update: { label: '更新', variant: 'secondary' },
-  Delete: { label: '删除', variant: 'destructive' },
-  Import: { label: '导入', variant: 'secondary' },
-  Export: { label: '导出', variant: 'secondary' },
+  create: { label: '创建', variant: 'secondary' },
+  read: { label: '读取', variant: 'secondary' },
+  update: { label: '更新', variant: 'secondary' },
+  delete: { label: '删除', variant: 'destructive' },
+  execute: { label: '执行', variant: 'secondary' },
 }
 
 /**

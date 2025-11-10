@@ -8,7 +8,7 @@ use crate::entities::applications::Entity as Applications;
 use crate::permissions::handlers::get_user_permission_by_name;
 use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
-use crate::shared::status::{is_valid_status, STATUS_ACTIVE, STATUS_DISABLED};
+use crate::shared::enums::Status;
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::Utc;
 use sea_orm::{
@@ -136,11 +136,6 @@ pub async fn create_application(
             "Name and code are required".to_string(),
         ));
     }
-    if !is_valid_status(app.status.as_str()) {
-        return Err(ApiError::BadRequest(
-            "Invalid status; must be 'active' or 'disabled'".to_string(),
-        ));
-    }
 
     // 创建ApplicationsModule实例
     let applications_module = ApplicationsModule::new(db.get_ref().clone());
@@ -173,7 +168,7 @@ pub async fn create_application(
         project_id: ActiveValue::Set(app.project_id.clone()),
         name: ActiveValue::Set(app.name.clone()),
         code: ActiveValue::Set(app.code.clone()),
-        status: ActiveValue::Set(app.status.clone()),
+        status: ActiveValue::Set(match app.status.as_str() { "active" => Status::Active, "disabled" => Status::Disabled, _ => Status::Disabled }),
         description: ActiveValue::Set(Some(app.description.clone())),
         auth_config: ActiveValue::Set(serde_json::Value::Null),
         revision: ActiveValue::Set(1),
@@ -295,12 +290,6 @@ pub async fn update_application(
             "Name and code are required".to_string(),
         ));
     }
-    if !is_valid_status(app.status.as_str()) {
-        return Err(ApiError::BadRequest(
-            "Invalid status; must be 'active' or 'disabled'".to_string(),
-        ));
-    }
-
     // 查询数据库获取应用信息
     if let Some(application) = applications_module.find_application_by_id(&app_id).await? {
         // 检查用户是否有更新权限
@@ -328,7 +317,7 @@ pub async fn update_application(
         active_app.name = ActiveValue::Set(app.name.clone());
         active_app.project_id = ActiveValue::Set(app.project_id.clone());
         active_app.code = ActiveValue::Set(app.code.clone());
-        active_app.status = ActiveValue::Set(app.status.clone());
+        active_app.status = ActiveValue::Set(match app.status.as_str() { "active" => Status::Active, "disabled" => Status::Disabled, _ => Status::Disabled });
         active_app.description = ActiveValue::Set(Some(app.description.clone()));
         active_app.updated_by = ActiveValue::Set(user_id.to_string());
         active_app.updated_at = ActiveValue::Set(Utc::now().into());
@@ -426,7 +415,7 @@ pub async fn enable_application(
 
     if let Some(app) = module.find_application_by_id(&app_id).await? {
         let mut active: crate::entities::applications::ActiveModel = app.into();
-        active.status = ActiveValue::Set(STATUS_ACTIVE.to_string());
+        active.status = ActiveValue::Set(Status::Active);
         active.updated_by = ActiveValue::Set(user_id.to_string());
         active.updated_at = ActiveValue::Set(Utc::now().into());
         let saved = active.update(db.get_ref()).await?;
@@ -471,7 +460,7 @@ pub async fn disable_application(
 
     if let Some(app) = module.find_application_by_id(&app_id).await? {
         let mut active: crate::entities::applications::ActiveModel = app.into();
-        active.status = ActiveValue::Set(STATUS_DISABLED.to_string());
+        active.status = ActiveValue::Set(Status::Disabled);
         active.updated_by = ActiveValue::Set(user_id.to_string());
         active.updated_at = ActiveValue::Set(Utc::now().into());
         let saved = active.update(db.get_ref()).await?;

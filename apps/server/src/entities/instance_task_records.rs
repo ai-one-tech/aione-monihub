@@ -1,4 +1,5 @@
 use sea_orm::entity::prelude::*;
+use crate::shared::enums::TaskStatus;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
@@ -8,7 +9,7 @@ pub struct Model {
     pub id: String,
     pub task_id: String,
     pub instance_id: String,
-    pub status: String,
+    pub status: TaskStatus,
     pub dispatch_time: Option<DateTimeWithTimeZone>,
     pub start_time: Option<DateTimeWithTimeZone>,
     pub end_time: Option<DateTimeWithTimeZone>,

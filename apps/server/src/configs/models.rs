@@ -1,14 +1,15 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
+use crate::shared::enums::{Environment, ConfigType};
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Config {
     pub id: String,
     pub code: String,
-    pub environment: String,
+    pub environment: Environment,
     pub name: String,
-    pub config_type: String, // 使用与数据库一致的字段名
+    pub config_type: ConfigType, // 使用与数据库一致的字段名
     pub content: String,
     pub description: String,
     pub version: i32,
@@ -24,9 +25,9 @@ pub struct Config {
 pub struct ConfigResponse {
     pub id: String,
     pub code: String,
-    pub environment: String,
+    pub environment: Environment,
     pub name: String,
-    pub config_type: String,
+    pub config_type: ConfigType,
     pub content: String,
     pub description: String,
     pub version: u32,

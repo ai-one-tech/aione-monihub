@@ -3,6 +3,7 @@ pub mod models;
 pub mod routes;
 
 use crate::entities::{projects, Projects};
+use crate::shared::enums::Status;
 use crate::shared::generate_snowflake_id;
 use sea_orm::{ActiveValue, DatabaseConnection};
 use chrono::Utc;
@@ -35,7 +36,12 @@ impl ProjectsModule {
             id: ActiveValue::Set(id),
             name: ActiveValue::Set(name),
             code: ActiveValue::Set(code),
-            status: ActiveValue::Set(status),
+            // 将字符串状态转换为枚举
+            status: ActiveValue::Set(match status.to_lowercase().as_str() {
+                "active" => Status::Active,
+                "disabled" => Status::Disabled,
+                _ => Status::Active,
+            }),
             description: ActiveValue::Set(description),
             created_by: ActiveValue::Set(created_by.clone()),
             updated_by: ActiveValue::Set(created_by),

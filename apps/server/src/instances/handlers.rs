@@ -5,6 +5,7 @@ use crate::instances::models::{
 use crate::shared::error::ApiError;
 use crate::shared::generate_snowflake_id;
 use crate::entities::instances::{Entity as Instances, ActiveModel};
+use crate::shared::enums::Status;
 use actix_web::{web, HttpResponse, Result, HttpRequest};
 use crate::auth::middleware::get_user_id_from_request;
 use crate::permissions::handlers::{get_user_permission_by_name};
@@ -40,6 +41,11 @@ pub async fn get_instances(
     // 添加状态过滤器
     if let Some(status) = &query.status {
         select = select.filter(crate::entities::instances::Column::Status.eq(status));
+    }
+
+    // 添加在线状态过滤器
+    if let Some(online_status) = &query.online_status {
+        select = select.filter(crate::entities::instances::Column::OnlineStatus.eq(online_status));
     }
 
     // 添加应用ID过滤器
@@ -252,7 +258,7 @@ pub async fn enable_instance(
         .await?;
     let instance = match existing { Some(i) => i, None => return Err(ApiError::NotFound("实例不存在".to_string())) };
     let mut active: ActiveModel = instance.into();
-    active.status = Set("active".to_string());
+    active.status = Set(Status::Active);
     active.updated_by = Set(user_id.to_string());
     active.updated_at = Set(Utc::now().into());
     let saved = active.update(&**db).await?;
@@ -278,7 +284,7 @@ pub async fn disable_instance(
         .await?;
     let instance = match existing { Some(i) => i, None => return Err(ApiError::NotFound("实例不存在".to_string())) };
     let mut active: ActiveModel = instance.into();
-    active.status = Set("disabled".to_string());
+    active.status = Set(Status::Disabled);
     active.updated_by = Set(user_id.to_string());
     active.updated_at = Set(Utc::now().into());
     let saved = active.update(&**db).await?;

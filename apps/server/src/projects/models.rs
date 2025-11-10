@@ -1,13 +1,14 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
+use crate::shared::enums::Status;
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Project {
     pub id: String,
     pub name: String,
     pub code: String,
-    pub status: String,
+    pub status: Option<Status>,
     pub description: Option<String>,
     pub created_by: String,
     pub updated_by: String,
@@ -22,7 +23,7 @@ pub struct ProjectResponse {
     pub id: String,
     pub name: String,
     pub code: String,
-    pub status: String,
+    pub status: Option<Status>,
     pub description: String,
     pub created_at: String, // DateTime in ISO 8601 format
     pub updated_at: String, // DateTime in ISO 8601 format
@@ -32,7 +33,7 @@ pub struct ProjectResponse {
 pub struct ProjectCreateRequest {
     pub name: String,
     pub code: String,
-    pub status: String,
+    pub status: Option<Status>,
     pub description: String,
 }
 
@@ -40,7 +41,7 @@ pub struct ProjectCreateRequest {
 pub struct ProjectUpdateRequest {
     pub name: String,
     pub code: String,
-    pub status: String,
+    pub status: Option<Status>,
     pub description: String,
 }
 
@@ -65,5 +66,5 @@ pub struct ProjectListQuery {
     pub page: Option<u32>,
     pub limit: Option<u32>,
     pub search: Option<String>,
-    pub status: Option<String>,
+    pub status: Option<Status>,
 }

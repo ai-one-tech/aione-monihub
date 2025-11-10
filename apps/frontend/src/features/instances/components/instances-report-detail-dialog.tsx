@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { type InstanceReportRecord } from '../data/api-schema'
+import { type InstanceReportRecord, type NetworkType } from '../data/api-schema'
 
 interface InstanceReportDetailDialogProps {
   report: InstanceReportRecord | null
@@ -130,7 +130,11 @@ export function InstanceReportDetailDialog({
                 </div>
                 <div>
                   <span className='text-muted-foreground'>网络类型:</span>
-                  <p className='mt-1'>{report.network_type || '- -'}</p>
+                  <p className='mt-1'>
+                    {Array.isArray(report.network_type)
+                      ? (report.network_type as NetworkType[]).join(', ')
+                      : (report.network_type || '- -')}
+                  </p>
                 </div>
               </div>
             </div>

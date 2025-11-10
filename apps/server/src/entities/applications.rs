@@ -1,4 +1,5 @@
 use sea_orm::entity::prelude::*;
+use crate::shared::enums::Status;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
@@ -9,7 +10,7 @@ pub struct Model {
     pub project_id: String,  // 改为String支持雪花ID
     pub name: String,
     pub code: String,
-    pub status: String,
+    pub status: Status,
     pub description: Option<String>,
     pub auth_config: serde_json::Value,  // 修改字段名，使用JSON类型
     pub created_by: String,  // 改为String支持雪花ID
@@ -44,7 +45,7 @@ pub struct ApplicationDetail {
     pub project_id: String,
     pub name: String,
     pub code: String,
-    pub status: String,
+    pub status: Status,
     pub description: Option<String>,
     pub auth_config: serde_json::Value,
     pub created_by: String,

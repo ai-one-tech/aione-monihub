@@ -3,14 +3,15 @@ use sea_orm::{EnumIter};
 use strum_macros::{EnumString, Display};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
+use crate::shared::enums::{PermissionAction, PermissionType};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Permission {
     pub id: String,
     pub name: String,
     pub description: Option<String>,
-    pub action: String,
-    pub permission_type: String, // menu, action, button, page
+    pub action: Option<PermissionAction>,
+    pub permission_type: PermissionType, // menu, action, button, page
     pub menu_path: Option<String>,
     pub menu_icon: Option<String>,
     pub parent_permission_id: Option<String>,
@@ -24,20 +25,13 @@ pub struct Permission {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Copy, Clone, Display, EnumString, Debug,  EnumIter)]
-pub enum PermissionType{
-    Menu,
-    Page,
-    Action,
-}
-
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct PermissionResponse {
     pub id: String,
     pub name: String,
     pub description: Option<String>,
-    pub action: String,
-    pub permission_type: String,
+    pub action: Option<PermissionAction>,
+    pub permission_type: PermissionType,
     pub menu_path: Option<String>,
     pub menu_icon: Option<String>,
     pub parent_permission_id: Option<String>,
@@ -70,8 +64,8 @@ pub struct UserMenuResponse {
 pub struct PermissionCreateRequest {
     pub name: String,
     pub description: Option<String>,
-    pub action: String,
-    pub permission_type: String, // menu, action, button, page
+    pub action: Option<PermissionAction>,
+    pub permission_type: PermissionType, // menu, action, button, page
     pub menu_path: Option<String>,
     pub menu_icon: Option<String>,
     pub parent_permission_id: Option<String>,
@@ -83,8 +77,8 @@ pub struct PermissionCreateRequest {
 pub struct PermissionUpdateRequest {
     pub name: String,
     pub description: Option<String>,
-    pub action: String,
-    pub permission_type: String,
+    pub action: Option<PermissionAction>,
+    pub permission_type: PermissionType,
     pub menu_path: Option<String>,
     pub menu_icon: Option<String>,
     pub parent_permission_id: Option<String>,

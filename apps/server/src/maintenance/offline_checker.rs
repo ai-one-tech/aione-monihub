@@ -1,10 +1,11 @@
 use chrono::{Duration, Utc};
 use log::{error, info};
-use std::time::Instant;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use sea_orm::sea_query::Expr;
+use sea_orm::{ColumnTrait, Condition, DatabaseConnection, EntityTrait, QueryFilter};
+use std::time::Instant;
 
 use crate::entities::instances;
+use crate::shared::enums;
 
 /// 启动每分钟巡检任务，判断并标记离线实例
 pub fn start_offline_checker(db: DatabaseConnection) {
@@ -35,42 +36,22 @@ async fn run_offline_check(db: &DatabaseConnection) -> Result<u64, sea_orm::DbEr
 
     // 1) last_report_at <= cutoff 的 active 实例
     let res1 = instances::Entity::update_many()
-        .col_expr(instances::Column::Status, Expr::value("offline"))
+        .col_expr(
+            instances::Column::OnlineStatus,
+            Expr::value(enums::OnlineStatus::Offline),
+        )
         .col_expr(instances::Column::OfflineAt, Expr::value(now))
-        .col_expr(instances::Column::UpdatedAt, Expr::value(now))
         .filter(instances::Column::DeletedAt.is_null())
-        .filter(instances::Column::Status.eq("active"))
-        .filter(instances::Column::LastReportAt.lte(cutoff))
+        .filter(instances::Column::Status.eq(enums::Status::Active))
+        .filter(instances::Column::OnlineStatus.eq(enums::OnlineStatus::Online))
+        .filter(
+            Condition::any()
+                .add(instances::Column::LastReportAt.lte(cutoff))
+                .add(instances::Column::LastReportAt.is_null()),
+        )
         .exec(db)
         .await?;
-    total_updated += res1.rows_affected;
-
-    // 2) last_report_at IS NULL 且 first_report_at <= cutoff 的 active 实例
-    let res2 = instances::Entity::update_many()
-        .col_expr(instances::Column::Status, Expr::value("offline"))
-        .col_expr(instances::Column::OfflineAt, Expr::value(now))
-        .col_expr(instances::Column::UpdatedAt, Expr::value(now))
-        .filter(instances::Column::DeletedAt.is_null())
-        .filter(instances::Column::Status.eq("active"))
-        .filter(instances::Column::LastReportAt.is_null())
-        .filter(instances::Column::FirstReportAt.lte(cutoff))
-        .exec(db)
-        .await?;
-    total_updated += res2.rows_affected;
-
-    // 3) last_report_at IS NULL 且 first_report_at IS NULL 且 created_at <= cutoff 的 active 实例
-    let res3 = instances::Entity::update_many()
-        .col_expr(instances::Column::Status, Expr::value("offline"))
-        .col_expr(instances::Column::OfflineAt, Expr::value(now))
-        .col_expr(instances::Column::UpdatedAt, Expr::value(now))
-        .filter(instances::Column::DeletedAt.is_null())
-        .filter(instances::Column::Status.eq("active"))
-        .filter(instances::Column::LastReportAt.is_null())
-        .filter(instances::Column::FirstReportAt.is_null())
-        .filter(instances::Column::CreatedAt.lte(cutoff))
-        .exec(db)
-        .await?;
-    total_updated += res3.rows_affected;
+    total_updated = res1.rows_affected;
 
     let elapsed_ms = start.elapsed().as_millis();
     info!(
