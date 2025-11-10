@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { type ApplicationResponse } from '../data/api-schema'
 import { useApplicationsProvider } from './applications-provider'
+import { getRouteApi } from '@tanstack/react-router'
 
 interface ApplicationsDataTableRowActionsProps {
   row: Row<ApplicationResponse>
@@ -12,16 +13,16 @@ interface ApplicationsDataTableRowActionsProps {
 export function ApplicationsDataTableRowActions({
   row,
 }: ApplicationsDataTableRowActionsProps) {
+  const applicationTasksRoute = getRouteApi('/_authenticated/application-tasks')
+  const navigate = applicationTasksRoute.useNavigate()
   const {
     setIsSheetOpen,
     setSheetMode,
     setSelectedApplicationId,
     setIsDeleteDialogOpen,
     setDeletingApplicationId,
-    setIsTaskDrawerOpen,
-    setTaskDrawerApplicationId,
   } = useApplicationsProvider()
-  
+
   const application = row.original
 
   const handleView = () => {
@@ -42,8 +43,12 @@ export function ApplicationsDataTableRowActions({
   }
 
   const handleConnectInstances = () => {
-    setTaskDrawerApplicationId(application.id)
-    setIsTaskDrawerOpen(true)
+    navigate({
+      to: '/application-tasks',
+      search: {
+        applicationId: application.id,
+      },
+    })
   }
 
   return (

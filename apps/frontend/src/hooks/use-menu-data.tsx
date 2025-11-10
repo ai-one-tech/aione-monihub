@@ -56,6 +56,29 @@ const iconMap: Record<string, ElementType> = {
 }
 
 /**
+ * 规范化从后端返回的路由路径：
+ * - 移除 TanStack Router 的路由分组前缀（例如 `/_authenticated`）
+ * - 移除括号分组（例如 `/(errors)`）
+ * - 保留正常路径段（例如 `/clerk`）
+ */
+function normalizeRoutePath(path: string): string {
+  if (!path) return '/'
+  // 仅处理站内路由（以`/`开头），外链原样返回
+  if (!path.startsWith('/')) return path
+  const segments = path.split('/')
+  const filtered = segments.filter((seg) => {
+    // 跳过空段
+    if (!seg) return false
+    // 去掉以 `_` 开头的路由分组（如 _authenticated）
+    if (seg.startsWith('_')) return false
+    // 去掉括号分组（如 (errors)）
+    if (seg.startsWith('(') && seg.endsWith(')')) return false
+    return true
+  })
+  return '/' + filtered.join('/')
+}
+
+/**
  * 将后端菜单数据转换为前端菜单格式
  * 注意：隐藏的菜单项已在后端过滤，这里不需要额外处理
  * 但保留原始数据以便权限判断时使用
@@ -71,7 +94,7 @@ function transformMenuToNavItems(menuItems: MenuItemResponse[]): NavItem[] {
         icon: icon,
         items: item.children.filter(child => !child.is_hidden).map((child) => ({
           title: child.title,
-          url: child.path,
+          url: normalizeRoutePath(child.path),
           icon: child.icon ? iconMap[child.icon] : undefined,
         })),
       }
@@ -79,7 +102,7 @@ function transformMenuToNavItems(menuItems: MenuItemResponse[]): NavItem[] {
       // 没有子菜单的情况
       return {
         title: item.title,
-        url: item.path,
+        url: normalizeRoutePath(item.path),
         icon: icon,
       }
     }

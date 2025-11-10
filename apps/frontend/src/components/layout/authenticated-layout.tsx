@@ -68,16 +68,16 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
               {children}
               <Outlet />
             </div>
-            <UserInfoBadge />
+            {/* <UserInfoBadge /> */}
           </SidebarInset>
-          
+
           {/* 登录弹窗 */}
-          <LoginDialog 
-            open={showLoginDialog} 
-            onOpenChange={setShowLoginDialog} 
-            onLoginSuccess={handleLoginSuccess} 
+          <LoginDialog
+            open={showLoginDialog}
+            onOpenChange={setShowLoginDialog}
+            onLoginSuccess={handleLoginSuccess}
           />
-          
+
           {/* 网络错误弹窗 */}
           <NetworkErrorDialog
             open={showNetworkError}
