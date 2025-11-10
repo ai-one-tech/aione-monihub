@@ -14,6 +14,7 @@ pub struct Model {
     pub priority: Option<i32>,
     pub timeout_seconds: Option<i32>,
     pub retry_count: Option<i32>,
+    pub application_id: Option<String>,
     pub created_by: String,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,

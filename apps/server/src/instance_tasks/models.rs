@@ -32,6 +32,8 @@ pub struct TaskCreateRequest {
     pub timeout_seconds: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub retry_count: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub application_id: Option<String>,
 }
 
 /// 任务响应
@@ -45,6 +47,7 @@ pub struct TaskResponse {
     pub priority: i32,
     pub timeout_seconds: i32,
     pub retry_count: i32,
+    pub application_id: Option<String>,
     pub created_by: String,
     pub created_at: String,
     pub updated_at: String,
@@ -65,6 +68,7 @@ pub struct TaskListQuery {
     pub page: Option<u32>,
     pub limit: Option<u32>,
     pub task_type: Option<String>,
+    pub application_id: Option<String>,
     pub start_time: Option<String>,
     pub end_time: Option<String>,
 }
@@ -188,6 +192,7 @@ impl TaskResponse {
             priority: entity.priority.unwrap_or(5),
             timeout_seconds: entity.timeout_seconds.unwrap_or(300),
             retry_count: entity.retry_count.unwrap_or(0),
+            application_id: entity.application_id,
             created_by: entity.created_by,
             created_at: entity.created_at.to_rfc3339(),
             updated_at: entity.updated_at.to_rfc3339(),

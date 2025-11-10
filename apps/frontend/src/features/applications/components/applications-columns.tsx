@@ -8,42 +8,6 @@ import { ApplicationsDataTableRowActions } from './applications-data-table-row-a
 import { useApplicationInstances } from '../hooks/use-application-instances'
 import { Badge } from '@/components/ui/badge'
 
-function OnlineInstancesCell({ applicationId }: { applicationId: string }) {
-  const { data, isLoading, error } = useApplicationInstances(applicationId)
-
-  const onlineCount = (data?.data || []).filter(
-    (inst) => inst.online_status === 'online'
-  ).length
-
-  if (isLoading) {
-    return (
-      <div className='w-fit text-xs text-muted-foreground'>加载中...</div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className='w-fit text-xs text-destructive'>加载失败</div>
-    )
-  }
-
-  return (
-    <div className='w-fit'>
-      <Badge
-        className={
-          onlineCount > 0
-            ? 'px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-            : 'px-2 py-1 rounded-full bg-muted text-muted-foreground'
-        }
-      >
-        在线实例 {onlineCount}
-      </Badge>
-    </div>
-  )
-}
-import { useApplicationInstances } from '../hooks/use-application-instances'
-import { Badge } from '@/components/ui/badge'
-
 interface OnlineInstancesCellProps {
   applicationId: string
 }
@@ -188,20 +152,6 @@ export const applicationsColumns: ColumnDef<ApplicationResponse>[] = [
       return value.includes(status)
     },
     enableSorting: true,
-    enableHiding: false,
-  },
-  {
-    id: 'online_instances',
-    header: () => (
-      <div className='text-sm font-medium'>在线实例</div>
-    ),
-    cell: ({ row }) => (
-      <OnlineInstancesCell applicationId={row.original.id} />
-    ),
-    meta: {
-      className: cn('min-w-24'),
-    },
-    enableSorting: false,
     enableHiding: false,
   },
   {

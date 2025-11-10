@@ -51,6 +51,7 @@ pub async fn create_task(
         priority: Set(request.priority),
         timeout_seconds: Set(request.timeout_seconds),
         retry_count: Set(request.retry_count),
+        application_id: Set(request.application_id.clone()),
         created_by: Set(user_id),
         created_at: Set(Utc::now().into()),
         updated_at: Set(Utc::now().into()),
@@ -103,6 +104,11 @@ pub async fn get_tasks(
     // 添加任务类型过滤
     if let Some(task_type) = &query.task_type {
         select = select.filter(instance_tasks::Column::TaskType.eq(task_type));
+    }
+
+    // 添加应用ID过滤
+    if let Some(application_id) = &query.application_id {
+        select = select.filter(instance_tasks::Column::ApplicationId.eq(application_id));
     }
 
     // 添加时间范围过滤

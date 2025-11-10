@@ -122,7 +122,7 @@ function SheetFooter({
     <div
       data-slot='sheet-footer'
       className={cn(
-        'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end',
+        'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end p-6 pt-3',
         className
       )}
       {...props}

@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Value;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
+import java.net.URL;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
@@ -111,13 +113,15 @@ public class RuntimeInfoCollector {
      * 获取程序路径
      */
     private String getProgramPath() {
+        URL location = RuntimeInfo.class.getProtectionDomain().getCodeSource().getLocation();
         try {
-            String path = RuntimeInfo.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
-            return Paths.get(path).toString();
+            // 获取当前类的URI
+            Path path = Paths.get(location.toURI());
+            // 检查是否为JAR文件
+            return path.toString();
         } catch (Exception e) {
-            log.warn("Failed to get program path", e);
+            return location.getPath();
         }
-        return null;
     }
 
     /**

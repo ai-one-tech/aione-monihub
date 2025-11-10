@@ -65,7 +65,6 @@ class ApiClient {
   private addAuthHeader(headers: Record<string, string>, skipAuth?: boolean): Record<string, string> {
     if (!skipAuth) {
       const authHeader = authToken.getAuthorizationHeader()
-      console.log('添加认证头 Authorization:', authHeader)
       if (authHeader) {
         headers['Authorization'] = authHeader
       }

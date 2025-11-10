@@ -104,16 +104,16 @@ export function ApplicationTasks() {
 
   return (
     <Main fixed className="flex flex-col">
-      <div className="flex-1 p-6 space-y-6">
+      <div className="flex-1 p-2">
         {/* 页面标题 */}
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            {application?.name || '应用实例任务'}
+            应用：{application?.name}     ID：{application?.id}
           </h1>
-          <Separator className="mt-4" />
+          <Separator className="mt-4 mb-4" />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4">
           {/* 在线实例 */}
           <Card className="p-4">
             <div className="flex items-center justify-between mb-4">

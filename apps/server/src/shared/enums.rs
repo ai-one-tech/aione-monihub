@@ -78,7 +78,8 @@ pub enum PermissionAction {
     #[sea_orm(string_value = "read")] Read,
     #[sea_orm(string_value = "update")] Update,
     #[sea_orm(string_value = "delete")] Delete,
-    #[sea_orm(string_value = "execute")] Execute,
+    #[sea_orm(string_value = "export")] Export,
+    #[sea_orm(string_value = "import")] Import,
 }
 
 // 配置类型
