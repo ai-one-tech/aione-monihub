@@ -186,7 +186,7 @@ export function ProjectsEditSheet() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {PROJECT_STATUS_OPTIONS.filter(option => option.value !== 'all').map((option) => (
+                          {PROJECT_STATUS_OPTIONS.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
                               {option.label}
                             </SelectItem>

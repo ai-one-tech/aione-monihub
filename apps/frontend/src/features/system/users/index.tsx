@@ -24,7 +24,7 @@ export function SystemUsers() {
     page: search.page || 1,
     limit: search.pageSize || 10,
     search: search.username || undefined,
-    status: (search.status && search.status !== 'all') ? search.status as string : undefined,
+    status: (search.status) ? search.status as string : undefined,
   }
 
   const { data, isLoading, error, refetch } = useUsersQuery(apiParams)

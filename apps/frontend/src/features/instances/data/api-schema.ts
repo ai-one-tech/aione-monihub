@@ -98,7 +98,6 @@ export type GetInstancesParams = z.infer<typeof getInstancesParamsSchema>
 
 // 实例状态选项
 export const INSTANCE_STATUS_OPTIONS = [
-  { value: 'all', label: '全部状态' },
   { value: 'active', label: '正常' },
   { value: 'disabled', label: '已禁用' },
 ] as const
@@ -121,6 +120,7 @@ export const OS_TYPE_OPTIONS = [
   { value: 'linux', label: 'Linux' },
   { value: 'windows', label: 'Windows' },
   { value: 'macos', label: 'macOS' },
+  { value: 'unknown', label: 'Unknown' },
 ] as const
 
 // ===================================================================

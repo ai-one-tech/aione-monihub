@@ -25,7 +25,7 @@ export function Projects() {
     page: search.page || 1,
     limit: search.pageSize || 10,
     search: search.search || undefined,
-    status: (search.status && search.status !== 'all') ? search.status as 'active' | 'disabled' : undefined,
+    status: (search.status) ? search.status as 'active' | 'disabled' : undefined,
   }
 
   const { data, isLoading, error, refetch } = useProjectsQuery(apiParams)

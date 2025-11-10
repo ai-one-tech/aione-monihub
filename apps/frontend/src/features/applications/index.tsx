@@ -27,7 +27,7 @@ export function Applications() {
     page: search.page || 1,
     limit: search.pageSize || 10,
     search: search.search || undefined,
-    status: (search.status && search.status !== 'all') ? search.status as 'active' | 'inactive' | 'archived' : undefined,
+    status: (search.status) ? search.status as 'active' | 'inactive' | 'archived' : undefined,
     project_id: search.project_id || undefined,
   }
 

@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/sheet'
 import { useInstancesProvider } from './instances-provider'
 import { useInstanceQuery } from '../hooks/use-instances-query'
-import { CreateInstanceRequest, createInstanceRequestSchema, INSTANCE_STATUS_OPTIONS, INSTANCE_ENVIRONMENT_OPTIONS, OS_TYPE_OPTIONS } from '../data/api-schema'
+import { type CreateInstanceRequest, createInstanceRequestSchema, INSTANCE_STATUS_OPTIONS, INSTANCE_ENVIRONMENT_OPTIONS, OS_TYPE_OPTIONS } from '../data/api-schema'
 import { toast } from 'sonner'
 
 export function InstancesEditSheet() {
@@ -182,7 +182,7 @@ export function InstancesEditSheet() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {INSTANCE_STATUS_OPTIONS.filter(option => option.value !== 'all').map((option) => (
+                            {INSTANCE_STATUS_OPTIONS.map((option) => (
                               <SelectItem key={option.value} value={option.value}>
                                 {option.label}
                               </SelectItem>

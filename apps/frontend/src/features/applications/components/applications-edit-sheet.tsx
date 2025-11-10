@@ -31,6 +31,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Command, CommandInput, CommandEmpty, CommandGroup, CommandList, CommandItem } from '@/components/ui/command'
 import { CheckIcon, CaretSortIcon } from '@radix-ui/react-icons'
+import { Loader } from 'lucide-react'
 import { useApplicationsProvider } from './applications-provider'
 import { useCreateApplication, useUpdateApplication, useApplicationQuery } from '../hooks/use-applications-query'
 import {
@@ -77,7 +78,7 @@ export function ApplicationsEditSheet() {
   const debouncedProjectSearch = useDebounce(projectSearch)
   const selectedProjectId = form.watch('project_id')
   const { data: selectedProject } = useProjectQuery(selectedProjectId || '')
-  const { data: projectsList } = useProjectsQuery({ page: 1, limit: 10, search: debouncedProjectSearch })
+  const { data: projectsList, isLoading: isLoadingProjects, isFetching: isFetchingProjects } = useProjectsQuery({ page: 1, limit: 100, search: debouncedProjectSearch })
 
   // 将后端返回的状态值归一化为表单允许的字面量类型
   const normalizeStatus = (s: unknown): CreateApplicationRequest['status'] => {
@@ -220,7 +221,7 @@ export function ApplicationsEditSheet() {
                               </Button>
                             </FormControl>
                           </PopoverTrigger>
-                          <PopoverContent className='w-[320px] p-0'>
+                          <PopoverContent className='w-[320px] p-0 z-[100]'>
                             <Command>
                               <CommandInput
                                 placeholder='搜索项目...'
@@ -230,6 +231,14 @@ export function ApplicationsEditSheet() {
                               <CommandEmpty>未找到项目</CommandEmpty>
                               <CommandGroup>
                                 <CommandList>
+                                  {(isLoadingProjects || isFetchingProjects) && (
+                                    <CommandItem disabled value='loading'>
+                                      <span className='flex items-center gap-2 py-1.5'>
+                                        <Loader className='h-4 w-4 animate-spin' />
+                                        加载项目...
+                                      </span>
+                                    </CommandItem>
+                                  )}
                                   {(projectsList?.data ?? []).map((project) => (
                                     <CommandItem
                                       key={project.id}
@@ -301,7 +310,7 @@ export function ApplicationsEditSheet() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {APPLICATION_STATUS_OPTIONS.filter(option => option.value !== 'all').map((option) => (
+                            {APPLICATION_STATUS_OPTIONS.map((option) => (
                               <SelectItem key={option.value} value={option.value}>
                                 {option.label}
                               </SelectItem>

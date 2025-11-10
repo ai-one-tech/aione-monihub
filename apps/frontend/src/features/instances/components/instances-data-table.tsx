@@ -102,7 +102,6 @@ export function InstancesTable({ data = [], totalPages, search, navigate }: Data
             columnId: 'status',
             title: '状态',
             options: INSTANCE_STATUS_OPTIONS
-              .filter(option => option.value !== 'all')
               .map(option => ({
                 label: option.label,
                 value: option.value,

@@ -36,13 +36,13 @@ function InstancesContent() {
     page: search.page || 1,
     limit: search.pageSize || 10,
     search: search.search || undefined,
-    status: (search.status && search.status !== 'all') ? search.status as 'active' | 'disabled' | 'offline' : undefined,
-    online_status: (search.online_status && search.online_status !== 'all') ? search.online_status as 'online' | 'offline' : undefined,
+    status: (search.status) ? search.status as 'active' | 'disabled' | 'offline' : undefined,
+    online_status: (search.online_status) ? search.online_status as 'online' | 'offline' : undefined,
     application_id: search.application_id || undefined,
     ip_address: search.ip_address || undefined,
     public_ip: search.public_ip || undefined,
     hostname: search.hostname || undefined,
-    os_type: (search.os_type && search.os_type !== 'all') ? search.os_type : undefined,
+    os_type: (search.os_type) ? search.os_type : undefined,
   }
 
   const { data, isLoading, error, refetch } = useInstancesQuery(apiParams)

@@ -101,7 +101,6 @@ export function ProjectsTable({ data = [], totalPages, search, navigate }: DataT
             columnId: 'status',
             title: '状态',
             options: PROJECT_STATUS_OPTIONS
-              .filter(option => option.value !== 'all')
               .map(option => ({
                 label: option.label,
                 value: option.value,
