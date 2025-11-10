@@ -5,6 +5,75 @@ import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
 import { type ApplicationResponse, APPLICATION_STATUS_LABELS } from '../data/api-schema'
 import { ApplicationsDataTableRowActions } from './applications-data-table-row-actions'
+import { useApplicationInstances } from '../hooks/use-application-instances'
+import { Badge } from '@/components/ui/badge'
+
+function OnlineInstancesCell({ applicationId }: { applicationId: string }) {
+  const { data, isLoading, error } = useApplicationInstances(applicationId)
+
+  const onlineCount = (data?.data || []).filter(
+    (inst) => inst.online_status === 'online'
+  ).length
+
+  if (isLoading) {
+    return (
+      <div className='w-fit text-xs text-muted-foreground'>加载中...</div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className='w-fit text-xs text-destructive'>加载失败</div>
+    )
+  }
+
+  return (
+    <div className='w-fit'>
+      <Badge
+        className={
+          onlineCount > 0
+            ? 'px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+            : 'px-2 py-1 rounded-full bg-muted text-muted-foreground'
+        }
+      >
+        在线实例 {onlineCount}
+      </Badge>
+    </div>
+  )
+}
+import { useApplicationInstances } from '../hooks/use-application-instances'
+import { Badge } from '@/components/ui/badge'
+
+interface OnlineInstancesCellProps {
+  applicationId: string
+}
+
+function OnlineInstancesCell({ applicationId }: OnlineInstancesCellProps) {
+  const { data: instancesData, isLoading } = useApplicationInstances(applicationId)
+  
+  if (isLoading) {
+    return <div className='text-xs text-muted-foreground'>加载中...</div>
+  }
+  
+  const onlineInstances = instancesData?.data?.filter(
+    instance => instance.online_status === 'online'
+  ) || []
+  
+  return (
+    <div className='w-fit'>
+      <Badge 
+        variant={onlineInstances.length > 0 ? 'default' : 'secondary'}
+        className={`text-xs ${
+          onlineInstances.length > 0 
+            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+            : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+        }`}
+      >
+        {onlineInstances.length} 个在线
+      </Badge>
+    </div>
+  )
+}
 
 export const applicationsColumns: ColumnDef<ApplicationResponse>[] = [
   {
@@ -120,6 +189,27 @@ export const applicationsColumns: ColumnDef<ApplicationResponse>[] = [
     },
     enableSorting: true,
     enableHiding: false,
+  },
+  {
+    id: 'online_instances',
+    header: () => (
+      <div className='text-sm font-medium'>在线实例</div>
+    ),
+    cell: ({ row }) => (
+      <OnlineInstancesCell applicationId={row.original.id} />
+    ),
+    meta: {
+      className: cn('min-w-24'),
+    },
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
+    accessorKey: 'online_instances',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='在线实例' />
+    ),
+    cell: ({ row }) => <OnlineInstancesCell applicationId={row.original.id} />,
   },
   {
     accessorKey: 'created_at',

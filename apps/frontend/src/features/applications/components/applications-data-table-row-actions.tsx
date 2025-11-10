@@ -1,5 +1,5 @@
 import { type Row } from '@tanstack/react-table'
-import { Eye, Edit, Trash2, Link2 } from 'lucide-react'
+import { Eye, Edit, Trash2, Link2, Server } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { type ApplicationResponse } from '../data/api-schema'
@@ -51,6 +51,15 @@ export function ApplicationsDataTableRowActions({
     })
   }
 
+  const handleViewInstances = () => {
+    navigate({
+      to: '/instances',
+      search: {
+        application_id: application.id,
+      },
+    })
+  }
+
   return (
     <div className='flex items-center space-x-1'>
       <TooltipProvider>
@@ -88,6 +97,19 @@ export function ApplicationsDataTableRowActions({
           </TooltipTrigger>
           <TooltipContent>
             <p>连接实例</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant='ghost' size='sm' onClick={handleViewInstances}>
+              <Server className='h-4 w-4' />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>查看实例</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
