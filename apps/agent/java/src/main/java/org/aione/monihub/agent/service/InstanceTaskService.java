@@ -105,7 +105,7 @@ public class InstanceTaskService {
             log.info("Polling tasks for instance: {}", properties.getInstanceId());
 
             // 构建拉取任务的URL
-            String url = properties.getServerUrl() + "/api/open/instances/tasks?instance_id=" + properties.getInstanceId();
+            String url = properties.getServerUrl() + "/api/open/instances/tasks?agent_instance_id=" + properties.getInstanceId();
 
             if (longPollingEnabled) {
                 url += "&wait=true&timeout=30";

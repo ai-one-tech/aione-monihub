@@ -187,6 +187,41 @@ export const getTaskRecordsParamsSchema = z.object({
 
 export type GetTaskRecordsParams = z.infer<typeof getTaskRecordsParamsSchema>
 
+// 实例信息
+export const instanceInfoSchema = z.object({
+  id: z.string(),
+  agent_instance_id: z.string(),
+  hostname: z.string().optional(),
+  ip_address: z.string().optional(),
+  public_ip: z.string().optional(),
+  os_type: z.string(),
+  os_version: z.string().optional(),
+  online_status: z.string(),
+  last_heartbeat: z.string().optional(),
+  created_at: z.string(),
+  updated_at: z.string(),
+})
+
+export type InstanceInfo = z.infer<typeof instanceInfoSchema>
+
+// 任务关联实例及执行结果
+export const taskInstanceWithResultSchema = z.object({
+  instance: instanceInfoSchema,
+  execution_record: taskRecordResponseSchema,
+})
+
+export type TaskInstanceWithResult = z.infer<typeof taskInstanceWithResultSchema>
+
+// 任务关联实例及执行结果响应
+export const taskInstanceWithResultResponseSchema = z.object({
+  task_id: z.string(),
+  data: z.array(taskInstanceWithResultSchema),
+  timestamp: z.number(),
+  trace_id: z.string(),
+})
+
+export type TaskInstanceWithResultResponse = z.infer<typeof taskInstanceWithResultResponseSchema>
+
 // 任务状态标签映射
 export const TASK_STATUS_LABELS: Record<string, string> = {
   pending: '待执行',

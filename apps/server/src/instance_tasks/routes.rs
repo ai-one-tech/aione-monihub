@@ -9,6 +9,7 @@ pub fn instance_task_routes(cfg: &mut web::ServiceConfig) {
         .route("/instances/tasks/{task_id}", web::delete().to(handlers::delete_task))
         .route("/instances/tasks/{task_id}/cancel", web::post().to(handlers::cancel_task))
         .route("/instances/tasks/{task_id}/records", web::get().to(handlers::get_task_records))
+        .route("/instances/tasks/{task_id}/instances-with-results", web::get().to(handlers::get_task_instances_with_results))
         .route("/instances/task-records/{record_id}/retry", web::post().to(handlers::retry_task_record));
 }
 

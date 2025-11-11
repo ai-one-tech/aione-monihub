@@ -61,7 +61,8 @@ use aione_monihub_server::{DatabaseManager, WsServer};
         aione_monihub_server::configs::handlers::get_config_by_code_env_and_version,
         aione_monihub_server::configs::handlers::delete_config,
         aione_monihub_server::instance_tasks::handlers::get_instance_tasks,
-        aione_monihub_server::instance_tasks::handlers::submit_task_result
+        aione_monihub_server::instance_tasks::handlers::submit_task_result,
+        aione_monihub_server::instance_tasks::handlers::get_task_instances_with_results
     ),
     components(
         schemas(
@@ -117,7 +118,10 @@ use aione_monihub_server::{DatabaseManager, WsServer};
             aione_monihub_server::instance_tasks::models::TaskResultSubmitResponse,
             aione_monihub_server::instance_tasks::models::TaskDispatchResponse,
             aione_monihub_server::instance_tasks::models::TaskDispatchItem,
-            aione_monihub_server::instance_tasks::models::Pagination
+            aione_monihub_server::instance_tasks::models::Pagination,
+            aione_monihub_server::instance_tasks::models::InstanceInfo,
+            aione_monihub_server::instance_tasks::models::TaskInstanceWithResult,
+            aione_monihub_server::instance_tasks::models::TaskInstanceWithResultResponse
         )
     ),
     info(
@@ -245,9 +249,9 @@ async fn main() -> io::Result<()> {
                     .configure(user_routes)
                     .configure(role_routes)
                     .configure(permission_routes)
-                    .configure(instance_routes)
                     .configure(instance_report_routes)
                     .configure(instance_task_routes)
+                    .configure(instance_routes)
                     .configure(config_routes)
                     .configure(websocket_routes)
                     .configure(log_routes)

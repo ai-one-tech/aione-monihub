@@ -8,6 +8,7 @@ import {
   type TaskResponse,
   type TaskListResponse,
   type TaskRecordListResponse,
+  type TaskInstanceWithResultResponse,
   type GetTasksParams,
   type GetTaskRecordsParams
 } from '../data/api-schema'
@@ -156,6 +157,14 @@ class ApplicationsApi {
    */
   async retryTaskRecord(recordId: string): Promise<any> {
     const response = await apiClient.post(`/api/instances/task-records/${recordId}/retry`, {})
+    return response.data
+  }
+
+  /**
+   * 获取任务关联的所有实例及其执行结果
+   */
+  async getTaskInstancesWithResults(taskId: string): Promise<TaskInstanceWithResultResponse> {
+    const response = await apiClient.get<TaskInstanceWithResultResponse>(`/api/instances/tasks/${taskId}/instances-with-results`)
     return response.data
   }
 }

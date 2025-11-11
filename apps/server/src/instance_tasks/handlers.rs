@@ -354,30 +354,30 @@ pub async fn get_instance_tasks(
     query: web::Query<std::collections::HashMap<String, String>>,
 ) -> Result<HttpResponse, ApiError> {
     // 从查询参数中获取instance_id
-    let instance_id = query
-        .get("instance_id")
+    let agent_instance_id = query
+        .get("agent_instance_id")
         .ok_or_else(|| ApiError::BadRequest("Missing required parameter: instance_id".to_string()))?
         .clone();
     log::info!(
         "[get_instance_tasks] Received request for instance: {}",
-        instance_id
+        agent_instance_id
     );
 
     // 验证实例是否存在
     let instance = instances::Entity::find()
-        .filter(instances::Column::Id.eq(&instance_id))
+        .filter(instances::Column::AgentInstanceId.eq(&agent_instance_id))
         .filter(instances::Column::DeletedAt.is_null())
         .one(&**db)
         .await?;
 
     if instance.is_none() {
-        log::warn!("[get_instance_tasks] Instance not found: {}", instance_id);
+        log::warn!("[get_instance_tasks] Instance not found: {}", agent_instance_id);
         return Err(ApiError::NotFound(format!(
             "Instance {} not found",
-            instance_id
+            agent_instance_id
         )));
     }
-    log::debug!("[get_instance_tasks] Instance found: {}", instance_id);
+    log::debug!("[get_instance_tasks] Instance found: {}", agent_instance_id);
 
     // 检查是否启用长轮询
     let wait = query
@@ -396,7 +396,7 @@ pub async fn get_instance_tasks(
     loop {
         // 查询pending状态的任务
         let records = instance_task_records::Entity::find()
-            .filter(instance_task_records::Column::InstanceId.eq(&instance_id))
+            .filter(instance_task_records::Column::InstanceId.eq(&agent_instance_id))
             .filter(instance_task_records::Column::Status.eq(TaskStatus::Dispatched))
             .order_by_asc(instance_task_records::Column::CreatedAt)
             .all(&**db)

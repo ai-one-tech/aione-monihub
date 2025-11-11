@@ -114,6 +114,39 @@ pub struct TaskRecordListResponse {
     pub trace_id: String,
 }
 
+/// 实例信息
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InstanceInfo {
+    pub id: String,
+    pub agent_instance_id: String,
+    pub hostname: Option<String>,
+    pub ip_address: Option<String>,
+    pub public_ip: Option<String>,
+    pub os_type: crate::shared::enums::OsType,
+    pub os_version: Option<String>,
+    pub online_status: crate::shared::enums::OnlineStatus,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_heartbeat: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+/// 任务关联实例及执行结果
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TaskInstanceWithResult {
+    pub instance: InstanceInfo,
+    pub execution_record: TaskRecordResponse,
+}
+
+/// 任务关联实例及执行结果响应
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TaskInstanceWithResultResponse {
+    pub task_id: String,
+    pub data: Vec<TaskInstanceWithResult>,
+    pub timestamp: u64,
+    pub trace_id: String,
+}
+
 /// 任务执行记录查询参数
 #[derive(Debug, Deserialize)]
 pub struct TaskRecordListQuery {
