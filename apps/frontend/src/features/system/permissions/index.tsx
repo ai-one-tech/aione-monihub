@@ -25,11 +25,21 @@ export function SystemPermissions() {
     // permission_type 可能是串行(API直接传入)或数组(来自表格筛选)
     let permission_type_value = (search.permission_type as string | string[]) || undefined
     
-    // 如果是数组，仅使用第一个值
+    // 如果是数组，将数组转换为逗号分隔的字符串以支持多选筛选
     if (Array.isArray(permission_type_value) && permission_type_value.length > 0) {
-      permission_type_value = permission_type_value[0]
+      permission_type_value = permission_type_value.join(',')
     } else if (Array.isArray(permission_type_value)) {
       permission_type_value = undefined
+    }
+
+    // action 可能是串行(API直接传入)或数组(来自表格筛选)
+    let action_value = (search.action as string | string[]) || undefined
+    
+    // 如果是数组，将数组转换为逗号分隔的字符串以支持多选筛选
+    if (Array.isArray(action_value) && action_value.length > 0) {
+      action_value = action_value.join(',')
+    } else if (Array.isArray(action_value)) {
+      action_value = undefined
     }
     
     return {
@@ -37,8 +47,9 @@ export function SystemPermissions() {
       limit: search.pageSize || 10,
       search: search.name || undefined,
       permission_type: permission_type_value,
+      action: action_value,
     }
-  }, [search.page, search.pageSize, search.name, search.permission_type])
+  }, [search.page, search.pageSize, search.name, search.permission_type, search.action])
 
   const { data, isLoading, error, refetch } = usePermissionsQuery(apiParams)
 

@@ -51,7 +51,7 @@ const permissionFormSchema = z.object({
 }).refine(
   (data) => {
     // 如果权限类型是 Action，则操作类型必填
-    if (data.permission_type === 'Action') {
+    if (data.permission_type === 'action') {
       return data.action && data.action.length > 0
     }
     // 其他类型操作类型可以为空
@@ -146,7 +146,7 @@ export function SystemPermissionsEditSheet() {
   // 监听权限类型变化，如果不是 Action，则清空操作类型
   useEffect(() => {
     const permissionType = form.watch('permission_type')
-    if (permissionType !== 'Action') {
+    if (permissionType !== 'action') {
       form.setValue('action', '')
     }
   }, [form.watch('permission_type'), form])
@@ -172,7 +172,7 @@ export function SystemPermissionsEditSheet() {
       is_hidden: data.is_hidden || false,
     }
 
-    if (submitData.permission_type !== 'Action') {
+    if (submitData.permission_type !== 'action') {
       // 非操作类型不传动作，兼容后端允许空
       submitData.action = ''
     }
@@ -306,7 +306,7 @@ export function SystemPermissionsEditSheet() {
                   )}
                 />
 
-                {form.watch('permission_type') === 'Action' && (
+                {form.watch('permission_type') === 'action' && (
                   <FormField
                     control={form.control}
                     name='action'

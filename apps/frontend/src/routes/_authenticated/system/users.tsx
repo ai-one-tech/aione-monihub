@@ -8,11 +8,8 @@ const systemUsersSearchSchema = z.object({
   // API 支持的查询参数
   username: z.string().optional().catch(''),
   status: z.string().optional().catch(''),
-  // 角色筛选 - 支持多选
-  roles: z
-    .array(z.string())
-    .optional()
-    .catch([]),
+  // 角色筛选 - 逗号分隔字符串
+  roles: z.string().optional().catch(''),
 })
 
 export const Route = createFileRoute('/_authenticated/system/users')({

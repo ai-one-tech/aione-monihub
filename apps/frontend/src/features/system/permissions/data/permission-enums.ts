@@ -10,11 +10,11 @@ export type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline'
  */
 // 与后端枚举保持一致（snake_case）
 export const ACTION_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
+  manage: { label: '管理', variant: 'secondary' },
   create: { label: '创建', variant: 'secondary' },
   read: { label: '读取', variant: 'secondary' },
   update: { label: '更新', variant: 'secondary' },
   delete: { label: '删除', variant: 'destructive' },
-  manage: { label: '管理', variant: 'secondary' },
   import: { label: '导入', variant: 'secondary' },
   export: { label: '导出', variant: 'secondary' },
 }

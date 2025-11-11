@@ -25,7 +25,7 @@ export function SystemUsers() {
     limit: search.pageSize || 10,
     search: search.username || undefined,
     status: (search.status) ? search.status as string : undefined,
-    roles: (search.roles) ? (Array.isArray(search.roles) ? search.roles[0] : search.roles) as string : undefined, // 添加角色筛选参数
+    roles: (search.roles) ? (Array.isArray(search.roles) ? search.roles.join(',') : search.roles) as string : undefined, // 支持逗号分隔的角色筛选
   }
 
   const { data, isLoading, error, refetch } = useUsersQuery(apiParams)

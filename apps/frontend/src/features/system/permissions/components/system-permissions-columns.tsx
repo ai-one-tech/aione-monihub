@@ -92,7 +92,8 @@ export const systemPermissionsColumns: ColumnDef<ApiPermissionResponse>[] = [
     },
     filterFn: (row, id, value) => {
       const permissionType = row.getValue(id) as string
-      return value.includes(permissionType)
+      // value是数组，检查当前行的类型是否在筛选值中
+      return Array.isArray(value) && value.includes(permissionType)
     },
   },
   {
@@ -117,6 +118,15 @@ export const systemPermissionsColumns: ColumnDef<ApiPermissionResponse>[] = [
           {actionInfo.label}
         </Badge>
       )
+    },
+    filterFn: (row, id, value) => {
+      const action = row.getValue(id) as string | null
+      if (!action) {
+        // 如果筛选值包含空值或"none"，则显示无操作的权限
+        return Array.isArray(value) && value.includes('none')
+      }
+      // value是数组，检查当前行的操作是否在筛选值中
+      return Array.isArray(value) && value.includes(action.toLowerCase())
     },
   },
 

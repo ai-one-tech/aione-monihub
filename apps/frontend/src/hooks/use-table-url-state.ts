@@ -42,6 +42,8 @@ type UseTableUrlStateParams = {
         columnId: string
         searchKey: string
         type: 'array'
+        /** 数组在URL中的序列化方式，'array' 保持数组格式，'string' 转为逗号分隔字符串 */
+        arraySerialization?: 'array' | 'string'
         serialize?: (value: unknown) => unknown
         deserialize?: (value: unknown) => unknown
       }
@@ -106,7 +108,16 @@ export function useTableUrlState(
         }
       } else {
         // default to array type
-        const value = (deserialize(raw) as unknown[]) ?? []
+        let value: unknown[] = []
+        if (Array.isArray(raw)) {
+          value = raw
+        } else if (typeof raw === 'string' && raw.trim() !== '') {
+          // 如果是逗号分隔的字符串，拆分为数组
+          value = raw.split(',').map(s => s.trim()).filter(Boolean)
+        } else {
+          value = (deserialize(raw) as unknown[]) ?? []
+        }
+        
         if (Array.isArray(value) && value.length > 0) {
           collected.push({ id: cfg.columnId, value })
         }
@@ -192,7 +203,15 @@ export function useTableUrlState(
         const value = Array.isArray(found?.value)
           ? (found!.value as unknown[])
           : []
-        patch[cfg.searchKey] = value.length > 0 ? serialize(value) : undefined
+        const arraySerialization = ('arraySerialization' in cfg) ? cfg.arraySerialization : 'array'
+        
+        if (arraySerialization === 'string') {
+          // 序列化为逗号分隔的字符串
+          patch[cfg.searchKey] = value.length > 0 ? value.join(',') : undefined
+        } else {
+          // 保持数组格式
+          patch[cfg.searchKey] = value.length > 0 ? value : undefined
+        }
       }
     }
 

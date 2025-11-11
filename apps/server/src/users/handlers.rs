@@ -1,17 +1,17 @@
 use crate::auth::middleware::get_user_id_from_request;
 use crate::entities::users::Model as UserModel;
 use crate::entities::users::{ActiveModel, Entity as Users};
-use crate::permissions::handlers::{get_user_permission_by_name};
+use crate::permissions::handlers::get_user_permission_by_name;
 use crate::shared::enums::UserStatus;
 
+use crate::entities::roles::Entity as Roles;
+use crate::entities::user_roles::{ActiveModel as UserRoleActiveModel, Entity as UserRoles};
 use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
 use crate::users::models::{
-    RoleInfo, UserCreateRequest, UserListQuery, UserListResponse, UserResponse, UserUpdateRequest,
-    UserRoleAssignRequest, UserRoleResponse, UserRoleListResponse,
+    RoleInfo, UserCreateRequest, UserListQuery, UserListResponse, UserResponse, UserRoleAssignRequest,
+    UserRoleListResponse, UserRoleResponse, UserUpdateRequest,
 };
-use crate::entities::user_roles::{ActiveModel as UserRoleActiveModel, Entity as UserRoles};
-use crate::entities::roles::{Entity as Roles};
 use actix_web::{web, HttpRequest, HttpResponse, Result};
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::Utc;
@@ -66,12 +66,22 @@ pub async fn get_users(
     }
 
     // 角色过滤
-    if let Some(role_id) = &query.roles {
+    if let Some(roles) = &query.roles {
+        let role_ids: Vec<String> = if roles.contains(',') {
+            roles
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect()
+        } else {
+            Vec::from([roles.to_string()])
+        };
+
         // 通过用户角色关联表进行过滤
         select = select.filter(
             crate::entities::users::Column::Id.in_subquery(
                 crate::entities::user_roles::Entity::find()
-                    .filter(crate::entities::user_roles::Column::RoleId.eq(role_id.clone()))
+                    .filter(crate::entities::user_roles::Column::RoleId.is_in(role_ids))
                     .select_only()
                     .column(crate::entities::user_roles::Column::UserId)
                     .as_query()
@@ -87,7 +97,7 @@ pub async fn get_users(
     let paginator = select.clone().paginate(&**db, limit);
     let total = paginator.num_items().await?;
     let total_pages = paginator.num_pages().await?;
-    
+
     let users: Vec<UserModel> = select
         .offset(offset)
         .limit(limit)
@@ -103,7 +113,7 @@ pub async fn get_users(
             .find_with_related(Roles)
             .all(&**db)
             .await?;
-        
+
         let role_infos: Vec<RoleInfo> = user_roles
             .into_iter()
             .filter_map(|(_, roles)| roles.into_iter().next())
@@ -113,7 +123,7 @@ pub async fn get_users(
                 description: role.description,
             })
             .collect();
-        
+
         user_responses.push(UserResponse {
             id: user.id,
             username: user.username,
@@ -265,7 +275,7 @@ pub async fn get_user(
                 .find_with_related(Roles)
                 .all(&**db)
                 .await?;
-            
+
             let role_infos: Vec<RoleInfo> = user_roles
                 .into_iter()
                 .filter_map(|(_, roles)| roles.into_iter().next())
@@ -275,7 +285,7 @@ pub async fn get_user(
                     description: role.description,
                 })
                 .collect();
-            
+
             let response = UserResponse {
                 id: user.id,
                 username: user.username,
@@ -417,7 +427,7 @@ pub async fn update_user(
         .find_with_related(Roles)
         .all(&**db)
         .await?;
-    
+
     let role_infos: Vec<RoleInfo> = user_roles
         .into_iter()
         .filter_map(|(_, roles)| roles.into_iter().next())
@@ -427,7 +437,7 @@ pub async fn update_user(
             description: role.description,
         })
         .collect();
-    
+
     let response = UserResponse {
         id: saved_user.id,
         username: saved_user.username,

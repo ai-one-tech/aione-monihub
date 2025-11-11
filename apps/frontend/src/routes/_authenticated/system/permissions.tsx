@@ -15,6 +15,14 @@ const systemPermissionsSearchSchema = z.object({
     ])
     .optional()
     .catch([]),
+  // 操作筛选 - 支持多选
+  action: z
+    .union([
+      z.string(),
+      z.array(z.string())
+    ])
+    .optional()
+    .catch([]),
 })
 
 export const Route = createFileRoute('/_authenticated/system/permissions')({

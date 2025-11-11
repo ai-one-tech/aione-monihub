@@ -61,7 +61,8 @@ export function SystemPermissionsTable({ data = [], totalPages, search, navigate
       // name per-column text filter
       { columnId: 'name', searchKey: 'name', type: 'string' },
       // { columnId: 'resource', searchKey: 'resource', type: 'array' },
-      { columnId: 'permission_type', searchKey: 'permission_type', type: 'array' },
+      { columnId: 'permission_type', searchKey: 'permission_type', type: 'array', arraySerialization: 'string' },
+      { columnId: 'action', searchKey: 'action', type: 'array', arraySerialization: 'string' },
     ],
   })
 
@@ -104,6 +105,21 @@ export function SystemPermissionsTable({ data = [], totalPages, search, navigate
               { label: '操作', value: 'action' },
               { label: '页面', value: 'page' },
             ],
+            multiSelect: true,
+          },
+          {
+            columnId: 'action',
+            title: '操作',
+            options: [
+              { label: '管理', value: 'manage' },
+              { label: '创建', value: 'create' },
+              { label: '读取', value: 'read' },
+              { label: '更新', value: 'update' },
+              { label: '删除', value: 'delete' },
+              { label: '导入', value: 'import' },
+              { label: '导出', value: 'export' },
+            ],
+            multiSelect: true,
           },
         ]}
       />

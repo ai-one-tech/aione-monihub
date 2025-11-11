@@ -24,6 +24,7 @@ pub struct PermissionQueryParams {
     pub limit: Option<u64>,
     pub search: Option<String>,
     pub permission_type: Option<String>,
+    pub action: Option<String>,
 }
 
 /// 获取权限列表
@@ -36,6 +37,7 @@ pub struct PermissionQueryParams {
         ("limit" = Option<u64>, Query, description = "每页数量"),
         ("search" = Option<String>, Query, description = "搜索关键词"),
         ("permission_type" = Option<String>, Query, description = "权限类型筛选"),
+        ("action" = Option<String>, Query, description = "操作筛选"),
     ),
     responses(
         (status = 200, description = "成功获取权限列表", body = PermissionListResponse),
@@ -69,10 +71,45 @@ pub async fn get_permissions(
         }
     }
 
-    // 添加权限类型筛选
+    // 添加权限类型筛选 - 支持逗号分隔的多个类型
     if let Some(permission_type) = &query.permission_type {
         if !permission_type.is_empty() {
-            query_builder = query_builder.filter(Column::PermissionType.eq(permission_type));
+            // 检查是否包含逗号，如果有则拆分为多个类型
+            if permission_type.contains(',') {
+                let types: Vec<String> = permission_type
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+                
+                if !types.is_empty() {
+                    query_builder = query_builder.filter(Column::PermissionType.is_in(types));
+                }
+            } else {
+                // 单个类型筛选
+                query_builder = query_builder.filter(Column::PermissionType.eq(permission_type));
+            }
+        }
+    }
+
+    // 添加操作筛选 - 支持逗号分隔的多个操作
+    if let Some(action) = &query.action {
+        if !action.is_empty() {
+            // 检查是否包含逗号，如果有则拆分为多个操作
+            if action.contains(',') {
+                let actions: Vec<String> = action
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+                
+                if !actions.is_empty() {
+                    query_builder = query_builder.filter(Column::PermissionAction.is_in(actions));
+                }
+            } else {
+                // 单个操作筛选
+                query_builder = query_builder.filter(Column::PermissionAction.eq(action));
+            }
         }
     }
 
@@ -83,7 +120,7 @@ pub async fn get_permissions(
 
     // 获取分页数据
     let permissions: Vec<PermissionModel> = query_builder
-        .order_by_desc(Column::SortOrder)
+        .order_by_asc(Column::Name)
         .offset(offset)
         .limit(limit)
         .all(&**db)

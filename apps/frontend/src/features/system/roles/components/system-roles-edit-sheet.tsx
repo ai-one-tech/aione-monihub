@@ -236,7 +236,7 @@ export function SystemRolesEditSheet() {
                                       {/* 分组标题 */}
                                       <div className='bg-muted/50 px-4 py-3 border-b'>
                                         <h4 className='text-sm font-semibold text-foreground'>
-                                          {type === 'Menu' ? '菜单' : type === 'Action' ? '操作' : '页面'}
+                                          {type === 'menu' ? '菜单' : type === 'action' ? '操作' : '页面'}
                                         </h4>
                                       </div>
                                       {/* 权限列表 */}

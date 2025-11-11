@@ -36,7 +36,8 @@ export const getPermissionsParamsSchema = z.object({
   page: z.number().optional(),
   limit: z.number().optional(),
   search: z.string().optional(),
-  permission_type: z.string().optional(),
+  permission_type: z.string().optional(), // 支持逗号分隔的多个类型
+  action: z.string().optional(), // 支持逗号分隔的多个操作
 })
 
 export type GetPermissionsParams = z.infer<typeof getPermissionsParamsSchema>

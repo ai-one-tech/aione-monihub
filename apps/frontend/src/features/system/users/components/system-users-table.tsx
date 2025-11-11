@@ -60,7 +60,7 @@ export function SystemUsersTable({ data = [], totalPages, search, navigate }: Da
     columnFilters: [
       // username per-column text filter
       { columnId: 'username', searchKey: 'username', type: 'string' },
-      { columnId: 'roles', searchKey: 'roles', type: 'array' }, // 改为 string 类型以匹配单选模式
+      { columnId: 'roles', searchKey: 'roles', type: 'array', arraySerialization: 'string' }, // 统一使用逗号分隔格式
       { columnId: 'status', searchKey: 'status', type: 'string' }, // 改为 string 类型以匹配单选模式
     ],
   })
