@@ -101,6 +101,9 @@ class ApplicationsApi {
     if (params.task_type) {
       searchParams.append('task_type', params.task_type)
     }
+    if (params.application_id) {
+      searchParams.append('application_id', params.application_id)
+    }
 
     const queryString = searchParams.toString()
     const endpoint = `/api/instances/tasks${queryString ? `?${queryString}` : ''}`

@@ -14,7 +14,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { applicationsApi } from '@/features/applications/api/applications-api'
 import { instancesApi } from '@/features/instances/api/instances-api'
 import { useApplicationInstances } from '@/features/applications/hooks/use-application-instances'
-import { ConnectInstanceDialog } from './components/connect-instance-dialog'
 
 const route = getRouteApi('/_authenticated/application-tasks')
 
@@ -24,7 +23,6 @@ export function ApplicationTasks() {
   const [selectedInstances, setSelectedInstances] = useState<string[]>([])
   const [taskType, setTaskType] = useState('shell')
   const [shellScript, setShellScript] = useState('')
-  const [connectDialogOpen, setConnectDialogOpen] = useState(false)
 
   // 获取应用详情
   const { data: application } = useQuery({
@@ -97,25 +95,21 @@ export function ApplicationTasks() {
     }
   }
 
-  const handleConnectSuccess = () => {
-    // 刷新实例列表
-    queryClient.invalidateQueries({ queryKey: ['application-instances', search.applicationId] })
-  }
-
   return (
     <Main fixed className="flex flex-col">
       <div className="flex-1 p-2">
         {/* 页面标题 */}
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            应用：{application?.name}     ID：{application?.id}
-          </h1>
+          <h2 className="text-2xl font-bold tracking-tight">
+            应用：{application?.name}
+            <span className="text-sm pl-2 text-gray-500">ID：{application?.id}</span>
+          </h2>
           <Separator className="mt-4 mb-4" />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* 在线实例 */}
-          <Card className="p-4">
+          <Card className="p-4 lg:col-span-1">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">在线实例</h3>
               <Badge variant="secondary">在线 {activeInstances.length}</Badge>
@@ -129,17 +123,9 @@ export function ApplicationTasks() {
               >
                 {selectedInstances.length === activeInstances.length ? '取消全选' : '全选'}
               </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setConnectDialogOpen(true)}
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                连接实例
-              </Button>
             </div>
 
-            <ScrollArea className="h-[400px] rounded-lg border">
+            <ScrollArea className="rounded-lg border">
               <div className="p-2 space-y-2">
                 {activeInstances.map((instance) => (
                   <div 
@@ -165,11 +151,13 @@ export function ApplicationTasks() {
                         <div className="text-sm font-medium truncate">
                           {instance.id}
                         </div>
-                        <div className="text-xs text-gray-600 truncate">
-                          {instance.hostname || '未知主机名'}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {instance.public_ip || instance.ip_address || '未知IP'}
+                        <div className="flex justify-between items-center w-full">
+                          <p className="text-xs text-gray-600 truncate">
+                            {instance.hostname || '未知主机名'}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {instance.public_ip || instance.ip_address || '未知IP'}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -180,7 +168,7 @@ export function ApplicationTasks() {
           </Card>
 
           {/* 创建任务 */}
-          <Card className="p-4">
+          <Card className="p-4 lg:col-span-2">
             <h3 className="text-lg font-semibold mb-4">创建任务</h3>
             
             <div className="space-y-4">
@@ -227,11 +215,11 @@ export function ApplicationTasks() {
         </div>
 
         {/* 底部三个区域 */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* 任务历史 */}
           <Card className="p-4">
             <h3 className="text-lg font-semibold mb-4">任务历史</h3>
-            <ScrollArea className="h-[300px]">
+            <ScrollArea className="">
               <div className="space-y-3">
                 {tasks.map((task) => (
                   <div key={task.id} className="p-3 rounded-lg border">
@@ -306,13 +294,6 @@ PING baidu.com (220.181.7.203): 56 data bytes
         </div>
       </div>
 
-      {/* 连接实例弹窗 */}
-      <ConnectInstanceDialog
-        open={connectDialogOpen}
-        onOpenChange={setConnectDialogOpen}
-        applicationId={search.applicationId || ''}
-        onSuccess={handleConnectSuccess}
-      />
     </Main>
   )
 }

@@ -173,6 +173,7 @@ export const getTasksParamsSchema = z.object({
   limit: z.number().optional(),
   status: z.string().optional(),
   task_type: z.string().optional(),
+  application_id: z.string().optional(),
 })
 
 export type GetTasksParams = z.infer<typeof getTasksParamsSchema>
