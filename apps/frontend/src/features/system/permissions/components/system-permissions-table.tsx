@@ -100,9 +100,9 @@ export function SystemPermissionsTable({ data = [], totalPages, search, navigate
             columnId: 'permission_type',
             title: '类型',
             options: [
-              { label: '菜单', value: 'Menu' },
-              { label: '操作', value: 'Action' },
-              { label: '页面', value: 'Page' },
+              { label: '菜单', value: 'menu' },
+              { label: '操作', value: 'action' },
+              { label: '页面', value: 'page' },
             ],
           },
         ]}

@@ -246,7 +246,7 @@ export function SystemRolesCreateDialog() {
                                   {Object.entries(permissionsByType).map(([type, perms]) => (
                                     <div key={type}>
                                       <h4 className='text-sm font-semibold mb-3 text-muted-foreground'>
-                                        {type === 'Menu' ? '菜单' : type === 'Action' ? '操作' : '页面'}
+                                        {type === 'menu' ? '菜单' : type === 'action' ? '操作' : '页面'}
                                       </h4>
                                       <div className='space-y-3 space-x-3 ml-2 flex flex-row flex-wrap'>
                                         {perms.map((perm) => (

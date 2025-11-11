@@ -14,16 +14,18 @@ export const ACTION_MAP: Record<string, { label: string; variant: BadgeVariant }
   read: { label: '读取', variant: 'secondary' },
   update: { label: '更新', variant: 'secondary' },
   delete: { label: '删除', variant: 'destructive' },
-  execute: { label: '执行', variant: 'secondary' },
+  manage: { label: '管理', variant: 'secondary' },
+  import: { label: '导入', variant: 'secondary' },
+  export: { label: '导出', variant: 'secondary' },
 }
 
 /**
  * 权限类型映射
  */
 export const PERMISSION_TYPE_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
-  Menu: { label: '菜单', variant: 'default' },
-  Page: { label: '页面', variant: 'secondary' },
-  Action: { label: '操作', variant: 'secondary' },
+  menu: { label: '菜单', variant: 'default' },
+  page: { label: '页面', variant: 'secondary' },
+  action: { label: '操作', variant: 'secondary' },
 }
 
 /**

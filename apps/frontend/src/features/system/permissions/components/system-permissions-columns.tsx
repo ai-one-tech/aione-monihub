@@ -58,9 +58,8 @@ export const systemPermissionsColumns: ColumnDef<ApiPermissionResponse>[] = [
       <DataTableColumnHeader column={column} title='权限名称' />
     ),
     cell: ({ row }) => (
-      <LongText className='max-w-36 font-medium'>{row.getValue('name')}</LongText>
+      <div>{row.getValue('name')}</div>
     ),
-    meta: { className: 'w-36' },
   },
   {
     accessorKey: 'description',
@@ -138,6 +137,9 @@ export const systemPermissionsColumns: ColumnDef<ApiPermissionResponse>[] = [
   },
   {
     id: 'actions',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='操作' />
+    ),
     cell: SystemPermissionsDataTableRowActions,
   },
 ]
