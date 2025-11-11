@@ -94,7 +94,7 @@ pub async fn report_instance_info(
             .map(|i| i.status.clone())
             != Some(Status::Active)
         {
-            return Err(ApiError::BadRequest("Instance is disabled".to_string()));
+            return Err(ApiError::Forbidden("Instance is disabled".to_string()));
         }
         instance.unwrap()
     };

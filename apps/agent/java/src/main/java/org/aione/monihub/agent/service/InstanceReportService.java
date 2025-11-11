@@ -10,6 +10,7 @@ import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.model.*;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
+import org.springframework.http.HttpStatus;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -106,7 +107,6 @@ public class InstanceReportService {
     private void reportInstance() {
         try {
             log.debug("Collecting instance information...");
-
 
             // 构建上报请求
             InstanceReportRequest request = buildReportRequest();
@@ -223,6 +223,11 @@ public class InstanceReportService {
                     log.trace("Report response: {}", response.body().string());
                     return true;
                 } else {
+                    if (response.code() == HttpStatus.FORBIDDEN.value()) {
+                        // 封禁处理
+
+                        return false;
+                    }
                     log.warn("Report failed with status: {}", response.code());
                     return false;
                 }

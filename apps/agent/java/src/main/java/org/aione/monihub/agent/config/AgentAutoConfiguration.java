@@ -8,7 +8,7 @@ import org.aione.monihub.agent.collector.NetworkInfoCollector;
 import org.aione.monihub.agent.collector.RuntimeInfoCollector;
 import org.aione.monihub.agent.collector.SystemInfoCollector;
 import org.aione.monihub.agent.executor.AgentTaskExecutor;
-import org.aione.monihub.agent.handler.ExecuteCommandHandler;
+import org.aione.monihub.agent.handler.CustomCommandHandler;
 import org.aione.monihub.agent.handler.FileManagerHandler;
 import org.aione.monihub.agent.handler.ShellExecHandler;
 import org.aione.monihub.agent.service.InstanceReportService;
@@ -118,8 +118,8 @@ public class AgentAutoConfiguration {
      * 命令执行处理器
      */
     @Bean
-    public ExecuteCommandHandler executeCommandHandler() {
-        return new ExecuteCommandHandler();
+    public CustomCommandHandler executeCommandHandler() {
+        return new CustomCommandHandler();
     }
 
     /**

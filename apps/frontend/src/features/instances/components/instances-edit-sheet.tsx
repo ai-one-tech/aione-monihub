@@ -13,6 +13,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -291,7 +292,13 @@ export function InstancesEditSheet() {
                         <FormItem className='mt-4'>
                           <FormLabel>程序运行路径</FormLabel>
                           <FormControl>
-                            <Input placeholder='请输入程序运行路径' {...field} disabled={isViewMode} />
+                            <Textarea 
+                              placeholder='请输入程序运行路径' 
+                              {...field} 
+                              disabled={isViewMode}
+                              rows={3}
+                              className='resize-none'
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
