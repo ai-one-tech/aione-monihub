@@ -32,6 +32,7 @@ pub async fn get_instances(
         select = select.filter(
             crate::entities::instances::Column::Hostname.contains(search)
                 .or(crate::entities::instances::Column::Id.contains(search))
+                .or(crate::entities::instances::Column::AgentInstanceId.contains(search))
                 .or(crate::entities::instances::Column::IpAddress.contains(search))
                 .or(crate::entities::instances::Column::PublicIp.contains(search))
                 .or(crate::entities::instances::Column::ApplicationId.contains(search))
@@ -66,6 +67,11 @@ pub async fn get_instances(
     // 添加计算机名过滤器
     if let Some(hostname) = &query.hostname {
         select = select.filter(crate::entities::instances::Column::Hostname.contains(hostname));
+    }
+
+    // 添加Agent实例ID过滤器
+    if let Some(agent_instance_id) = &query.agent_instance_id {
+        select = select.filter(crate::entities::instances::Column::AgentInstanceId.contains(agent_instance_id));
     }
 
     // 获取总数

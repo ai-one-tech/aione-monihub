@@ -24,6 +24,8 @@ pub struct Instance {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InstanceResponse {
     pub id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub agent_instance_id: Option<String>,
     pub hostname: String,
     pub ip_address: String,
     pub environment: Option<JsonValue>,
@@ -62,6 +64,8 @@ pub struct InstanceCreateRequest {
     pub status: Status,
     pub application_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub agent_instance_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub public_ip: Option<String>,
@@ -84,6 +88,8 @@ pub struct InstanceUpdateRequest {
     pub environment: String,
     pub status: Option<Status>,
     pub application_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub agent_instance_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -118,6 +124,7 @@ pub struct InstanceListQuery {
     pub ip_address: Option<String>,
     pub public_ip: Option<String>,
     pub hostname: Option<String>,
+    pub agent_instance_id: Option<String>,
     pub start_time: Option<String>,
     pub end_time: Option<String>,
 }
@@ -127,6 +134,7 @@ impl InstanceResponse {
     pub fn from_entity(entity: crate::entities::instances::Model) -> Self {
         Self {
             id: entity.id,
+            agent_instance_id: entity.agent_instance_id,
             hostname: entity.hostname,
             ip_address: entity.ip_address,
             environment: entity.environment,
@@ -157,6 +165,7 @@ impl InstanceCreateRequest {
         
         crate::entities::instances::ActiveModel {
             id: Set(id),
+            agent_instance_id: Set(self.agent_instance_id.clone()),
             hostname: Set(format!("host-{}", generate_snowflake_id())),
             ip_address: Set("0.0.0.0".to_string()),
             status: Set(self.status.clone()),

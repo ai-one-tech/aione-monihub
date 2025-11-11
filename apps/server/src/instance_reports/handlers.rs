@@ -43,17 +43,20 @@ pub async fn report_instance_info(
     };
 
     // 5. 验证实例是否存在，如果不存在则自动创建
+    // 首先通过 agent_instance_id 查找实例
     let instance = instances::Entity::find()
-        .filter(instances::Column::Id.eq(&request.instance_id))
+        .filter(instances::Column::AgentInstanceId.eq(&request.instance_id))
         .filter(instances::Column::DeletedAt.is_null())
         .one(&**db)
         .await?;
 
     let instance = if instance.is_none() {
-        // 自动创建新实例
+        // 自动创建新实例，生成新的数据库主键 id
+        let new_instance_id = generate_snowflake_id();
         
         let new_instance = instances::ActiveModel {
-            id: Set(request.instance_id.clone()),
+            id: Set(new_instance_id),
+            agent_instance_id: Set(Some(request.instance_id.clone())),
             hostname: Set(request.system_info.hostname.clone().unwrap_or_default()),
             ip_address: Set(request.network_info.ip_address.clone().unwrap_or_default()),
             status: Set(Status::Active),
@@ -117,7 +120,7 @@ pub async fn report_instance_info(
 
     let record = instance_records::ActiveModel {
         id: Set(record_id.clone()),
-        instance_id: Set(request.instance_id.clone()),
+        instance_id: Set(instance.id.clone()),
         agent_type: Set(request.agent_type.clone()),
         agent_version: Set(request.agent_version.clone()),
         os_type: Set(Some(request.system_info.os_type.clone())),
