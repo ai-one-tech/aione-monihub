@@ -1,8 +1,11 @@
 package org.aione.monihub.agent.model;
 
+import lombok.Getter;
+
 /**
  * 任务类型枚举
  */
+@Getter
 public enum TaskType {
     
     /**
@@ -13,26 +16,28 @@ public enum TaskType {
     /**
      * 文件管理任务
      */
+    SCRIPT_EXEC("script_exec"),
+
+    /**
+     * 文件管理任务
+     */
     FILE_MANAGER("file_manager"),
     
     /**
-     * 命令执行任务
+     * 自定义命令任务
      */
-    EXECUTE_COMMAND("execute_command");
-    
+    CUSTOM_COMMAND("custom_command");
+
+    /**
+     * -- GETTER --
+     *  获取枚举值
+     */
     private final String value;
     
     TaskType(String value) {
         this.value = value;
     }
-    
-    /**
-     * 获取枚举值
-     */
-    public String getValue() {
-        return value;
-    }
-    
+
     /**
      * 根据字符串值获取对应的枚举
      */

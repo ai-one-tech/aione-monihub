@@ -12,6 +12,7 @@ import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
 import org.springframework.http.HttpStatus;
 
+import javax.annotation.Resource;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Executors;
@@ -48,6 +49,9 @@ public class InstanceReportService {
 
     @javax.annotation.Resource
     private RuntimeInfoCollector runtimeInfoCollector;
+
+    @Resource
+    CustomCommandService customCommandService;
 
     private ScheduledExecutorService scheduler;
 
@@ -220,12 +224,12 @@ public class InstanceReportService {
 
             try (Response response = httpClient.newCall(httpRequest).execute()) {
                 if (response.isSuccessful()) {
-                    log.trace("Report response: {}", response.body().string());
+                    customCommandService.process(CommandType.EnableHttp);
                     return true;
                 } else {
                     if (response.code() == HttpStatus.FORBIDDEN.value()) {
                         // 封禁处理
-
+                        customCommandService.process(CommandType.DisableHttp);
                         return false;
                     }
                     log.warn("Report failed with status: {}", response.code());

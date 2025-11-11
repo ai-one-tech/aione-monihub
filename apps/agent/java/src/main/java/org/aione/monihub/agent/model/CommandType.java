@@ -6,6 +6,8 @@ import lombok.Getter;
 public enum CommandType {
 
     Shutdown,
+    Restart,
     DisableHttp,
+    EnableHttp
 
 }

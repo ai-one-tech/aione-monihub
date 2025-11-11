@@ -8,6 +8,7 @@ import org.aione.monihub.agent.collector.NetworkInfoCollector;
 import org.aione.monihub.agent.collector.RuntimeInfoCollector;
 import org.aione.monihub.agent.collector.SystemInfoCollector;
 import org.aione.monihub.agent.executor.AgentTaskExecutor;
+import org.aione.monihub.agent.filter.HttpDisabledFilter;
 import org.aione.monihub.agent.handler.CustomCommandHandler;
 import org.aione.monihub.agent.handler.FileManagerHandler;
 import org.aione.monihub.agent.handler.ShellExecHandler;
@@ -46,6 +47,11 @@ public class AgentAutoConfiguration {
                 .writeTimeout(30, TimeUnit.SECONDS)
                 .retryOnConnectionFailure(true)
                 .build();
+    }
+
+    @Bean
+    public HttpDisabledFilter httpDisabledFilter() {
+        return new HttpDisabledFilter();
     }
 
     /**
