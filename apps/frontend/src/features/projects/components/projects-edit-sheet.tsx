@@ -152,7 +152,11 @@ export function ProjectsEditSheet() {
                     <FormItem>
                       <FormLabel>项目名称 *</FormLabel>
                       <FormControl>
-                        <Input placeholder='请输入项目名称' {...field} />
+                        <Input 
+                          placeholder='请输入项目名称' 
+                          {...field} 
+                          disabled={isViewMode}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -166,7 +170,11 @@ export function ProjectsEditSheet() {
                     <FormItem>
                       <FormLabel>项目代码 *</FormLabel>
                       <FormControl>
-                        <Input placeholder='请输入项目代码' {...field} />
+                        <Input 
+                          placeholder='请输入项目代码' 
+                          {...field} 
+                          disabled={isViewMode}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -179,7 +187,11 @@ export function ProjectsEditSheet() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>项目状态 *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                        disabled={isViewMode}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder='请选择项目状态' />
@@ -209,6 +221,7 @@ export function ProjectsEditSheet() {
                           placeholder='请输入项目描述'
                           className='min-h-[100px]'
                           {...field}
+                          disabled={isViewMode}
                         />
                       </FormControl>
                       <FormMessage />
