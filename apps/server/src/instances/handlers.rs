@@ -40,12 +40,12 @@ pub async fn get_instances(
 
     // 添加状态过滤器
     if let Some(status) = &query.status {
-        select = select.filter(crate::entities::instances::Column::Status.eq(status));
+        select = select.filter(crate::entities::instances::Column::Status.eq(status.clone()));
     }
 
     // 添加在线状态过滤器
     if let Some(online_status) = &query.online_status {
-        select = select.filter(crate::entities::instances::Column::OnlineStatus.eq(online_status));
+        select = select.filter(crate::entities::instances::Column::OnlineStatus.eq(online_status.clone()));
     }
 
     // 添加应用ID过滤器

@@ -55,6 +55,6 @@ public class CustomCommandHandler implements TaskHandler {
 
     @Override
     public TaskType getTaskType() {
-        return TaskType.EXECUTE_COMMAND;
+        return TaskType.CUSTOM_COMMAND;
     }
 }

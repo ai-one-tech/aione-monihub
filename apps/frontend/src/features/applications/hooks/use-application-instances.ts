@@ -9,6 +9,7 @@ export function useApplicationInstances(applicationId: string) {
     queryKey: ['application-instances', applicationId],
     queryFn: () => instancesApi.getInstances({
       application_id: applicationId,
+      online_status: 'online',
       limit: 100, // 获取最多100个实例
     }),
     enabled: !!applicationId,
