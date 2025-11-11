@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/popover'
 import { Separator } from '@/components/ui/separator'
 
-type DataTableFacetedFilterProps<TData, TValue> = {
+type DataTableSingleFilterProps<TData, TValue> = {
   column?: Column<TData, TValue>
   title?: string
   options: {
@@ -28,20 +28,14 @@ type DataTableFacetedFilterProps<TData, TValue> = {
     value: string
     icon?: React.ComponentType<{ className?: string }>
   }[]
-  multiSelect?: boolean // 控制是否启用多选，默认为 false（单选）
 }
 
-export function DataTableFacetedFilter<TData, TValue>({
+export function DataTableSingleFilter<TData, TValue>({
   column,
   title,
   options,
-  multiSelect = false, // 默认为单选模式
-}: DataTableFacetedFilterProps<TData, TValue>) {
-  // 根据是否多选来确定 selectedValues 的类型和初始值
-  const filterValue = column?.getFilterValue()
-  const selectedValues = multiSelect 
-    ? new Set(filterValue as string[])
-    : new Set(filterValue ? [filterValue as string] : [])
+}: DataTableSingleFilterProps<TData, TValue>) {
+  const selectedValue = column?.getFilterValue() as string | undefined
 
   return (
     <Popover>
@@ -49,37 +43,15 @@ export function DataTableFacetedFilter<TData, TValue>({
         <Button variant='outline' size='sm' className='h-8 border-dashed'>
           <PlusCircledIcon className='size-4' />
           {title}
-          {selectedValues.size > 0 && (
+          {selectedValue && (
             <>
               <Separator orientation='vertical' className='mx-2 h-4' />
               <Badge
                 variant='secondary'
-                className='rounded-sm px-1 font-normal lg:hidden'
+                className='rounded-sm px-1 font-normal'
               >
-                {selectedValues.size}
+                {options.find(option => option.value === selectedValue)?.label || selectedValue}
               </Badge>
-              <div className='hidden space-x-1 lg:flex'>
-                {selectedValues.size > 2 ? (
-                  <Badge
-                    variant='secondary'
-                    className='rounded-sm px-1 font-normal'
-                  >
-                    {selectedValues.size} selected
-                  </Badge>
-                ) : (
-                  options
-                    .filter((option) => selectedValues.has(option.value))
-                    .map((option) => (
-                      <Badge
-                        variant='secondary'
-                        key={option.value}
-                        className='rounded-sm px-1 font-normal'
-                      >
-                        {option.label}
-                      </Badge>
-                    ))
-                )}
-              </div>
             </>
           )}
         </Button>
@@ -91,32 +63,14 @@ export function DataTableFacetedFilter<TData, TValue>({
             <CommandEmpty>No results found.</CommandEmpty>
             <CommandGroup>
               {options.map((option) => {
-                const isSelected = selectedValues.has(option.value)
+                const isSelected = selectedValue === option.value
                 return (
                   <CommandItem
                     key={option.value}
                     onSelect={() => {
-                      if (multiSelect) {
-                        // 多选模式
-                        if (isSelected) {
-                          selectedValues.delete(option.value)
-                        } else {
-                          selectedValues.add(option.value)
-                        }
-                        const filterValues = Array.from(selectedValues)
-                        column?.setFilterValue(
-                          filterValues.length ? filterValues : undefined
-                        )
-                      } else {
-                        // 单选模式
-                        if (isSelected) {
-                          // 如果已选中，则清空选择
-                          column?.setFilterValue(undefined)
-                        } else {
-                          // 如果未选中，则选择该项
-                          column?.setFilterValue(option.value)
-                        }
-                      }
+                      // For single selection, set the value directly or clear if already selected
+                      const newValue = isSelected ? undefined : option.value
+                      column?.setFilterValue(newValue)
                     }}
                   >
                     <div
@@ -137,7 +91,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                 )
               })}
             </CommandGroup>
-            {selectedValues.size > 0 && (
+            {selectedValue && (
               <>
                 <CommandSeparator />
                 <CommandGroup>
@@ -145,7 +99,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                     onSelect={() => column?.setFilterValue(undefined)}
                     className='justify-center text-center'
                   >
-                    Clear filters
+                    Clear filter
                   </CommandItem>
                 </CommandGroup>
               </>

@@ -60,8 +60,8 @@ export function SystemUsersTable({ data = [], totalPages, search, navigate }: Da
     columnFilters: [
       // username per-column text filter
       { columnId: 'username', searchKey: 'username', type: 'string' },
-      { columnId: 'roles', searchKey: 'roles', type: 'array' },
-      { columnId: 'status', searchKey: 'status', type: 'array' },
+      { columnId: 'roles', searchKey: 'roles', type: 'array' }, // 改为 string 类型以匹配单选模式
+      { columnId: 'status', searchKey: 'status', type: 'string' }, // 改为 string 类型以匹配单选模式
     ],
   })
 
@@ -95,7 +95,8 @@ export function SystemUsersTable({ data = [], totalPages, search, navigate }: Da
 
   // 动态加载角色列表用于筛选（统一使用角色名称）
   const { data: rolesData, isLoading: rolesLoading } = useRolesQuery({})
-
+  console.log('rolesData', rolesLoading, rolesData)
+  
   return (
     <div className='flex flex-col h-full min-h-0 max-sm:has-[div[role="toolbar"]]:mb-16'>
       <DataTableToolbar
@@ -110,6 +111,7 @@ export function SystemUsersTable({ data = [], totalPages, search, navigate }: Da
               { label: '激活', value: 'active' },
               { label: '禁用', value: 'disabled' },
             ],
+            multiSelect: false, // 改为单选模式
           },
           {
             columnId: 'roles',
@@ -118,8 +120,9 @@ export function SystemUsersTable({ data = [], totalPages, search, navigate }: Da
               ? []
               : (rolesData?.data ?? []).map((role) => ({
                   label: role.name,
-                  value: role.name,
+                  value: role.id, // 使用角色ID而不是角色名称
                 })),
+            multiSelect: true, // 改为单选模式
           },
         ]}
       />

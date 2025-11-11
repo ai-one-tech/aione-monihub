@@ -59,12 +59,12 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot='dialog-content'
         className={cn(
-          'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-[100] flex items-center justify-center p-4',
+          'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-[100] flex items-center justify-center',
           className
         )}
         {...props}
       >
-        <div className={cn('bg-background sm:max-w-lg max-w-[calc(100%-2rem)] max-h-[calc(100%-2rem)] overflow-y-auto rounded-lg border p-6 shadow-lg duration-200 relative')}>        
+        <div className={cn('bg-background sm:max-w-lg max-w-[calc(100%-2rem)] max-h-[calc(100%-2rem)] overflow-y-auto rounded-lg border p-6 shadow-lg duration-200 relative p-4')}>        
           {children}
           {showCloseButton && (
             <DialogPrimitive.Close

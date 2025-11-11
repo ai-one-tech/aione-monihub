@@ -20,6 +20,7 @@ pub struct User {
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct RoleInfo {
+    pub id: String,
     pub name: String,
     pub description: Option<String>,
 }
@@ -98,4 +99,5 @@ pub struct UserListQuery {
     pub limit: Option<u64>,
     pub search: Option<String>,
     pub status: Option<UserStatus>,
+    pub roles: Option<String>, // 添加角色筛选参数
 }

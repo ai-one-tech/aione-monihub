@@ -70,7 +70,6 @@ export type GetApplicationsParams = z.infer<typeof getApplicationsParamsSchema>
 
 // 应用状态选项
 export const APPLICATION_STATUS_OPTIONS = [
-  { value: 'all', label: '全部状态' },
   { value: 'active', label: '激活' },
   { value: 'disabled', label: '禁用' },
 ] as const

@@ -25,6 +25,7 @@ export function SystemUsers() {
     limit: search.pageSize || 10,
     search: search.username || undefined,
     status: (search.status) ? search.status as string : undefined,
+    roles: (search.roles) ? (Array.isArray(search.roles) ? search.roles[0] : search.roles) as string : undefined, // 添加角色筛选参数
   }
 
   const { data, isLoading, error, refetch } = useUsersQuery(apiParams)
@@ -41,7 +42,7 @@ export function SystemUsers() {
           </div>
           <SystemUsersPrimaryButtons />
         </div>
-        <div className='flex-1 min-h-0 overflow-hidden px-4 py-1 lg:flex-row lg:space-y-0 lg:space-x-12'>
+        <div className='flex-1 min-h-0 overflow-hidden py-1 lg:flex-row lg:space-y-0 lg:space-x-12'>
           {isLoading ? (
             <div className='space-y-4'>
               <Skeleton className='h-10 w-full' />

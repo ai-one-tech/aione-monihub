@@ -1,7 +1,7 @@
 use crate::auth::middleware::get_user_id_from_request;
 use crate::entities::{instance_task_records, instance_tasks, instances};
 use crate::instance_tasks::models::*;
-use crate::shared::enums::{TaskStatus, TaskType};
+use crate::shared::enums::{TaskStatus};
 use crate::shared::error::ApiError;
 use crate::shared::generate_snowflake_id;
 use actix_web::{web, HttpRequest, HttpResponse, Result};

@@ -17,9 +17,8 @@ use bcrypt::{hash, DEFAULT_COST};
 use chrono::Utc;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter,
-    QueryOrder, QuerySelect, Set,
+    QueryOrder, QuerySelect, QueryTrait, Set,
 };
-use sqlx::types::uuid::Version::Nil;
 
 #[utoipa::path(
     get,
@@ -66,6 +65,21 @@ pub async fn get_users(
         select = select.filter(crate::entities::users::Column::Status.eq(status.clone()));
     }
 
+    // 角色过滤
+    if let Some(role_id) = &query.roles {
+        // 通过用户角色关联表进行过滤
+        select = select.filter(
+            crate::entities::users::Column::Id.in_subquery(
+                crate::entities::user_roles::Entity::find()
+                    .filter(crate::entities::user_roles::Column::RoleId.eq(role_id.clone()))
+                    .select_only()
+                    .column(crate::entities::user_roles::Column::UserId)
+                    .as_query()
+                    .clone() // 添加 .clone() 来解决类型不匹配问题
+            )
+        );
+    }
+
     // 排序
     select = select.order_by_desc(crate::entities::users::Column::CreatedAt);
 
@@ -94,6 +108,7 @@ pub async fn get_users(
             .into_iter()
             .filter_map(|(_, roles)| roles.into_iter().next())
             .map(|role| RoleInfo {
+                id: role.id, // 添加缺失的 id 字段
                 name: role.name,
                 description: role.description,
             })
@@ -255,6 +270,7 @@ pub async fn get_user(
                 .into_iter()
                 .filter_map(|(_, roles)| roles.into_iter().next())
                 .map(|role| RoleInfo {
+                    id: role.id, // 添加缺失的 id 字段
                     name: role.name,
                     description: role.description,
                 })
@@ -406,6 +422,7 @@ pub async fn update_user(
         .into_iter()
         .filter_map(|(_, roles)| roles.into_iter().next())
         .map(|role| RoleInfo {
+            id: role.id, // 添加缺失的 id 字段
             name: role.name,
             description: role.description,
         })

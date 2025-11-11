@@ -17,7 +17,7 @@ export const projectsColumns: ColumnDef<ProjectResponse>[] = [
         }
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         aria-label='全选'
-        className='translate-y-[2px]'
+        className='translate-y-0.5'
       />
     ),
     meta: {
@@ -28,7 +28,7 @@ export const projectsColumns: ColumnDef<ProjectResponse>[] = [
         checked={row.getIsSelected()}
         onCheckedChange={(value) => row.toggleSelected(!!value)}
         aria-label='选择行'
-        className='translate-y-[2px]'
+        className='translate-y-0.5'
       />
     ),
     enableSorting: false,
@@ -134,6 +134,9 @@ export const projectsColumns: ColumnDef<ProjectResponse>[] = [
   },
   {
     id: 'actions',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='操作' />
+    ),
     cell: ProjectsDataTableRowActions,
   },
 ]

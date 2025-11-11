@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 // 角色信息结构
 export const roleInfoSchema = z.object({
+  id: z.string(), // 添加ID字段
   name: z.string(),
   description: z.string().nullable().optional(),
 })
@@ -46,7 +47,7 @@ export const updateUserRequestSchema = z.object({
   username: z.string().optional(),
   email: z.string().email().optional(),
   status: z.string().optional(),
-  roles: z.array(z.string()).optional(),
+  roles: z.string().optional(),
 })
 
 export type UpdateUserRequest = z.infer<typeof updateUserRequestSchema>
@@ -77,6 +78,7 @@ export const getUsersParamsSchema = z.object({
   limit: z.number().optional(),
   search: z.string().optional(),
   status: z.string().optional(),
+  roles: z.string().optional(), // 添加角色筛选参数
 })
 
 export type GetUsersParams = z.infer<typeof getUsersParamsSchema>

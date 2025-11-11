@@ -67,7 +67,6 @@ export type GetProjectsParams = z.infer<typeof getProjectsParamsSchema>
 
 // 项目状态选项
 export const PROJECT_STATUS_OPTIONS = [
-  { value: 'all', label: '全部状态' },
   { value: 'active', label: '激活' },
   { value: 'disabled', label: '禁用' },
 ] as const

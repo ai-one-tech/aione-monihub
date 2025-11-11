@@ -92,8 +92,16 @@ export function useTableUrlState(
       const raw = (search as SearchRecord)[cfg.searchKey]
       const deserialize = cfg.deserialize ?? ((v: unknown) => v)
       if (cfg.type === 'string') {
-        const value = (deserialize(raw) as string) ?? ''
-        if (typeof value === 'string' && value.trim() !== '') {
+        // Handle both string and array values for string type
+        let value = '';
+        if (Array.isArray(raw) && raw.length > 0) {
+          // If it's an array, take the first element
+          value = raw[0] as string;
+        } else if (typeof raw === 'string') {
+          value = raw;
+        }
+        
+        if (value.trim() !== '') {
           collected.push({ id: cfg.columnId, value })
         }
       } else {
@@ -169,10 +177,17 @@ export function useTableUrlState(
       const found = next.find((f) => f.id === cfg.columnId)
       const serialize = cfg.serialize ?? ((v: unknown) => v)
       if (cfg.type === 'string') {
-        const value =
-          typeof found?.value === 'string' ? (found.value as string) : ''
+        // Handle both string and array values
+        let value = '';
+        if (Array.isArray(found?.value) && found!.value.length > 0) {
+          // If it's an array, take the first element
+          value = found!.value[0] as string;
+        } else if (typeof found?.value === 'string') {
+          value = found.value;
+        }
+        
         patch[cfg.searchKey] =
-          value.trim() !== '' ? serialize(value) : undefined
+          value.trim() !== '' ? serialize(value) : undefined;
       } else {
         const value = Array.isArray(found?.value)
           ? (found!.value as unknown[])

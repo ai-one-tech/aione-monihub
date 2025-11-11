@@ -32,7 +32,6 @@ async fn run_offline_check(db: &DatabaseConnection) -> Result<u64, sea_orm::DbEr
     let start = Instant::now();
     let cutoff = Utc::now() - Duration::minutes(5);
     let now = Utc::now();
-    let mut total_updated: u64 = 0;
 
     // 1) last_report_at <= cutoff 的 active 实例
     let res1 = instances::Entity::update_many()
@@ -51,7 +50,7 @@ async fn run_offline_check(db: &DatabaseConnection) -> Result<u64, sea_orm::DbEr
         )
         .exec(db)
         .await?;
-    total_updated = res1.rows_affected;
+    let total_updated = res1.rows_affected;
 
     let elapsed_ms = start.elapsed().as_millis();
     info!(

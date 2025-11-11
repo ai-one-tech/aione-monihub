@@ -58,7 +58,7 @@ export function ApplicationsTable({ data = [], totalPages, search, navigate }: D
     globalFilter: { enabled: false },
     columnFilters: [
       { columnId: 'name', searchKey: 'search', type: 'string' },
-      { columnId: 'status', searchKey: 'status', type: 'array' },
+      { columnId: 'status', searchKey: 'status', type: 'string' }, // 改为字符串类型
     ],
   })
 
@@ -105,6 +105,7 @@ export function ApplicationsTable({ data = [], totalPages, search, navigate }: D
                 label: option.label,
                 value: option.value,
               })),
+            multiSelect: false, // 设置为单选模式
           },
         ]}
       />

@@ -72,7 +72,7 @@ function InstancesContent() {
             新增实例
           </Button> */}
         </div>
-        <div className='flex-1 min-h-0 min-w-0 overflow-hidden px-4 py-1 lg:flex-row lg:space-y-0 lg:space-x-12'>
+        <div className='flex-1 min-h-0 min-w-0 overflow-hidden py-1 lg:flex-row lg:space-y-0 lg:space-x-12'>
           {isLoading ? (
             <div className='space-y-4'>
               <Skeleton className='h-10 w-full' />

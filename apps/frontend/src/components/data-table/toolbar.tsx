@@ -19,6 +19,7 @@ type DataTableToolbarProps<TData> = {
       value: string
       icon?: React.ComponentType<{ className?: string }>
     }[]
+    multiSelect?: boolean
   }[]
 }
 
@@ -89,6 +90,7 @@ export function DataTableToolbar<TData>({
                 column={column}
                 title={filter.title}
                 options={filter.options}
+                multiSelect={filter.multiSelect} // 传递多选属性
               />
             )
           })}

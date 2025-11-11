@@ -42,7 +42,8 @@ pub async fn get_projects(
     let offset = (page - 1) * limit;
 
     // 构建查询
-    let mut select = Projects::find();
+    let mut select =
+        Projects::find().filter(crate::entities::projects::Column::DeletedAt.is_null());
 
     // 如果有搜索关键词，按名称、编码、描述搜索（任意匹配）
     if let Some(search) = &query.search {
@@ -192,6 +193,9 @@ pub async fn get_project(
 
     match project {
         Some(project) => {
+            if project.deleted_at.is_some() {
+                return Err(ApiError::NotFound("项目不存在".to_string()));
+            }
             let response = ProjectResponse {
                 id: project.id,
                 name: project.name,
@@ -303,7 +307,12 @@ pub async fn delete_project(
     let existing_project = Projects::find_by_id(&project_id).one(&**db).await?;
 
     let _existing_project = match existing_project {
-        Some(project) => project,
+        Some(project) => {
+            if project.deleted_at.is_some() {
+                return Err(ApiError::NotFound("项目不存在".to_string()));
+            }
+            project
+        }
         None => return Err(ApiError::NotFound("项目不存在".to_string())),
     };
 
@@ -360,7 +369,12 @@ pub async fn enable_project(
 
     let existing = Projects::find_by_id(&project_id).one(&**db).await?;
     let project = match existing {
-        Some(p) => p,
+        Some(p) => {
+            if p.deleted_at.is_some() {
+                return Err(ApiError::NotFound("项目不存在".to_string()));
+            }
+            p
+        }
         None => return Err(ApiError::NotFound("项目不存在".to_string())),
     };
 
@@ -407,7 +421,12 @@ pub async fn disable_project(
 
     let existing = Projects::find_by_id(&project_id).one(&**db).await?;
     let project = match existing {
-        Some(p) => p,
+        Some(p) => {
+            if p.deleted_at.is_some() {
+                return Err(ApiError::NotFound("项目不存在".to_string()));
+            }
+            p
+        }
         None => return Err(ApiError::NotFound("项目不存在".to_string())),
     };
 

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { type NavigateOptions } from '@tanstack/react-router'
 import {
   type SortingState,
   type VisibilityState,
@@ -58,7 +57,11 @@ export function ProjectsTable({ data = [], totalPages, search, navigate }: DataT
     globalFilter: { enabled: false },
     columnFilters: [
       { columnId: 'name', searchKey: 'search', type: 'string' },
-      { columnId: 'status', searchKey: 'status', type: 'array' },
+      { 
+        columnId: 'status', 
+        searchKey: 'status', 
+        type: 'string', // 改回字符串类型，因为现在是单选
+      },
     ],
   })
 
@@ -105,6 +108,7 @@ export function ProjectsTable({ data = [], totalPages, search, navigate }: DataT
                 label: option.label,
                 value: option.value,
               })),
+            multiSelect: false, // 明确设置为单选模式
           },
         ]}
       />

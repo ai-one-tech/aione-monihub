@@ -47,7 +47,10 @@ export function SystemRolesTable({ data, totalPages, search, navigate }: SystemR
     navigate,
     pagination: { defaultPage: 1, defaultPageSize: 10 },
     globalFilter: { enabled: false },
-    columnFilters: [],
+    columnFilters: [
+      { columnId: 'name', searchKey: 'name', type: 'string' },
+      { columnId: 'permissions', searchKey: 'permissions', type: 'string' },
+    ],
   })
 
   const table = useReactTable({
@@ -69,6 +72,7 @@ export function SystemRolesTable({ data, totalPages, search, navigate }: SystemR
     manualPagination: true,
     pageCount: totalPages,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
@@ -80,6 +84,19 @@ export function SystemRolesTable({ data, totalPages, search, navigate }: SystemR
         table={table}
         searchKey='name'
         searchPlaceholder='搜索角色名称...'
+        filters={[
+          {
+            columnId: 'permissions',
+            title: '权限数量',
+            options: [
+              { label: '0', value: '0' },
+              { label: '1-5', value: '1-5' },
+              { label: '6-10', value: '6-10' },
+              { label: '10+', value: '10+' },
+            ],
+            multiSelect: false,
+          },
+        ]}
       />
       <div className='flex-1 min-h-0 overflow-auto rounded-md border mt-4'>
         <Table>
@@ -99,9 +116,9 @@ export function SystemRolesTable({ data, totalPages, search, navigate }: SystemR
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   )
                 })}

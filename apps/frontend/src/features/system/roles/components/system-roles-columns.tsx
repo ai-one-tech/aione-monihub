@@ -6,8 +6,38 @@ import { SystemRolesDataTableRowActions } from './system-roles-data-table-row-ac
 import { type ApiRoleResponse } from '../data/api-schema'
 import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
+import { Checkbox } from '@/components/ui/checkbox'
+import { cn } from '@/lib/utils'
 
 export const systemRolesColumns: ColumnDef<ApiRoleResponse>[] = [
+  // 选择复选框列（支持当前页全选/取消全选）
+  {
+    id: 'select',
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && 'indeterminate')
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label='全选'
+        className='translate-y-[2px]'
+      />
+    ),
+    meta: {
+      className: cn('sticky md:table-cell start-0 z-10 rounded-tl-[inherit]'),
+    },
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label='选择行'
+        className='translate-y-[2px]'
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
   {
     accessorKey: 'name',
     header: ({ column }) => (
@@ -51,6 +81,30 @@ export const systemRolesColumns: ColumnDef<ApiRoleResponse>[] = [
         </Badge>
       )
     },
+    // 支持根据数量区间进行筛选
+    filterFn: (row, id, value) => {
+      const permissions = row.getValue(id) as string[]
+      const count = Array.isArray(permissions) ? permissions.length : 0
+
+      const values = Array.isArray(value) ? value : [value]
+
+      return values.some((v: string) => {
+        switch (v) {
+          case '0':
+            return count === 0
+          case '1-5':
+            return count >= 1 && count <= 5
+          case '6-10':
+            return count >= 6 && count <= 10
+          case '10+':
+            return count >= 10
+          default:
+            return true
+        }
+      })
+    },
+    enableSorting: false,
+    enableHiding: false,
   },
   {
     accessorKey: 'created_at',
@@ -92,6 +146,9 @@ export const systemRolesColumns: ColumnDef<ApiRoleResponse>[] = [
   },
   {
     id: 'actions',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='操作' />
+    ),
     cell: ({ row }) => <SystemRolesDataTableRowActions row={row} />,
   },
 ]

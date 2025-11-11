@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use sea_orm::entity::prelude::*;
 use utoipa::ToSchema;
-use strum_macros::{Display, EnumIter, EnumString};
+use strum_macros::{EnumIter};
 
 // 统一的枚举定义与数据库/序列化映射
 

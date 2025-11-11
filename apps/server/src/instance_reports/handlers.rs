@@ -5,7 +5,7 @@ use crate::instance_reports::models::{
 use crate::shared::error::ApiError;
 use crate::shared::generate_snowflake_id;
 use crate::entities::{instance_records, instances, applications};
-use crate::shared::enums::{Status, OnlineStatus, NetworkType};
+use crate::shared::enums::{Status, OnlineStatus};
 use actix_web::{web, HttpResponse, Result};
 use chrono::Utc;
 use sea_orm::{

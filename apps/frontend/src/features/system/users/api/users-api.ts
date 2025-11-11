@@ -20,9 +20,13 @@ class UsersApi {
     if (params.status) {
       searchParams.append('status', params.status)
     }
+    if (params.roles) {
+      searchParams.append('roles', params.roles)
+    }
 
     const queryString = searchParams.toString()
     const endpoint = `/api/users${queryString ? `?${queryString}` : ''}`
+    console.log('API endpoint:', endpoint) // 调试信息
 
     const response = await apiClient.get<UserListResponse>(endpoint)
     return response.data

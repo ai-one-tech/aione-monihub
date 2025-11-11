@@ -108,17 +108,18 @@ export const systemUsersColumns: ColumnDef<ApiUserResponse>[] = [
       }
       return (
         <div className='w-fit text-nowrap'>
-          {roles.map((role, index) => {
-            const displayText = role.name;
-            return displayText
-          }).join(' , ')}
+          {roles.map((role) => role.name).join(' , ')}
         </div>
       )
     },
     filterFn: (row, id, value) => {
       const roles = row.getValue(id) as RoleInfo[] | undefined
       if (!roles || !Array.isArray(roles)) return false
-      return value.some((v: string) => roles.some(role => role.name.includes(v)))
+      
+      // 处理单个值或数组值的情况
+      const filterValues = Array.isArray(value) ? value : [value]
+      // 检查用户的角色ID是否匹配筛选条件
+      return filterValues.some((roleId: string) => roles.some(role => role.id === roleId))
     },
     enableSorting: false,
     enableHiding: false,
