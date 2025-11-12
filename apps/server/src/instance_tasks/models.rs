@@ -115,7 +115,7 @@ pub struct TaskRecordListResponse {
 }
 
 /// 实例信息
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct InstanceInfo {
     pub id: String,
     pub agent_instance_id: String,
@@ -132,14 +132,14 @@ pub struct InstanceInfo {
 }
 
 /// 任务关联实例及执行结果
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct TaskInstanceWithResult {
     pub instance: InstanceInfo,
     pub execution_record: TaskRecordResponse,
 }
 
 /// 任务关联实例及执行结果响应
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct TaskInstanceWithResultResponse {
     pub task_id: String,
     pub data: Vec<TaskInstanceWithResult>,
@@ -148,10 +148,18 @@ pub struct TaskInstanceWithResultResponse {
 }
 
 /// 任务执行记录查询参数
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct TaskRecordListQuery {
+    #[serde(rename = "page")]
+    #[param(rename = "page")]
     pub page: Option<u32>,
+    
+    #[serde(rename = "limit")]
+    #[param(rename = "limit")]
     pub limit: Option<u32>,
+    
+    #[serde(rename = "status")]
+    #[param(rename = "status")]
     pub status: Option<String>,
 }
 

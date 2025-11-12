@@ -37,6 +37,7 @@ pub enum OnlineStatus {
 #[sea_orm(rs_type = "String", db_type = "Text")]
 #[serde(rename_all = "snake_case")]
 pub enum TaskStatus {
+    #[sea_orm(string_value = "pending")] Pending,
     #[sea_orm(string_value = "dispatched")] Dispatched,
     #[sea_orm(string_value = "running")] Running,
     #[sea_orm(string_value = "success")] Success,
