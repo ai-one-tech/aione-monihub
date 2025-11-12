@@ -22,7 +22,14 @@ export function ApplicationTasks() {
   const queryClient = useQueryClient()
   const [selectedInstances, setSelectedInstances] = useState<string[]>([])
   const [taskType, setTaskType] = useState('shell_exec')
+  
+  // 不同任务类型的参数状态
   const [shellScript, setShellScript] = useState('')
+  const [codeContent, setCodeContent] = useState('')
+  const [fileManagerOperation, setFileManagerOperation] = useState('list')
+  const [filePath, setFilePath] = useState('')
+  const [fileContent, setFileContent] = useState('')
+  const [customCommand, setCustomCommand] = useState('')
 
   // 获取应用详情
   const { data: application } = useQuery({
@@ -75,6 +82,75 @@ export function ApplicationTasks() {
     return statusMap[status] || status
   }
 
+  // 渲染不同任务类型的参数输入表单
+  const renderTaskTypeForm = () => {
+    switch (taskType) {
+      case 'shell_exec':
+        return (
+          <div>
+            <Textarea
+              placeholder="请输入Shell脚本"
+              value={shellScript}
+              onChange={(e) => setShellScript(e.target.value)}
+              rows={2}
+            />
+          </div>
+        )
+      
+      case 'code_exec':
+        return (
+          <div className="space-y-3">
+              <Textarea
+                placeholder="请输入要执行的代码"
+                value={codeContent}
+                onChange={(e) => setCodeContent(e.target.value)}
+                rows={2}
+              />
+          </div>
+        )
+      
+      case 'file_manager':
+        return (
+          <div className="space-y-3">
+            <div>
+              <select 
+                value={fileManagerOperation} 
+                onChange={(e) => setFileManagerOperation(e.target.value)}
+                className="w-full p-2 border border-input rounded-md bg-background text-sm"
+              >
+                <option value="list">上传文件</option>
+                <option value="read">下载文件</option>
+              </select>
+            </div>
+            <div>
+              <input
+                type="text"
+                placeholder="请输入文件路径，如：/tmp/test.txt"
+                value={filePath}
+                onChange={(e) => setFilePath(e.target.value)}
+                className="w-full p-2 border border-input rounded-md bg-background text-sm"
+              />
+            </div>
+          </div>
+        )
+      
+      case 'custom_command':
+        return (
+          <div>
+            <Textarea
+              placeholder="请输入自定义命令"
+              value={customCommand}
+              onChange={(e) => setCustomCommand(e.target.value)}
+              rows={3}
+            />
+          </div>
+        )
+      
+      default:
+        return null
+    }
+  }
+
   // 获取任务关联的实例和执行结果
   const { data: taskInstancesData } = useQuery({
     queryKey: ['task-instances', selectedTask],
@@ -99,7 +175,40 @@ export function ApplicationTasks() {
   }
 
   const handleSubmitTask = async () => {
-    if (!shellScript.trim() || selectedInstances.length === 0) return
+    // 根据任务类型验证必需的参数
+    let isValid = false
+    let taskContent: any = {
+      workdir: null,
+      env: null,
+    }
+
+    switch (taskType) {
+      case 'shell_exec':
+        isValid = shellScript.trim() !== ''
+        taskContent.script = shellScript
+        break
+      
+      case 'code_exec':
+        isValid = codeContent.trim() !== ''
+        taskContent.code = codeContent
+        break
+      
+      case 'file_manager':
+        isValid = filePath.trim() !== ''
+        taskContent.operation = fileManagerOperation
+        taskContent.path = filePath
+        break
+      
+      case 'custom_command':
+        isValid = customCommand.trim() !== ''
+        taskContent.command = customCommand
+        break
+    }
+
+    if (!isValid || selectedInstances.length === 0) {
+      toast.error('请填写必要的参数并选择至少一个实例')
+      return
+    }
 
     try {
       const taskData = {
@@ -107,11 +216,7 @@ export function ApplicationTasks() {
         task_name: `${getTaskTypeLabel(taskType)}-${Date.now().toString().substring(0, 10)}`,
         task_type: taskType,
         target_instances: selectedInstances,
-        task_content: {
-          script: shellScript,
-          workdir: null,
-          env: null,
-        },
+        task_content: taskContent,
         priority: 5,
         timeout_seconds: 300,
         retry_count: 1,
@@ -125,6 +230,10 @@ export function ApplicationTasks() {
       
       // 清空表单
       setShellScript('')
+      setCodeContent('')
+      setFilePath('')
+      setFileContent('')
+      setCustomCommand('')
       setSelectedInstances([])
 
       // 刷新任务列表和实例数据
@@ -181,7 +290,7 @@ export function ApplicationTasks() {
             </h2>
           </div>
 
-          <div className="flex gap-4 h-60 min-h-0 overflow-auto">
+          <div className="flex gap-4 h-[260px] min-h-0 overflow-auto">
             {/* 在线实例 */}
             <Card className="flex-1 p-4 flex flex-col min-h-0">
               <div className="flex items-center justify-between mb-4">
@@ -198,8 +307,8 @@ export function ApplicationTasks() {
                 <Badge variant="secondary">在线 {instances.length}</Badge>
               </div>
 
-              <ScrollArea className="rounded-lg border flex-1">
-                <div className="p-2 grid grid-cols-2 gap-2">
+              <ScrollArea className="rounded-lg flex-1">
+                <div className="grid grid-cols-2 gap-2">
                   {instances.map((instance) => (
                     <div
                       key={instance.id}
@@ -244,7 +353,6 @@ export function ApplicationTasks() {
 
               <div className="space-y-4">
                 <div>
-                  <Label className="text-sm font-medium mb-2 block">任务类型：</Label>
                   <RadioGroup value={taskType} onValueChange={setTaskType} className="flex flex-row gap-4">
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="shell_exec" id="shell_exec" />
@@ -265,14 +373,7 @@ export function ApplicationTasks() {
                   </RadioGroup>
                 </div>
 
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Shell脚本：</Label>
-                  <Textarea
-                    placeholder="请输入Shell 脚本"
-                    value={shellScript}
-                    onChange={(e) => setShellScript(e.target.value)}
-                  />
-                </div>
+                {renderTaskTypeForm()}
 
                 <Button
                   className="w-full"
