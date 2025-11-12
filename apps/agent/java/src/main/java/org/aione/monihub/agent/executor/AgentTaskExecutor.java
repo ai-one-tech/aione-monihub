@@ -3,7 +3,8 @@ package org.aione.monihub.agent.executor;
 import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.handler.TaskHandler;
 import org.aione.monihub.agent.model.TaskDispatchItem;
-import org.aione.monihub.agent.model.TaskResult;
+import org.aione.monihub.agent.model.TaskExecutionResult;
+import org.aione.monihub.agent.model.TaskStatus;
 import org.aione.monihub.agent.model.TaskType;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
@@ -78,65 +79,47 @@ public class AgentTaskExecutor {
      */
     public TaskExecutionResult execute(TaskDispatchItem task) {
         long startTime = System.currentTimeMillis();
-        TaskResult result;
-        String status;
-        String errorMessage = null;
+        TaskExecutionResult result = new TaskExecutionResult();
 
         try {
             // 查找任务处理器
             TaskHandler handler = handlers.get(task.getTaskType());
             if (handler == null) {
                 log.error("No handler found for task type: {}", task.getTaskType());
-                result = TaskResult.failure("Unsupported task type: " + task.getTaskType());
-                status = "failed";
+                result.setErrorMessage("Unsupported task type: " + task.getTaskType());
+                result.setStatus(TaskStatus.failed);
             } else {
                 // 使用Future进行超时控制
                 Integer timeoutSeconds = task.getTimeoutSeconds();
-                if (timeoutSeconds == null || timeoutSeconds <= 0) {
-                    timeoutSeconds = 300; // 默认5分钟
-                }
 
-                Future<TaskResult> future = executorService.submit(() ->
-                        handler.execute(task.getTaskContent())
+                Future<TaskExecutionResult> future = executorService.submit(() ->
+                        handler.execute(task)
                 );
 
                 try {
                     result = future.get(timeoutSeconds, TimeUnit.SECONDS);
-                    status = result.getCode() == 0 ? "success" : "failed";
                 } catch (TimeoutException e) {
                     future.cancel(true);
-                    log.error("Task execution timeout: {}", task.getTaskId(), e);
-                    result = TaskResult.failure(-1, "Task execution timeout");
-                    status = "timeout";
-                    errorMessage = "Task execution timeout after " + timeoutSeconds + " seconds";
+                    result.setErrorMessage("Task execution timeout");
+                    result.setStatus(TaskStatus.timeout);
                 } catch (ExecutionException e) {
-                    log.error("Task execution error: {}", task.getTaskId(), e);
                     Throwable cause = e.getCause();
-                    result = TaskResult.failure(cause != null ? cause.getMessage() : e.getMessage());
-                    status = "failed";
-                    errorMessage = cause != null ? cause.getMessage() : e.getMessage();
+                    result.setErrorMessage(cause != null ? cause.getMessage() : e.getMessage());
+                    result.setStatus(TaskStatus.failed);
                 }
             }
         } catch (Exception e) {
-            log.error("Unexpected error executing task: {}", task.getTaskId(), e);
-            result = TaskResult.failure(e.getMessage());
-            status = "failed";
-            errorMessage = e.getMessage();
+            result.setErrorMessage(e.getMessage());
+            result.setStatus(TaskStatus.failed);
         }
 
         long endTime = System.currentTimeMillis();
         long durationMs = endTime - startTime;
+        result.setStartTime(startTime);
+        result.setEndTime(endTime);
+        result.setDurationMs(durationMs);
 
-        return new TaskExecutionResult(
-                status,
-                result.getCode(),
-                result.getMessage(),
-                result.getData(),
-                errorMessage,
-                startTime,
-                endTime,
-                durationMs
-        );
+        return result;
     }
 
     /**
@@ -154,19 +137,4 @@ public class AgentTaskExecutor {
         }
     }
 
-    /**
-     * 任务执行结果
-     */
-    @lombok.Data
-    @lombok.AllArgsConstructor
-    public static class TaskExecutionResult {
-        private String status;
-        private Integer resultCode;
-        private String resultMessage;
-        private Map<String, Object> resultData;
-        private String errorMessage;
-        private long startTime;
-        private long endTime;
-        private long durationMs;
-    }
 }

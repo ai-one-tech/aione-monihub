@@ -1,14 +1,14 @@
 package org.aione.monihub.agent.handler;
 
-import org.aione.monihub.agent.model.TaskResult;
+import org.aione.monihub.agent.model.TaskDispatchItem;
+import org.aione.monihub.agent.model.TaskExecutionResult;
+import org.aione.monihub.agent.model.TaskStatus;
 import org.aione.monihub.agent.model.TaskType;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,10 +43,16 @@ public class FileManagerHandler implements TaskHandler {
     }
 
     @Override
-    public TaskResult execute(Map<String, Object> taskContent) throws Exception {
+    public TaskExecutionResult execute(TaskDispatchItem task) throws Exception {
+
+        TaskExecutionResult result = new TaskExecutionResult();
+
+        Map<String, Object> taskContent = task.getTaskContent();
         String operationType = (String) taskContent.get(OPERATION_TYPE);
         if (operationType == null || operationType.trim().isEmpty()) {
-            return TaskResult.failure("Operation type is required");
+            result.setStatus(TaskStatus.failed);
+            result.setErrorMessage("没有需要执行的脚本");
+            return result;
         }
 
         log.info("Executing file operation: {}", operationType);
@@ -72,34 +78,37 @@ public class FileManagerHandler implements TaskHandler {
                 case OP_MOVE_FILE:
                     return executeMoveFile(taskContent);
                 default:
-                    return TaskResult.failure("Unsupported operation type: " + operationType);
+                    result.setStatus(TaskStatus.failed);
+                    result.setErrorMessage("无法识别的 操作类型 " + operationType);
+                    return result;
             }
         } catch (Exception e) {
-            log.error("File operation failed: {}", operationType, e);
-            return TaskResult.failure("Operation failed: " + e.getMessage());
+            result.setStatus(TaskStatus.failed);
+            result.setErrorMessage("Operation failed: " + e.getMessage());
         }
+        return result;
     }
 
     /**
      * 查看目录下的文件列表
      */
-    private TaskResult executeListDirectory(Map<String, Object> taskContent) throws Exception {
+    private TaskExecutionResult executeListDirectory(Map<String, Object> taskContent) throws Exception {
         String directoryPath = (String) taskContent.get("directory_path");
         if (directoryPath == null || directoryPath.trim().isEmpty()) {
-            return TaskResult.failure("Directory path is required");
+            return TaskExecutionResult.failure("Directory path is required");
         }
 
         File directory = new File(directoryPath);
         if (!directory.exists()) {
-            return TaskResult.failure("Directory does not exist: " + directoryPath);
+            return TaskExecutionResult.failure("Directory does not exist: " + directoryPath);
         }
         if (!directory.isDirectory()) {
-            return TaskResult.failure("Path is not a directory: " + directoryPath);
+            return TaskExecutionResult.failure("Path is not a directory: " + directoryPath);
         }
 
         File[] files = directory.listFiles();
         if (files == null) {
-            return TaskResult.failure("Cannot read directory: " + directoryPath);
+            return TaskExecutionResult.failure("Cannot read directory: " + directoryPath);
         }
 
         List<Map<String, Object>> fileList = new ArrayList<>();
@@ -131,21 +140,21 @@ public class FileManagerHandler implements TaskHandler {
         resultData.put("file_count", fileList.size());
         resultData.put("files", fileList);
 
-        return TaskResult.success("Directory listing completed", resultData);
+        return TaskExecutionResult.success("Directory listing completed", resultData);
     }
 
     /**
      * 查看文件信息
      */
-    private TaskResult executeGetFileInfo(Map<String, Object> taskContent) throws Exception {
+    private TaskExecutionResult executeGetFileInfo(Map<String, Object> taskContent) throws Exception {
         String filePath = (String) taskContent.get("file_path");
         if (filePath == null || filePath.trim().isEmpty()) {
-            return TaskResult.failure("File path is required");
+            return TaskExecutionResult.failure("File path is required");
         }
 
         File file = new File(filePath);
         if (!file.exists()) {
-            return TaskResult.failure("File does not exist: " + filePath);
+            return TaskExecutionResult.failure("File does not exist: " + filePath);
         }
 
         Path path = Paths.get(filePath);
@@ -173,21 +182,21 @@ public class FileManagerHandler implements TaskHandler {
         Map<String, Object> resultData = new HashMap<>();
         resultData.put("file_info", fileInfo);
 
-        return TaskResult.success("File information retrieved", resultData);
+        return TaskExecutionResult.success("File information retrieved", resultData);
     }
 
     /**
      * 删除文件或目录
      */
-    private TaskResult executeDeleteFile(Map<String, Object> taskContent) throws Exception {
+    private TaskExecutionResult executeDeleteFile(Map<String, Object> taskContent) throws Exception {
         String filePath = (String) taskContent.get("file_path");
         if (filePath == null || filePath.trim().isEmpty()) {
-            return TaskResult.failure("File path is required");
+            return TaskExecutionResult.failure("File path is required");
         }
 
         File file = new File(filePath);
         if (!file.exists()) {
-            return TaskResult.success("File does not exist, nothing to delete");
+            return TaskExecutionResult.success("File does not exist, nothing to delete");
         }
 
         boolean recursive = (Boolean) taskContent.getOrDefault("recursive", false);
@@ -203,9 +212,9 @@ public class FileManagerHandler implements TaskHandler {
             Map<String, Object> resultData = new HashMap<>();
             resultData.put("deleted_path", filePath);
             resultData.put("was_directory", file.isDirectory());
-            return TaskResult.success("File deleted successfully", resultData);
+            return TaskExecutionResult.success("File deleted successfully", resultData);
         } else {
-            return TaskResult.failure("Failed to delete file: " + filePath);
+            return TaskExecutionResult.failure("Failed to delete file: " + filePath);
         }
     }
 
@@ -229,24 +238,24 @@ public class FileManagerHandler implements TaskHandler {
     /**
      * 文件改名
      */
-    private TaskResult executeRenameFile(Map<String, Object> taskContent) throws Exception {
+    private TaskExecutionResult executeRenameFile(Map<String, Object> taskContent) throws Exception {
         String oldPath = (String) taskContent.get("old_path");
         String newPath = (String) taskContent.get("new_path");
-        
+
         if (oldPath == null || newPath == null) {
-            return TaskResult.failure("Old path and new path are required");
+            return TaskExecutionResult.failure("Old path and new path are required");
         }
 
         File oldFile = new File(oldPath);
         if (!oldFile.exists()) {
-            return TaskResult.failure("Source file does not exist: " + oldPath);
+            return TaskExecutionResult.failure("Source file does not exist: " + oldPath);
         }
 
         File newFile = new File(newPath);
         if (newFile.exists()) {
             boolean overwrite = (Boolean) taskContent.getOrDefault("overwrite", false);
             if (!overwrite) {
-                return TaskResult.failure("Target file already exists and overwrite is disabled");
+                return TaskExecutionResult.failure("Target file already exists and overwrite is disabled");
             }
         }
 
@@ -255,52 +264,52 @@ public class FileManagerHandler implements TaskHandler {
             Map<String, Object> resultData = new HashMap<>();
             resultData.put("old_path", oldPath);
             resultData.put("new_path", newPath);
-            return TaskResult.success("File renamed successfully", resultData);
+            return TaskExecutionResult.success("File renamed successfully", resultData);
         } else {
-            return TaskResult.failure("Failed to rename file from " + oldPath + " to " + newPath);
+            return TaskExecutionResult.failure("Failed to rename file from " + oldPath + " to " + newPath);
         }
     }
 
     /**
      * 创建目录
      */
-    private TaskResult executeCreateDirectory(Map<String, Object> taskContent) throws Exception {
+    private TaskExecutionResult executeCreateDirectory(Map<String, Object> taskContent) throws Exception {
         String directoryPath = (String) taskContent.get("directory_path");
         if (directoryPath == null || directoryPath.trim().isEmpty()) {
-            return TaskResult.failure("Directory path is required");
+            return TaskExecutionResult.failure("Directory path is required");
         }
 
         File directory = new File(directoryPath);
         if (directory.exists()) {
-            return TaskResult.success("Directory already exists");
+            return TaskExecutionResult.success("Directory already exists");
         }
 
         boolean created = directory.mkdirs();
         if (created) {
             Map<String, Object> resultData = new HashMap<>();
             resultData.put("directory_path", directoryPath);
-            return TaskResult.success("Directory created successfully", resultData);
+            return TaskExecutionResult.success(resultData);
         } else {
-            return TaskResult.failure("Failed to create directory: " + directoryPath);
+            return TaskExecutionResult.failure("Failed to create directory: " + directoryPath);
         }
     }
 
     /**
      * 上传文件（模拟 - 实际需要Base64编码的文件内容）
      */
-    private TaskResult executeUploadFile(Map<String, Object> taskContent) throws Exception {
+    private TaskExecutionResult executeUploadFile(Map<String, Object> taskContent) throws Exception {
         String targetPath = (String) taskContent.get("target_path");
         String fileContent = (String) taskContent.get("file_content");
-        
+
         if (targetPath == null || fileContent == null) {
-            return TaskResult.failure("Target path and file content are required");
+            return TaskExecutionResult.failure("Target path and file content are required");
         }
 
         File targetFile = new File(targetPath);
         if (targetFile.exists()) {
             boolean overwrite = (Boolean) taskContent.getOrDefault("overwrite", false);
             if (!overwrite) {
-                return TaskResult.failure("Target file already exists and overwrite is disabled");
+                return TaskExecutionResult.failure("Target file already exists and overwrite is disabled");
             }
         }
 
@@ -320,30 +329,30 @@ public class FileManagerHandler implements TaskHandler {
         resultData.put("target_path", targetPath);
         resultData.put("file_size", targetFile.length());
 
-        return TaskResult.success("File uploaded successfully", resultData);
+        return TaskExecutionResult.success( resultData);
     }
 
     /**
      * 下载文件（返回Base64编码的文件内容）
      */
-    private TaskResult executeDownloadFile(Map<String, Object> taskContent) throws Exception {
+    private TaskExecutionResult executeDownloadFile(Map<String, Object> taskContent) throws Exception {
         String filePath = (String) taskContent.get("file_path");
         if (filePath == null || filePath.trim().isEmpty()) {
-            return TaskResult.failure("File path is required");
+            return TaskExecutionResult.failure("File path is required");
         }
 
         File file = new File(filePath);
         if (!file.exists()) {
-            return TaskResult.failure("File does not exist: " + filePath);
+            return TaskExecutionResult.failure("File does not exist: " + filePath);
         }
         if (!file.isFile()) {
-            return TaskResult.failure("Path is not a file: " + filePath);
+            return TaskExecutionResult.failure("Path is not a file: " + filePath);
         }
 
         // 检查文件大小限制（最大10MB）
         long maxSize = 10 * 1024 * 1024; // 10MB
         if (file.length() > maxSize) {
-            return TaskResult.failure("File is too large (max 10MB): " + file.length() + " bytes");
+            return TaskExecutionResult.failure("File is too large (max 10MB): " + file.length() + " bytes");
         }
 
         // 读取文件内容并编码为Base64
@@ -356,30 +365,30 @@ public class FileManagerHandler implements TaskHandler {
         resultData.put("file_content", encodedContent);
         resultData.put("mime_type", Files.probeContentType(file.toPath()));
 
-        return TaskResult.success("File downloaded successfully", resultData);
+        return TaskExecutionResult.success( resultData);
     }
 
     /**
      * 复制文件
      */
-    private TaskResult executeCopyFile(Map<String, Object> taskContent) throws Exception {
+    private TaskExecutionResult executeCopyFile(Map<String, Object> taskContent) throws Exception {
         String sourcePath = (String) taskContent.get("source_path");
         String targetPath = (String) taskContent.get("target_path");
-        
+
         if (sourcePath == null || targetPath == null) {
-            return TaskResult.failure("Source path and target path are required");
+            return TaskExecutionResult.failure("Source path and target path are required");
         }
 
         File sourceFile = new File(sourcePath);
         if (!sourceFile.exists()) {
-            return TaskResult.failure("Source file does not exist: " + sourcePath);
+            return TaskExecutionResult.failure("Source file does not exist: " + sourcePath);
         }
 
         File targetFile = new File(targetPath);
         if (targetFile.exists()) {
             boolean overwrite = (Boolean) taskContent.getOrDefault("overwrite", false);
             if (!overwrite) {
-                return TaskResult.failure("Target file already exists and overwrite is disabled");
+                return TaskExecutionResult.failure("Target file already exists and overwrite is disabled");
             }
         }
 
@@ -396,30 +405,30 @@ public class FileManagerHandler implements TaskHandler {
         resultData.put("target_path", targetPath);
         resultData.put("file_size", targetFile.length());
 
-        return TaskResult.success("File copied successfully", resultData);
+        return TaskExecutionResult.success(resultData);
     }
 
     /**
      * 移动文件
      */
-    private TaskResult executeMoveFile(Map<String, Object> taskContent) throws Exception {
+    private TaskExecutionResult executeMoveFile(Map<String, Object> taskContent) throws Exception {
         String sourcePath = (String) taskContent.get("source_path");
         String targetPath = (String) taskContent.get("target_path");
-        
+
         if (sourcePath == null || targetPath == null) {
-            return TaskResult.failure("Source path and target path are required");
+            return TaskExecutionResult.failure("Source path and target path are required");
         }
 
         File sourceFile = new File(sourcePath);
         if (!sourceFile.exists()) {
-            return TaskResult.failure("Source file does not exist: " + sourcePath);
+            return TaskExecutionResult.failure("Source file does not exist: " + sourcePath);
         }
 
         File targetFile = new File(targetPath);
         if (targetFile.exists()) {
             boolean overwrite = (Boolean) taskContent.getOrDefault("overwrite", false);
             if (!overwrite) {
-                return TaskResult.failure("Target file already exists and overwrite is disabled");
+                return TaskExecutionResult.failure("Target file already exists and overwrite is disabled");
             }
         }
 
@@ -435,7 +444,7 @@ public class FileManagerHandler implements TaskHandler {
         resultData.put("source_path", sourcePath);
         resultData.put("target_path", targetPath);
 
-        return TaskResult.success("File moved successfully", resultData);
+        return TaskExecutionResult.success(resultData);
     }
 
     /**
@@ -452,6 +461,6 @@ public class FileManagerHandler implements TaskHandler {
 
     @Override
     public TaskType getTaskType() {
-        return TaskType.FILE_MANAGER;
+        return TaskType.file_manager;
     }
 }

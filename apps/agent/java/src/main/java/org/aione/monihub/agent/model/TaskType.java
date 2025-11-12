@@ -11,22 +11,22 @@ public enum TaskType {
     /**
      * Shell脚本执行任务
      */
-    SHELL_EXEC("shell_exec"),
+    shell_exec("shell_exec"),
     
     /**
-     * 文件管理任务
+     * 执行代码
      */
-    SCRIPT_EXEC("script_exec"),
+    code_exec("code_exec"),
 
     /**
      * 文件管理任务
      */
-    FILE_MANAGER("file_manager"),
+    file_manager("file_manager"),
     
     /**
      * 自定义命令任务
      */
-    CUSTOM_COMMAND("custom_command");
+    custom_command("custom_command");
 
     /**
      * -- GETTER --

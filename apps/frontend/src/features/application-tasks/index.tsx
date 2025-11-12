@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { LongText } from '@/components/long-text'
 import { Label } from '@/components/ui/label'
-import { ChevronRight, CheckCircle } from 'lucide-react'
+import { ChevronRight, CheckCircle, RefreshCw } from 'lucide-react'
 import React, { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -53,8 +53,8 @@ export function ApplicationTasks() {
   // 任务类型中文映射
   const getTaskTypeLabel = (taskType: string) => {
     const typeMap: Record<string, string> = {
-      'shell_exec': 'Shell执行',
-      'script_exec': '脚本执行',
+      'shell_exec': '执行Shell',
+      'code_exec': '执行Code',
       'file_manager': '文件管理',
       'custom_command': '自定义命令'
     }
@@ -104,11 +104,13 @@ export function ApplicationTasks() {
     try {
       const taskData = {
         application_id: search.applicationId,
-        task_name: `${taskType}-${Date.now().toString().substring(0, 10)}`,
+        task_name: `${getTaskTypeLabel(taskType)}-${Date.now().toString().substring(0, 10)}`,
         task_type: taskType,
         target_instances: selectedInstances,
         task_content: {
-          script: shellScript
+          script: shellScript,
+          workdir: null,
+          env: null,
         },
         priority: 5,
         timeout_seconds: 300,
@@ -168,10 +170,10 @@ export function ApplicationTasks() {
   }, [taskInstancesData, selectedInstanceResult])
 
   return (
-    <Main fixed className="flex flex-col">
-      <div className="flex flex-col flex-1 min-h-0">
-        {/* 页面标题 - 占父容器高度的1/3 */}
-        <div className="h-100 p-4 overflow-hidden flex flex-col min-h-0">
+    <Main fixed className="flex lex-col h-screen overflow-auto">
+      <div className="flex flex-col flex-1 min-h-0 overflow-auto">
+        {/* 页面标题区域 */}
+        <div className="shrink-0 p-4 overflow-auto">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold tracking-tight">
               应用：{application?.name}
@@ -179,7 +181,7 @@ export function ApplicationTasks() {
             </h2>
           </div>
 
-          <div className="flex gap-4 h-full min-h-0">
+          <div className="flex gap-4 h-60 min-h-0 overflow-auto">
             {/* 在线实例 */}
             <Card className="flex-1 p-4 flex flex-col min-h-0">
               <div className="flex items-center justify-between mb-4">
@@ -249,8 +251,8 @@ export function ApplicationTasks() {
                       <Label htmlFor="shell_exec" className="text-sm">执行Shell</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="script_exec" id="script_exec" />
-                      <Label htmlFor="script_exec" className="text-sm">执行Script</Label>
+                      <RadioGroupItem value="code_exec" id="code_exec" />
+                      <Label htmlFor="code_exec" className="text-sm">执行Code</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="file_manager" id="file_manager" />
@@ -284,13 +286,24 @@ export function ApplicationTasks() {
           </div>
         </div>
 
-        {/* 底部三个区域 - 占父容器高度的2/3 */}
-        <div className="flex-1 p-4 pt-0 overflow-hidden flex flex-col min-h-0">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full">
+        {/* 底部三个区域 */}
+        <div className="flex-1 p-4 pt-0 overflow-auto flex flex-col min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full min-h-0">
             {/* 任务历史 */}
-            <Card className="p-4 flex flex-col">
-              <h3 className="text-lg font-semibold mb-4">任务历史</h3>
-              <ScrollArea className="flex-1">
+            <Card className="p-4 flex flex-col h-full min-h-0">
+              <div className="flex items-center justify-between mb-4 flex-shrink-0">
+                <h3 className="text-lg font-semibold">任务历史</h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => queryClient.invalidateQueries({ queryKey: ['tasks', search.applicationId] })}
+                  disabled={!search.applicationId}
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  刷新
+                </Button>
+              </div>
+              <ScrollArea className="flex-1 min-h-0">
                 <div className="space-y-3">
                   {tasks.map((task) => (
                     <div 
@@ -308,37 +321,13 @@ export function ApplicationTasks() {
                         </Badge>
                         <div className="flex items-center space-x-2">
                           <span className="text-sm text-green-600 font-medium">
-                            {task.target_instances?.length || 0}个实例
+                          {task.target_instances?.length || 0}&nbsp;个实例
                           </span>
                           <ChevronRight className="w-4 h-4 text-gray-400" />
                         </div>
                       </div>
-                      <LongText className="text-sm w-1/2 text-gray-700 mb-1">{task.task_name}</LongText>
                       <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>
-                          {(() => {
-                            // 计算总实例数
-                            const totalInstances = task.target_instances?.length || 0;
-                            
-                            // 从任务实例数据中查找当前任务的执行记录
-                            const currentTaskInstances = taskInstancesData?.data?.filter(
-                              ti => ti.task_id === task.id
-                            ) || [];
-                            
-                            // 计算成功实例数
-                            const successCount = currentTaskInstances.filter(
-                              ti => ti.execution_record?.status === 'success'
-                            ).length;
-                            
-                            // 显示格式：成功数/总实例数
-                            // 如果没有执行记录，显示 0/总数
-                            if (currentTaskInstances.length > 0) {
-                              return `${successCount}/${currentTaskInstances.length}`;
-                            } else {
-                              return `0/${totalInstances}`;
-                            }
-                          })()}
-                        </span>
+                        <LongText className="text-sm w-1/2 text-gray-700 mb-1">{task.task_name}</LongText>
                         <span>
                           {new Date(task.created_at).toLocaleString()}
                         </span>
@@ -350,9 +339,20 @@ export function ApplicationTasks() {
             </Card>
 
             {/* 相关实例 */}
-            <Card className="p-4 flex flex-col">
-              <h3 className="text-lg font-semibold mb-4">相关实例</h3>
-              <ScrollArea className="flex-1">
+            <Card className="p-4 flex flex-col h-full min-h-0">
+              <div className="flex items-center justify-between mb-4 flex-shrink-0">
+                <h3 className="text-lg font-semibold">相关实例</h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => queryClient.invalidateQueries({ queryKey: ['task-instances', selectedTask] })}
+                  disabled={!selectedTask}
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  刷新
+                </Button>
+              </div>
+              <ScrollArea className="flex-1 min-h-0">
                 <div className="space-y-3">
                   {taskInstances.map((taskInstance) => (
                     <div 
@@ -414,7 +414,12 @@ export function ApplicationTasks() {
                         </div>
                         <div className="flex items-center space-x-2">
                           <span className="text-xs text-gray-500">
-                            {new Date(taskInstance.instance.updated_at).toLocaleString()}
+                            {taskInstance.execution_record.start_time 
+                              ? new Date(taskInstance.execution_record.start_time).toLocaleString()
+                              : taskInstance.instance.updated_at 
+                                ? new Date(taskInstance.instance.updated_at).toLocaleString()
+                                : '未开始'
+                            }
                           </span>
                           <ChevronRight className="w-4 h-4 text-gray-400" />
                         </div>
@@ -426,9 +431,9 @@ export function ApplicationTasks() {
             </Card>
 
             {/* 执行结果 */}
-            <Card className="p-4 flex flex-col">
-              <h3 className="text-lg font-semibold mb-4">执行结果</h3>
-              <div className="flex-1 rounded-lg border bg-gray-50 p-4 overflow-auto">
+            <Card className="p-4 flex flex-col h-full min-h-0">
+              <h3 className="text-lg font-semibold mb-4 shrink-0">执行结果</h3>
+              <div className="flex-1 rounded-lg border bg-gray-50 p-4 overflow-auto min-h-0">
                 {selectedInstanceResult ? (
                   <div className="space-y-4">
                     {/* 基础信息 */}
@@ -464,20 +469,21 @@ export function ApplicationTasks() {
                         </div>
                       )}
                       
+                      {/* 返回码 */}
+                      {selectedInstanceResult.execution_record.result_code !== undefined && selectedInstanceResult.execution_record.result_code !== null && (
+                        <div>
+                          <span className="font-medium">返回码:</span>
+                          <div className="text-gray-600">
+                            {selectedInstanceResult.execution_record.result_code}
+                          </div>
+                        </div>
+                      )}
+                      
                     </div>
                     
                     {/* 根据状态显示不同内容 */}
                     {selectedInstanceResult.execution_record.status === 'success' && (
                       <div className="space-y-3">
-                        {/* 成功状态的返回码 */}
-                        {selectedInstanceResult.execution_record.result_code !== undefined && selectedInstanceResult.execution_record.result_code !== null && (
-                          <div>
-                            <div className="font-medium text-sm mb-1 text-green-700">返回码:</div>
-                            <div className="text-sm text-green-600 bg-green-50 p-2 rounded border border-green-200">
-                              {selectedInstanceResult.execution_record.result_code}
-                            </div>
-                          </div>
-                        )}
                         
                         {/* 成功状态的结果消息 */}
                         {selectedInstanceResult.execution_record.result_message && (
@@ -493,12 +499,33 @@ export function ApplicationTasks() {
                         {selectedInstanceResult.execution_record.result_data && (
                           <div>
                             <div className="font-medium text-sm mb-1 text-green-700">输出数据:</div>
-                            <pre className="text-sm font-mono text-gray-800 bg-green-50 p-3 rounded border border-green-200 whitespace-pre-wrap max-h-96 overflow-auto">
-                              {typeof selectedInstanceResult.execution_record.result_data === 'string' 
-                                ? selectedInstanceResult.execution_record.result_data
-                                : JSON.stringify(selectedInstanceResult.execution_record.result_data, null, 2)
+                            {(() => {
+                              // 获取当前任务信息
+                              const currentTask = tasksData?.data?.find(t => t.id === selectedTask);
+                              const isShellTask = currentTask?.task_type === 'shell_exec';
+                              
+                              // 如果是shell任务且result_data是包含output的JSON对象
+                              if (isShellTask && typeof selectedInstanceResult.execution_record.result_data === 'object') {
+                                const resultObj = selectedInstanceResult.execution_record.result_data as any;
+                                if (resultObj.output) {
+                                  return (
+                                    <pre className="text-sm font-mono text-gray-800 bg-green-50 p-3 rounded border border-green-200 whitespace-pre-wrap max-h-96 overflow-auto">
+                                      {resultObj.output}
+                                    </pre>
+                                  );
+                                }
                               }
-                            </pre>
+                              
+                              // 默认显示
+                              return (
+                                <pre className="text-sm font-mono text-gray-800 bg-green-50 p-3 rounded border border-green-200 whitespace-pre-wrap max-h-96 overflow-auto">
+                                  {typeof selectedInstanceResult.execution_record.result_data === 'string' 
+                                    ? selectedInstanceResult.execution_record.result_data
+                                    : JSON.stringify(selectedInstanceResult.execution_record.result_data, null, 2)
+                                  }
+                                </pre>
+                              );
+                            })()}
                           </div>
                         )}
                       </div>
@@ -513,15 +540,7 @@ export function ApplicationTasks() {
                           <div className="text-gray-600">{selectedInstanceResult.execution_record.retry_attempt}</div>
                         </div>
                       )}
-                        {/* 失败状态的返回码 */}
-                        {selectedInstanceResult.execution_record.result_code !== undefined && selectedInstanceResult.execution_record.result_code !== null && (
-                          <div>
-                            <div className="font-medium text-sm mb-1 text-red-700">错误码:</div>
-                            <div className="text-sm text-red-600 bg-red-50 p-2 rounded border border-red-200">
-                              {selectedInstanceResult.execution_record.result_code}
-                            </div>
-                          </div>
-                        )}
+
                         
                         {/* 失败状态的错误消息 */}
                         {selectedInstanceResult.execution_record.error_message && (
@@ -547,12 +566,33 @@ export function ApplicationTasks() {
                         {selectedInstanceResult.execution_record.result_data && (
                           <div>
                             <div className="font-medium text-sm mb-1 text-red-700">错误数据:</div>
-                            <pre className="text-sm font-mono text-gray-800 bg-red-50 p-3 rounded border border-red-200 whitespace-pre-wrap max-h-96 overflow-auto">
-                              {typeof selectedInstanceResult.execution_record.result_data === 'string' 
-                                ? selectedInstanceResult.execution_record.result_data
-                                : JSON.stringify(selectedInstanceResult.execution_record.result_data, null, 2)
+                            {(() => {
+                              // 获取当前任务信息
+                              const currentTask = tasksData?.data?.find(t => t.id === selectedTask);
+                              const isShellTask = currentTask?.task_type === 'shell_exec';
+                              
+                              // 如果是shell任务且result_data是包含output的JSON对象
+                              if (isShellTask && typeof selectedInstanceResult.execution_record.result_data === 'object') {
+                                const resultObj = selectedInstanceResult.execution_record.result_data as any;
+                                if (resultObj.output) {
+                                  return (
+                                    <pre className="text-sm font-mono text-gray-800 bg-red-50 p-3 rounded border border-red-200 whitespace-pre-wrap max-h-96 overflow-auto">
+                                      {resultObj.output}
+                                    </pre>
+                                  );
+                                }
                               }
-                            </pre>
+                              
+                              // 默认显示
+                              return (
+                                <pre className="text-sm font-mono text-gray-800 bg-red-50 p-3 rounded border border-red-200 whitespace-pre-wrap max-h-96 overflow-auto">
+                                  {typeof selectedInstanceResult.execution_record.result_data === 'string' 
+                                    ? selectedInstanceResult.execution_record.result_data
+                                    : JSON.stringify(selectedInstanceResult.execution_record.result_data, null, 2)
+                                  }
+                                </pre>
+                              );
+                            })()}
                           </div>
                         )}
                       </div>
@@ -561,15 +601,7 @@ export function ApplicationTasks() {
                     {/* 其他状态（运行中、已分发等）的显示 */}
                     {selectedInstanceResult.execution_record.status !== 'success' && selectedInstanceResult.execution_record.status !== 'failed' && (
                       <div className="space-y-3">
-                        {/* 返回码 */}
-                        {selectedInstanceResult.execution_record.result_code !== undefined && selectedInstanceResult.execution_record.result_code !== null && (
-                          <div>
-                            <div className="font-medium text-sm mb-1">返回码:</div>
-                            <div className="text-sm text-gray-600 bg-white p-2 rounded border">
-                              {selectedInstanceResult.execution_record.result_code}
-                            </div>
-                          </div>
-                        )}
+
                         
                         {/* 结果消息 */}
                         {selectedInstanceResult.execution_record.result_message && (
@@ -595,12 +627,33 @@ export function ApplicationTasks() {
                         {selectedInstanceResult.execution_record.result_data && (
                           <div>
                             <div className="font-medium text-sm mb-1">当前数据:</div>
-                            <pre className="text-sm font-mono text-gray-800 bg-white p-3 rounded border whitespace-pre-wrap max-h-96 overflow-auto">
-                              {typeof selectedInstanceResult.execution_record.result_data === 'string' 
-                                ? selectedInstanceResult.execution_record.result_data
-                                : JSON.stringify(selectedInstanceResult.execution_record.result_data, null, 2)
+                            {(() => {
+                              // 获取当前任务信息
+                              const currentTask = tasksData?.data?.find(t => t.id === selectedTask);
+                              const isShellTask = currentTask?.task_type === 'shell_exec';
+                              
+                              // 如果是shell任务且result_data是包含output的JSON对象
+                              if (isShellTask && typeof selectedInstanceResult.execution_record.result_data === 'object') {
+                                const resultObj = selectedInstanceResult.execution_record.result_data as any;
+                                if (resultObj.output) {
+                                  return (
+                                    <pre className="text-sm font-mono text-gray-800 bg-white p-3 rounded border whitespace-pre-wrap max-h-96 overflow-auto">
+                                      {resultObj.output}
+                                    </pre>
+                                  );
+                                }
                               }
-                            </pre>
+                              
+                              // 默认显示
+                              return (
+                                <pre className="text-sm font-mono text-gray-800 bg-white p-3 rounded border whitespace-pre-wrap max-h-96 overflow-auto">
+                                  {typeof selectedInstanceResult.execution_record.result_data === 'string' 
+                                    ? selectedInstanceResult.execution_record.result_data
+                                    : JSON.stringify(selectedInstanceResult.execution_record.result_data, null, 2)
+                                  }
+                                </pre>
+                              );
+                            })()}
                           </div>
                         )}
                       </div>

@@ -4,9 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
 import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.executor.AgentTaskExecutor;
-import org.aione.monihub.agent.model.TaskDispatchItem;
-import org.aione.monihub.agent.model.TaskDispatchResponse;
-import org.aione.monihub.agent.model.TaskResultSubmitRequest;
+import org.aione.monihub.agent.model.*;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
 
@@ -120,7 +118,7 @@ public class InstanceTaskService {
 
             try (Response response = httpClient.newCall(request).execute()) {
                 if (response.isSuccessful()) {
-                    String responseBody = response.body().string();
+                    String responseBody = response.body() != null ? response.body().string() : "";
                     TaskDispatchResponse taskResponse = objectMapper.readValue(
                             responseBody, TaskDispatchResponse.class);
 
@@ -156,7 +154,7 @@ public class InstanceTaskService {
         scheduler.execute(() -> {
             try {
                 // 执行任务
-                AgentTaskExecutor.TaskExecutionResult result = agentTaskExecutor.execute(task);
+                TaskExecutionResult result = agentTaskExecutor.execute(task);
 
                 // 提交结果
                 submitResult(task, result);
@@ -166,16 +164,9 @@ public class InstanceTaskService {
 
                 // 提交失败结果
                 try {
-                    AgentTaskExecutor.TaskExecutionResult failedResult = new AgentTaskExecutor.TaskExecutionResult(
-                            "failed",
-                            1,
-                            e.getMessage(),
-                            null,
-                            e.getMessage(),
-                            System.currentTimeMillis(),
-                            System.currentTimeMillis(),
-                            0L
-                    );
+                    TaskExecutionResult failedResult = new TaskExecutionResult();
+                    failedResult.setStatus(TaskStatus.failed);
+                    failedResult.setErrorMessage(e.getMessage());
                     submitResult(task, failedResult);
                 } catch (Exception ex) {
                     log.error("Failed to submit error result", ex);
@@ -187,15 +178,15 @@ public class InstanceTaskService {
     /**
      * 提交任务结果
      */
-    private void submitResult(TaskDispatchItem task, AgentTaskExecutor.TaskExecutionResult result) {
-        int maxRetries = 3;
+    private void submitResult(TaskDispatchItem task, TaskExecutionResult result) {
+        int maxRetries = 10;
         int retryCount = 0;
 
         while (retryCount < maxRetries) {
             try {
                 TaskResultSubmitRequest request = new TaskResultSubmitRequest();
                 request.setRecordId(task.getRecordId());
-                request.setInstanceId(properties.getInstanceId());
+                request.setAgentInstanceId(properties.getInstanceId());
                 request.setStatus(result.getStatus());
                 request.setResultCode(result.getResultCode());
                 request.setResultMessage(result.getResultMessage());

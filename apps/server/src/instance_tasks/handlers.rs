@@ -1,7 +1,7 @@
 use crate::auth::middleware::get_user_id_from_request;
 use crate::entities::{instance_task_records, instance_tasks, instances};
 use crate::instance_tasks::models::*;
-use crate::shared::enums::{TaskStatus};
+use crate::shared::enums::TaskStatus;
 use crate::shared::error::ApiError;
 use crate::shared::generate_snowflake_id;
 use actix_web::{web, HttpRequest, HttpResponse, Result};
@@ -67,7 +67,7 @@ pub async fn create_task(
             id: Set(record_id),
             task_id: Set(task_id.clone()),
             instance_id: Set(instance_id.clone()),
-            status: Set(TaskStatus::Dispatched),
+            status: Set(TaskStatus::Pending),
             dispatch_time: Set(None),
             start_time: Set(None),
             end_time: Set(None),
@@ -217,7 +217,10 @@ pub async fn cancel_task(
     // 将所有pending和dispatched状态的记录更新为cancelled
     let records = instance_task_records::Entity::find()
         .filter(instance_task_records::Column::TaskId.eq(&task_id))
-        .filter(instance_task_records::Column::Status.is_in(vec![TaskStatus::Pending, TaskStatus::Dispatched]))
+        .filter(
+            instance_task_records::Column::Status
+                .is_in(vec![TaskStatus::Pending, TaskStatus::Dispatched]),
+        )
         .all(&**db)
         .await?;
 
@@ -371,13 +374,18 @@ pub async fn get_instance_tasks(
         .await?;
 
     if instance.is_none() {
-        log::warn!("[get_instance_tasks] Instance not found: {}", agent_instance_id);
+        log::warn!(
+            "[get_instance_tasks] Instance not found: {}",
+            agent_instance_id
+        );
         return Err(ApiError::NotFound(format!(
             "Instance {} not found",
             agent_instance_id
         )));
     }
     log::debug!("[get_instance_tasks] Instance found: {}", agent_instance_id);
+
+    let instance = instance.unwrap();
 
     // 检查是否启用长轮询
     let wait = query
@@ -396,8 +404,8 @@ pub async fn get_instance_tasks(
     loop {
         // 查询pending状态的任务
         let records = instance_task_records::Entity::find()
-            .filter(instance_task_records::Column::InstanceId.eq(&agent_instance_id))
-            .filter(instance_task_records::Column::Status.eq(TaskStatus::Dispatched))
+            .filter(instance_task_records::Column::InstanceId.eq(&instance.id))
+            .filter(instance_task_records::Column::Status.eq(TaskStatus::Pending))
             .order_by_asc(instance_task_records::Column::CreatedAt)
             .all(&**db)
             .await?;
@@ -425,10 +433,12 @@ pub async fn get_instance_tasks(
 
                     // 更新记录状态为dispatched
                     let mut active: instance_task_records::ActiveModel = record.into();
-                    active.status = Set(TaskStatus::Dispatched);
-                    active.dispatch_time = Set(Some(Utc::now().into()));
-                    active.updated_at = Set(Utc::now().into());
-                    active.update(&**db).await?;
+                    if active.status.unwrap() != TaskStatus::Dispatched {
+                        active.status = Set(TaskStatus::Dispatched);
+                        active.dispatch_time = Set(Some(Utc::now().into()));
+                        active.updated_at = Set(Utc::now().into());
+                        active.update(&**db).await?;
+                    }
                 }
             }
 
@@ -493,11 +503,6 @@ pub async fn submit_task_result(
         }
     };
 
-    // 验证instance_id是否匹配
-    if record.instance_id != request.instance_id {
-        return Err(ApiError::BadRequest("Instance ID mismatch".to_string()));
-    }
-
     // 解析时间
     let start_time = chrono::DateTime::parse_from_rfc3339(&request.start_time)
         .map_err(|_| ApiError::BadRequest("Invalid start_time format".to_string()))?
@@ -513,7 +518,7 @@ pub async fn submit_task_result(
     active.start_time = Set(Some(start_time.into()));
     active.end_time = Set(Some(end_time.into()));
     active.duration_ms = Set(Some(request.duration_ms));
-    active.result_code = Set(Some(request.result_code));
+    active.result_code = Set(request.result_code);
     active.result_message = Set(request.result_message.clone());
     active.result_data = Set(request.result_data.clone());
     active.error_message = Set(request.error_message.clone());
@@ -602,7 +607,9 @@ pub async fn get_task_instances_with_results(
                 hostname: Some(instance.hostname),
                 ip_address: Some(instance.ip_address),
                 public_ip: instance.public_ip,
-                os_type: instance.os_type.unwrap_or(crate::shared::enums::OsType::Unknown),
+                os_type: instance
+                    .os_type
+                    .unwrap_or(crate::shared::enums::OsType::Unknown),
                 os_version: instance.os_version,
                 online_status: instance.online_status,
                 last_heartbeat: instance.last_report_at.map(|t| t.to_rfc3339()),
@@ -610,7 +617,8 @@ pub async fn get_task_instances_with_results(
                 updated_at: instance.updated_at.to_rfc3339(),
             };
 
-            let record_response = crate::instance_tasks::models::TaskRecordResponse::from_entity(record);
+            let record_response =
+                crate::instance_tasks::models::TaskRecordResponse::from_entity(record);
 
             let task_instance_with_result = crate::instance_tasks::models::TaskInstanceWithResult {
                 instance: instance_info,

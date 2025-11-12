@@ -167,9 +167,9 @@ pub struct TaskRecordListQuery {
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct TaskResultSubmitRequest {
     pub record_id: String,
-    pub instance_id: String,
+    pub agent_instance_id: String,
     pub status: TaskStatus,
-    pub result_code: i32,
+    pub result_code: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub result_message: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

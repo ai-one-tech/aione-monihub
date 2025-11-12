@@ -1,22 +1,23 @@
 package org.aione.monihub.agent.handler;
 
-import org.aione.monihub.agent.model.TaskResult;
+import org.aione.monihub.agent.model.TaskDispatchItem;
+import org.aione.monihub.agent.model.TaskExecutionResult;
+import org.aione.monihub.agent.model.TaskStatus;
 import org.aione.monihub.agent.model.TaskType;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -32,21 +33,26 @@ public class ShellExecHandler implements TaskHandler {
     }
 
     @Override
-    public TaskResult execute(Map<String, Object> taskContent) throws Exception {
+    public TaskExecutionResult execute(TaskDispatchItem task) throws Exception {
+
+        TaskExecutionResult result = new TaskExecutionResult();
+
+        Map<String, Object> taskContent = task.getTaskContent();
         // 获取脚本内容
-        String scriptContent = (String) taskContent.get("script_content");
+        String scriptContent = (String) taskContent.get("script");
         if (scriptContent == null || scriptContent.trim().isEmpty()) {
-            return TaskResult.failure("Shell script content is empty");
+            return TaskExecutionResult.failure("没有需要执行的脚本");
         }
 
         log.info("Executing shell script with content length: {}", scriptContent.length());
 
         // 创建临时脚本文件
-        Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"), "monihub", "scripts");
+        Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"), "monihub", "task");
         Files.createDirectories(tempDir);
 
         String scriptExtension = isWindows() ? ".bat" : ".sh";
-        Path scriptFile = Files.createTempFile(tempDir, "monihub_script_", scriptExtension);
+//        Path scriptFile = Files.createTempFile(tempDir, "task_", scriptExtension);
+        Path scriptFile = Files.createFile(Paths.get(tempDir.toString(), task.getTaskId() + scriptExtension));
 
         try {
             // 写入脚本内容
@@ -68,8 +74,9 @@ public class ShellExecHandler implements TaskHandler {
             }
 
             // 执行脚本
-            return executeScript(scriptFile.toFile(), taskContent);
-
+            return executeScript(scriptFile.toFile(), task);
+        } catch (Exception e) {
+            return TaskExecutionResult.failure(e.getMessage());
         } finally {
             // 清理临时文件
             try {
@@ -78,12 +85,17 @@ public class ShellExecHandler implements TaskHandler {
                 log.warn("Failed to delete temporary script file: {}", scriptFile, e);
             }
         }
+
     }
 
     /**
      * 执行脚本文件
      */
-    private TaskResult executeScript(File scriptFile, Map<String, Object> taskContent) throws Exception {
+    private TaskExecutionResult executeScript(File scriptFile, TaskDispatchItem task) throws Exception {
+        Map<String, Object> taskContent = task.getTaskContent();
+
+        TaskExecutionResult result = new TaskExecutionResult();
+
         ProcessBuilder processBuilder = new ProcessBuilder();
 
         // 根据操作系统设置执行命令
@@ -107,10 +119,7 @@ public class ShellExecHandler implements TaskHandler {
         }
 
         // 设置超时时间（默认5分钟）
-        Integer timeoutSeconds = (Integer) taskContent.get("timeout_seconds");
-        if (timeoutSeconds == null || timeoutSeconds <= 0) {
-            timeoutSeconds = 300; // 默认5分钟
-        }
+        Integer timeoutSeconds = task.getSafeTimeoutSeconds();
 
         // 合并标准输出和错误输出
         processBuilder.redirectErrorStream(true);
@@ -121,37 +130,37 @@ public class ShellExecHandler implements TaskHandler {
         // 启动进程
         Process process = processBuilder.start();
 
-        // 读取输出
         StringBuilder output = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(process.getInputStream()))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                output.append(line).append("\n");
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        Future future = executorService.submit(() -> {
+            // 读取输出
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line).append("\n");
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-        }
+        });
 
         // 等待进程完成
         boolean finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
+        future.cancel(true);
+        result.put("output", output.toString().trim());
 
-        if (!finished) {
-            process.destroyForcibly();
-            return TaskResult.failure("Shell script execution timeout after " + timeoutSeconds + " seconds");
-        }
+        if (finished) {
+            int exitCode = process.exitValue();
+            result.setResultCode(exitCode);
 
-        int exitCode = process.exitValue();
-
-        // 构建结果数据
-        Map<String, Object> resultData = new HashMap<>();
-        resultData.put("exit_code", exitCode);
-        resultData.put("output", output.toString().trim());
-        resultData.put("script_file", scriptFile.getAbsolutePath());
-
-        if (exitCode == 0) {
-            return TaskResult.success("Shell script executed successfully", resultData);
+            result.setStatus(TaskStatus.success);
         } else {
-            return TaskResult.failure(exitCode, "Shell script failed with exit code: " + exitCode + ", output: " + output.toString().trim());
+            process.destroy();
+            result.setStatus(TaskStatus.timeout);
         }
+
+        return result;
     }
 
     /**
@@ -164,6 +173,6 @@ public class ShellExecHandler implements TaskHandler {
 
     @Override
     public TaskType getTaskType() {
-        return TaskType.SHELL_EXEC;
+        return TaskType.shell_exec;
     }
 }

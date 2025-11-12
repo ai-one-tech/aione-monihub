@@ -74,33 +74,6 @@ public class AgentLogger {
     }
 
     /**
-     * TRACE级别日志 - 仅在debug=true时输出
-     */
-    public void trace(String msg) {
-        if (properties.isDebug()) {
-            logger.trace(msg);
-        }
-    }
-
-    public void trace(String format, Object arg) {
-        if (properties.isDebug()) {
-            logger.trace(format, arg);
-        }
-    }
-
-    public void trace(String format, Object arg1, Object arg2) {
-        if (properties.isDebug()) {
-            logger.trace(format, arg1, arg2);
-        }
-    }
-
-    public void trace(String format, Object... arguments) {
-        if (properties.isDebug()) {
-            logger.trace(format, arguments);
-        }
-    }
-
-    /**
      * WARN级别日志 - 始终输出
      */
     public void warn(String msg) {
@@ -131,18 +104,26 @@ public class AgentLogger {
     }
 
     public void error(String format, Object arg) {
-        logger.error(format, arg);
+        if (properties.isDebug()) {
+            logger.error(format, arg);
+        }
     }
 
     public void error(String format, Object arg1, Object arg2) {
-        logger.error(format, arg1, arg2);
+        if (properties.isDebug()) {
+            logger.error(format, arg1, arg2);
+        }
     }
 
     public void error(String format, Object... arguments) {
-        logger.error(format, arguments);
+        if (properties.isDebug()) {
+            logger.error(format, arguments);
+        }
     }
 
     public void error(String msg, Throwable t) {
-        logger.error(msg, t);
+        if (properties.isDebug()) {
+            logger.error(msg, t);
+        }
     }
 }

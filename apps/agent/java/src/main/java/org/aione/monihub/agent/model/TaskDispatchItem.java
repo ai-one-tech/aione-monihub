@@ -26,6 +26,25 @@ public class TaskDispatchItem {
     @JsonProperty("timeout_seconds")
     private Integer timeoutSeconds;
 
+    public Integer getTimeoutSeconds() {
+        if (timeoutSeconds == null || timeoutSeconds <= 0) {
+            return 300; // 默认5分钟
+        }
+        return timeoutSeconds;
+    }
+
+    /**
+     * 获取安全的超时时间
+     * @return
+     */
+    public Integer getSafeTimeoutSeconds() {
+        Integer getTimeoutSeconds = getTimeoutSeconds();
+        if (getTimeoutSeconds >= 10) {
+            getTimeoutSeconds -= 5;
+        }
+        return getTimeoutSeconds;
+    }
+
     @JsonProperty("priority")
     private Integer priority;
 }
