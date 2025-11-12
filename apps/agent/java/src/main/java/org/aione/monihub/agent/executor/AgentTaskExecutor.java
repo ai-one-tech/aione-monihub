@@ -25,9 +25,6 @@ public class AgentTaskExecutor {
     private ExecutorService executorService;
 
     @javax.annotation.Resource
-    private AgentConfig properties;
-
-    @javax.annotation.Resource
     private List<TaskHandler> taskHandlers;
 
     @javax.annotation.PostConstruct

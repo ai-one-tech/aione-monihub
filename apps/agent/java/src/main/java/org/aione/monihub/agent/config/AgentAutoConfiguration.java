@@ -9,6 +9,7 @@ import org.aione.monihub.agent.collector.RuntimeInfoCollector;
 import org.aione.monihub.agent.collector.SystemInfoCollector;
 import org.aione.monihub.agent.executor.AgentTaskExecutor;
 import org.aione.monihub.agent.filter.HttpDisabledFilter;
+import org.aione.monihub.agent.handler.RunnerCodeHandler;
 import org.aione.monihub.agent.handler.CustomCommandHandler;
 import org.aione.monihub.agent.handler.FileManagerHandler;
 import org.aione.monihub.agent.handler.ShellExecHandler;
@@ -142,6 +143,14 @@ public class AgentAutoConfiguration {
     @Bean
     public FileManagerHandler fileManagerHandler() {
         return new FileManagerHandler();
+    }
+
+    /**
+     * 文件管理处理器
+     */
+    @Bean
+    public RunnerCodeHandler codeExecHandler() {
+        return new RunnerCodeHandler();
     }
 
 }

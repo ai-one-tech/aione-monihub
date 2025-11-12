@@ -6,6 +6,7 @@ import org.aione.monihub.agent.model.TaskStatus;
 import org.aione.monihub.agent.model.TaskType;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
+import org.aione.monihub.agent.util.CommonUtils;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -35,8 +36,6 @@ public class ShellExecHandler implements TaskHandler {
     @Override
     public TaskExecutionResult execute(TaskDispatchItem task) throws Exception {
 
-        TaskExecutionResult result = new TaskExecutionResult();
-
         Map<String, Object> taskContent = task.getTaskContent();
         // 获取脚本内容
         String scriptContent = (String) taskContent.get("script");
@@ -50,7 +49,7 @@ public class ShellExecHandler implements TaskHandler {
         Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"), "monihub", "task");
         Files.createDirectories(tempDir);
 
-        String scriptExtension = isWindows() ? ".bat" : ".sh";
+        String scriptExtension = CommonUtils.isWindows() ? ".bat" : ".sh";
 //        Path scriptFile = Files.createTempFile(tempDir, "task_", scriptExtension);
         Path scriptFile = Files.createFile(Paths.get(tempDir.toString(), task.getTaskId() + scriptExtension));
 
@@ -61,7 +60,7 @@ public class ShellExecHandler implements TaskHandler {
             }
 
             // 设置脚本文件权限（非Windows系统）
-            if (!isWindows()) {
+            if (!CommonUtils.isWindows()) {
                 Set<PosixFilePermission> permissions = new HashSet<>();
                 permissions.add(PosixFilePermission.OWNER_READ);
                 permissions.add(PosixFilePermission.OWNER_WRITE);
@@ -99,7 +98,7 @@ public class ShellExecHandler implements TaskHandler {
         ProcessBuilder processBuilder = new ProcessBuilder();
 
         // 根据操作系统设置执行命令
-        if (isWindows()) {
+        if (CommonUtils.isWindows()) {
             processBuilder.command("cmd.exe", "/c", scriptFile.getAbsolutePath());
         } else {
             processBuilder.command("sh", scriptFile.getAbsolutePath());
@@ -161,14 +160,6 @@ public class ShellExecHandler implements TaskHandler {
         }
 
         return result;
-    }
-
-    /**
-     * 检查当前操作系统是否为Windows
-     */
-    private boolean isWindows() {
-        String os = System.getProperty("os.name").toLowerCase();
-        return os.contains("win");
     }
 
     @Override

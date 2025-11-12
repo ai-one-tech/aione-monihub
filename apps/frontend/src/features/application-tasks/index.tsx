@@ -61,7 +61,7 @@ export function ApplicationTasks() {
   const getTaskTypeLabel = (taskType: string) => {
     const typeMap: Record<string, string> = {
       'shell_exec': '执行Shell',
-      'code_exec': '执行Code',
+      'run_code': '运行Code',
       'file_manager': '文件管理',
       'custom_command': '自定义命令'
     }
@@ -97,7 +97,7 @@ export function ApplicationTasks() {
           </div>
         )
       
-      case 'code_exec':
+      case 'run_code':
         return (
           <div className="space-y-3">
               <Textarea
@@ -188,7 +188,7 @@ export function ApplicationTasks() {
         taskContent.script = shellScript
         break
       
-      case 'code_exec':
+      case 'run_code':
         isValid = codeContent.trim() !== ''
         taskContent.code = codeContent
         break
@@ -290,7 +290,7 @@ export function ApplicationTasks() {
             </h2>
           </div>
 
-          <div className="flex gap-4 h-[260px] min-h-0 overflow-auto">
+          <div className="flex gap-4 h-[250px] min-h-0 overflow-auto">
             {/* 在线实例 */}
             <Card className="flex-1 p-4 flex flex-col min-h-0">
               <div className="flex items-center justify-between mb-4">
@@ -359,8 +359,8 @@ export function ApplicationTasks() {
                       <Label htmlFor="shell_exec" className="text-sm">执行Shell</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="code_exec" id="code_exec" />
-                      <Label htmlFor="code_exec" className="text-sm">执行Code</Label>
+                      <RadioGroupItem value="run_code" id="run_code" />
+                      <Label htmlFor="run_code" className="text-sm">运行Code</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="file_manager" id="file_manager" />
@@ -378,7 +378,6 @@ export function ApplicationTasks() {
                 <Button
                   className="w-full"
                   onClick={handleSubmitTask}
-                  disabled={!shellScript.trim() || selectedInstances.length === 0}
                 >
                   发起任务
                 </Button>

@@ -16,7 +16,7 @@ public enum TaskType {
     /**
      * 执行代码
      */
-    code_exec("code_exec"),
+    run_code("run_code"),
 
     /**
      * 文件管理任务
