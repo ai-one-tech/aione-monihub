@@ -52,7 +52,7 @@ pub enum TaskStatus {
 #[serde(rename_all = "snake_case")]
 pub enum TaskType {
     #[sea_orm(string_value = "shell_exec")] ShellExec,
-    #[sea_orm(string_value = "run_code")] CodeExec,
+    #[sea_orm(string_value = "run_code")] RunCode,
     #[sea_orm(string_value = "file_manager")] FileManager,
     #[sea_orm(string_value = "custom_command")] CustomCommand,
 }

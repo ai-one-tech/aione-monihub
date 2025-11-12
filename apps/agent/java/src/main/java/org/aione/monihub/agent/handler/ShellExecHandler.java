@@ -46,11 +46,10 @@ public class ShellExecHandler implements TaskHandler {
         log.info("Executing shell script with content length: {}", scriptContent.length());
 
         // 创建临时脚本文件
-        Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"), "monihub", "task");
+        Path tempDir = Paths.get("tmp", "monihub", "task");
         Files.createDirectories(tempDir);
 
         String scriptExtension = CommonUtils.isWindows() ? ".bat" : ".sh";
-//        Path scriptFile = Files.createTempFile(tempDir, "task_", scriptExtension);
         Path scriptFile = Files.createFile(Paths.get(tempDir.toString(), task.getTaskId() + scriptExtension));
 
         try {

@@ -313,3 +313,4 @@ build/
 **/target/
 **/debug/
 **/release/
+apps/agent/java/tmp/

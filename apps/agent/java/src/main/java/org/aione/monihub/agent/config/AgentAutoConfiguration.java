@@ -149,7 +149,7 @@ public class AgentAutoConfiguration {
      * 文件管理处理器
      */
     @Bean
-    public RunnerCodeHandler codeExecHandler() {
+    public RunnerCodeHandler runnerCodeHandler() {
         return new RunnerCodeHandler();
     }
 
