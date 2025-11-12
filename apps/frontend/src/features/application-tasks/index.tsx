@@ -170,7 +170,7 @@ export function ApplicationTasks() {
   }, [taskInstancesData, selectedInstanceResult])
 
   return (
-    <Main fixed className="flex lex-col h-screen overflow-auto">
+    <Main fixed className="flex lex-col h-[calc(100vh-50rem)] overflow-auto">
       <div className="flex flex-col flex-1 min-h-0 overflow-auto">
         {/* 页面标题区域 */}
         <div className="shrink-0 p-4 overflow-auto">
