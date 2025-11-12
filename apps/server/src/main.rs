@@ -62,7 +62,12 @@ use aione_monihub_server::{DatabaseManager, WsServer};
         aione_monihub_server::configs::handlers::delete_config,
         aione_monihub_server::instance_tasks::handlers::get_instance_tasks,
         aione_monihub_server::instance_tasks::handlers::submit_task_result,
-        aione_monihub_server::instance_tasks::handlers::get_task_instances_with_results
+        aione_monihub_server::instance_tasks::handlers::get_task_instances_with_results,
+        aione_monihub_server::files::handlers::init_file_upload,
+        aione_monihub_server::files::handlers::upload_file_chunk,
+        aione_monihub_server::files::handlers::complete_file_upload,
+        aione_monihub_server::files::handlers::check_upload_status,
+        aione_monihub_server::files::handlers::download_file
     ),
     components(
         schemas(
@@ -121,7 +126,14 @@ use aione_monihub_server::{DatabaseManager, WsServer};
             aione_monihub_server::instance_tasks::models::Pagination,
             aione_monihub_server::instance_tasks::models::InstanceInfo,
             aione_monihub_server::instance_tasks::models::TaskInstanceWithResult,
-            aione_monihub_server::instance_tasks::models::TaskInstanceWithResultResponse
+            aione_monihub_server::instance_tasks::models::TaskInstanceWithResultResponse,
+            aione_monihub_server::files::models::FileUploadRequest,
+            aione_monihub_server::files::models::FileUploadResponse,
+            aione_monihub_server::files::models::FileChunkUploadRequest,
+            aione_monihub_server::files::models::FileChunkUploadResponse,
+            aione_monihub_server::files::models::FileUploadCompleteRequest,
+            aione_monihub_server::files::models::FileUploadCompleteResponse,
+            aione_monihub_server::files::models::FileInfo
         )
     ),
     info(
@@ -169,6 +181,7 @@ impl Modify for SecurityAddon {
 use aione_monihub_server::applications::routes::application_routes;
 use aione_monihub_server::auth::routes::auth_routes;
 use aione_monihub_server::configs::routes::config_routes;
+use aione_monihub_server::files::routes::file_routes;
 use aione_monihub_server::health::routes::health_routes;
 use aione_monihub_server::instance_reports::routes::{
     instance_report_routes, open_instance_report_routes,
@@ -255,6 +268,7 @@ async fn main() -> io::Result<()> {
                     .configure(config_routes)
                     .configure(websocket_routes)
                     .configure(log_routes)
+                    .configure(file_routes)
                     // Open API routes (no authentication required)
                     .service(
                         web::scope("/open/instances")

@@ -3,6 +3,7 @@ pub mod applications;
 pub mod auth;
 pub mod configs;
 pub mod entities;
+pub mod files;
 pub mod health;
 pub mod instance_reports;
 pub mod instance_tasks;

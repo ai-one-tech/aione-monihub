@@ -432,13 +432,13 @@ pub async fn get_instance_tasks(
                     });
 
                     // 更新记录状态为dispatched
-                    // let mut active: instance_task_records::ActiveModel = record.into();
-                    // if active.status.unwrap() != TaskStatus::Dispatched {
-                    //     active.status = Set(TaskStatus::Dispatched);
-                    //     active.dispatch_time = Set(Some(Utc::now().into()));
-                    //     active.updated_at = Set(Utc::now().into());
-                    //     active.update(&**db).await?;
-                    // }
+                    let mut active: instance_task_records::ActiveModel = record.into();
+                    if active.status.unwrap() != TaskStatus::Dispatched {
+                        active.status = Set(TaskStatus::Dispatched);
+                        active.dispatch_time = Set(Some(Utc::now().into()));
+                        active.updated_at = Set(Utc::now().into());
+                        active.update(&**db).await?;
+                    }
                 }
             }
 
