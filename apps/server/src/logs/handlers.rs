@@ -39,6 +39,11 @@ pub async fn get_logs(
             query_builder = query_builder.filter(Column::Timestamp.gte(start_time.naive_utc()));
         }
     }
+
+    // 来源过滤（log_source）
+    if let Some(source) = &query.source {
+        query_builder = query_builder.filter(Column::LogSource.eq(source));
+    }
     if let Some(end_date) = &query.end_date {
         if let Ok(end_time) = chrono::DateTime::parse_from_rfc3339(end_date) {
             query_builder = query_builder.filter(Column::Timestamp.lte(end_time.naive_utc()));
@@ -63,8 +68,21 @@ pub async fn get_logs(
             log_level: log.log_level,
             user_id: log.application_id.unwrap_or_default(),
             action: log.message,
-            ip_address: String::new(), // 字段在实体中不存在
-            user_agent: String::new(), // 字段在实体中不存在
+            ip_address: log
+                .context
+                .as_ref()
+                .and_then(|ctx| ctx.get("ip"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            user_agent: log
+                .context
+                .as_ref()
+                .and_then(|ctx| ctx.get("user_agent"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            log_source: log.log_source.clone(),
             timestamp: log.timestamp.to_string(),
             created_at: log.created_at.to_string(),
             updated_at: log.created_at.to_string(), // 使用created_at因为没有updated_at字段

@@ -243,7 +243,8 @@ async fn main() -> io::Result<()> {
                     .allow_any_header() // 允许所有请求头
                     .supports_credentials(), // 支持cookies和认证信息
             )
-            .wrap(AuthMiddleware) // 添加JWT认证中间件
+            .wrap(AuthMiddleware)
+            .wrap(aione_monihub_server::logs::middleware::RequestLoggingMiddleware)
             // Swagger UI
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}")

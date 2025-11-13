@@ -17,6 +17,7 @@ pub struct LogListQuery {
     pub keyword: Option<String>,
     pub start_date: Option<String>,
     pub end_date: Option<String>,
+    pub source: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -45,6 +46,7 @@ pub struct LogResponse {
     pub action: String,
     pub ip_address: String,
     pub user_agent: String,
+    pub log_source: Option<String>,
     pub timestamp: String,
     pub created_at: String,
     pub updated_at: String,
