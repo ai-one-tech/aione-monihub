@@ -161,6 +161,14 @@ class ApplicationsApi {
   }
 
   /**
+   * 将任务记录置为待执行
+   */
+  async setTaskRecordPending(recordId: string): Promise<any> {
+    const response = await apiClient.post(`/api/instances/task-records/${recordId}/set-pending`, {})
+    return response.data
+  }
+
+  /**
    * 获取任务关联的所有实例及其执行结果
    */
   async getTaskInstancesWithResults(taskId: string): Promise<TaskInstanceWithResultResponse> {

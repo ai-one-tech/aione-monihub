@@ -122,6 +122,8 @@ pub struct InstanceInfo {
     pub hostname: Option<String>,
     pub ip_address: Option<String>,
     pub public_ip: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mac_address: Option<String>,
     pub os_type: crate::shared::enums::OsType,
     pub os_version: Option<String>,
     pub online_status: crate::shared::enums::OnlineStatus,

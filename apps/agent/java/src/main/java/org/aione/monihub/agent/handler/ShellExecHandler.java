@@ -7,9 +7,13 @@ import org.aione.monihub.agent.model.TaskType;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
 import org.aione.monihub.agent.util.CommonUtils;
+import org.aione.monihub.agent.util.TaskLockUtils;
+import org.aione.monihub.agent.util.TaskTempUtils;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
@@ -45,44 +49,43 @@ public class ShellExecHandler implements TaskHandler {
 
         log.info("Executing shell script with content length: {}", scriptContent.length());
 
-        // 创建临时脚本文件
-        Path tempDir = Paths.get("tmp", "monihub", "task");
-        Files.createDirectories(tempDir);
-
         String scriptExtension = CommonUtils.isWindows() ? ".bat" : ".sh";
-        Path scriptFile = Files.createFile(Paths.get(tempDir.toString(), task.getTaskId() + scriptExtension));
-
-        try {
-            // 写入脚本内容
-            try (FileWriter writer = new FileWriter(scriptFile.toFile())) {
-                writer.write(scriptContent);
-            }
-
-            // 设置脚本文件权限（非Windows系统）
-            if (!CommonUtils.isWindows()) {
-                Set<PosixFilePermission> permissions = new HashSet<>();
-                permissions.add(PosixFilePermission.OWNER_READ);
-                permissions.add(PosixFilePermission.OWNER_WRITE);
-                permissions.add(PosixFilePermission.OWNER_EXECUTE);
-                permissions.add(PosixFilePermission.GROUP_READ);
-                permissions.add(PosixFilePermission.GROUP_EXECUTE);
-                permissions.add(PosixFilePermission.OTHERS_READ);
-                permissions.add(PosixFilePermission.OTHERS_EXECUTE);
-                Files.setPosixFilePermissions(scriptFile, permissions);
-            }
-
-            // 执行脚本
-            return executeScript(scriptFile.toFile(), task);
-        } catch (Exception e) {
-            return TaskExecutionResult.failure(e.getMessage());
-        } finally {
-            // 清理临时文件
-            try {
+        Path scriptsDir = TaskTempUtils.ensureSubDir("scripts");
+        Path scriptFile = scriptsDir.resolve(task.getTaskId() + scriptExtension);
+        TaskExecutionResult guarded = TaskLockUtils.guardWithLock("shell-exec", task, () -> {
+            if (Files.exists(scriptFile)) {
                 Files.deleteIfExists(scriptFile);
-            } catch (Exception e) {
-                log.warn("Failed to delete temporary script file: {}", scriptFile, e);
             }
-        }
+            Files.createFile(scriptFile);
+            boolean createdByThisInvocation = true;
+            try {
+                try (FileWriter writer = new FileWriter(scriptFile.toFile())) {
+                    writer.write(scriptContent);
+                }
+                if (!CommonUtils.isWindows()) {
+                    Set<PosixFilePermission> permissions = new HashSet<>();
+                    permissions.add(PosixFilePermission.OWNER_READ);
+                    permissions.add(PosixFilePermission.OWNER_WRITE);
+                    permissions.add(PosixFilePermission.OWNER_EXECUTE);
+                    permissions.add(PosixFilePermission.GROUP_READ);
+                    permissions.add(PosixFilePermission.GROUP_EXECUTE);
+                    permissions.add(PosixFilePermission.OTHERS_READ);
+                    permissions.add(PosixFilePermission.OTHERS_EXECUTE);
+                    Files.setPosixFilePermissions(scriptFile, permissions);
+                }
+                return executeScript(scriptFile.toFile(), task);
+            } finally {
+                try {
+                    if (createdByThisInvocation) {
+                        Files.deleteIfExists(scriptFile);
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to delete temporary script file: {}", scriptFile, e);
+                }
+            }
+        });
+
+        return guarded;
 
     }
 
@@ -125,15 +128,13 @@ public class ShellExecHandler implements TaskHandler {
         log.info("Executing shell script: {} with timeout: {} seconds",
                 scriptFile.getAbsolutePath(), timeoutSeconds);
 
-        // 启动进程
         Process process = processBuilder.start();
 
         StringBuilder output = new StringBuilder();
         ExecutorService executorService = Executors.newSingleThreadExecutor();
-        Future future = executorService.submit(() -> {
-            // 读取输出
+        Future<?> future = executorService.submit(() -> {
             try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream()))) {
+                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     output.append(line).append("\n");
@@ -143,20 +144,24 @@ public class ShellExecHandler implements TaskHandler {
             }
         });
 
-        // 等待进程完成
         boolean finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
-        future.cancel(true);
-        result.put("output", output.toString().trim());
 
         if (finished) {
             int exitCode = process.exitValue();
             result.setResultCode(exitCode);
-
-            result.setStatus(TaskStatus.success);
+            if (exitCode == 0) {
+                result.setStatus(TaskStatus.success);
+            } else {
+                result.setStatus(TaskStatus.failed);
+            }
         } else {
-            process.destroy();
+            process.destroyForcibly();
             result.setStatus(TaskStatus.timeout);
         }
+
+        executorService.shutdown();
+        executorService.awaitTermination(1, TimeUnit.SECONDS);
+        result.put("output", output.toString().trim());
 
         return result;
     }

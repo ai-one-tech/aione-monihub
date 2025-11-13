@@ -13,6 +13,7 @@ pub struct FileUploadRequest {
     pub instance_id: Option<String>,
     pub file_extension: Option<String>,
     pub original_file_path: Option<String>,
+    pub is_directory: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -26,6 +27,12 @@ pub struct FileChunkUploadRequest {
 pub struct FileUploadResponse {
     pub upload_id: String,
     pub message: String,
+    pub download_path: String,
+    pub is_directory: bool,
+    pub compressed: bool,
+    pub final_name: String,
+    pub size: i64,
+    pub server_file_path: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -33,6 +40,9 @@ pub struct FileChunkUploadResponse {
     pub upload_id: String,
     pub chunk_index: i64,
     pub message: String,
+    pub completed: bool,
+    pub file_id: Option<String>,
+    pub file_path: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]

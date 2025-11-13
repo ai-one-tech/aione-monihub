@@ -1,6 +1,5 @@
 package org.aione.monihub.agent.executor;
 
-import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.handler.TaskHandler;
 import org.aione.monihub.agent.model.TaskDispatchItem;
 import org.aione.monihub.agent.model.TaskExecutionResult;
@@ -8,6 +7,7 @@ import org.aione.monihub.agent.model.TaskStatus;
 import org.aione.monihub.agent.model.TaskType;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
+import org.aione.monihub.agent.util.TaskLockUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -76,47 +76,49 @@ public class AgentTaskExecutor {
      */
     public TaskExecutionResult execute(TaskDispatchItem task) {
         long startTime = System.currentTimeMillis();
-        TaskExecutionResult result = new TaskExecutionResult();
 
-        try {
-            // 查找任务处理器
-            TaskHandler handler = handlers.get(task.getTaskType());
-            if (handler == null) {
-                log.error("No handler found for task type: {}", task.getTaskType());
-                result.setErrorMessage("Unsupported task type: " + task.getTaskType());
-                result.setStatus(TaskStatus.failed);
-            } else {
-                // 使用Future进行超时控制
-                Integer timeoutSeconds = task.getTimeoutSeconds();
-
-                Future<TaskExecutionResult> future = executorService.submit(() ->
-                        handler.execute(task)
-                );
-
-                try {
-                    result = future.get(timeoutSeconds, TimeUnit.SECONDS);
-                } catch (TimeoutException e) {
-                    future.cancel(true);
-                    result.setErrorMessage("Task execution timeout");
-                    result.setStatus(TaskStatus.timeout);
-                } catch (ExecutionException e) {
-                    Throwable cause = e.getCause();
-                    result.setErrorMessage(cause != null ? cause.getMessage() : e.getMessage());
+        return TaskLockUtils.guardWithLock("processTask", task, () -> {
+            TaskExecutionResult result = new TaskExecutionResult();
+            try {
+                // 查找任务处理器
+                TaskHandler handler = handlers.get(task.getTaskType());
+                if (handler == null) {
+                    log.error("No handler found for task type: {}", task.getTaskType());
+                    result.setErrorMessage("Unsupported task type: " + task.getTaskType());
                     result.setStatus(TaskStatus.failed);
+                } else {
+                    // 使用Future进行超时控制
+                    Integer timeoutSeconds = task.getTimeoutSeconds();
+
+                    Future<TaskExecutionResult> future = executorService.submit(() ->
+                            handler.execute(task)
+                    );
+
+                    try {
+                        result = future.get(1, TimeUnit.HOURS);
+                    } catch (TimeoutException e) {
+                        future.cancel(true);
+                        result.setErrorMessage("Task execution timeout");
+                        result.setStatus(TaskStatus.timeout);
+                    } catch (ExecutionException e) {
+                        Throwable cause = e.getCause();
+                        result.setErrorMessage(cause != null ? cause.getMessage() : e.getMessage());
+                        result.setStatus(TaskStatus.failed);
+                    }
                 }
+            } catch (Exception e) {
+                result.setErrorMessage(e.getMessage());
+                result.setStatus(TaskStatus.failed);
             }
-        } catch (Exception e) {
-            result.setErrorMessage(e.getMessage());
-            result.setStatus(TaskStatus.failed);
-        }
 
-        long endTime = System.currentTimeMillis();
-        long durationMs = endTime - startTime;
-        result.setStartTime(startTime);
-        result.setEndTime(endTime);
-        result.setDurationMs(durationMs);
+            long endTime = System.currentTimeMillis();
+            long durationMs = endTime - startTime;
+            result.setStartTime(startTime);
+            result.setEndTime(endTime);
+            result.setDurationMs(durationMs);
 
-        return result;
+            return result;
+        });
     }
 
     /**

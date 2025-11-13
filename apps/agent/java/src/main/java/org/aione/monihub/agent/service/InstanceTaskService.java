@@ -7,6 +7,7 @@ import org.aione.monihub.agent.executor.AgentTaskExecutor;
 import org.aione.monihub.agent.model.*;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
+import org.aione.monihub.agent.util.TaskLockUtils;
 
 import java.net.SocketTimeoutException;
 import java.time.ZonedDateTime;
@@ -153,11 +154,12 @@ public class InstanceTaskService {
         // 异步执行任务
         scheduler.execute(() -> {
             try {
-                // 执行任务
-                TaskExecutionResult result = agentTaskExecutor.execute(task);
 
-                // 提交结果
-                submitResult(task, result);
+                    // 执行任务
+                    TaskExecutionResult result = agentTaskExecutor.execute(task);
+
+                    // 提交结果
+                    submitResult(task, result);
 
             } catch (Exception e) {
                 log.error("Error processing task: {}", task.getTaskId(), e);

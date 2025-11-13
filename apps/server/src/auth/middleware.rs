@@ -1,13 +1,13 @@
+use actix_web::http::Method;
 use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
     error::ErrorUnauthorized,
     Error, HttpMessage, HttpRequest,
 };
-use actix_web::http::Method;
 use futures_util::future::{ready, LocalBoxFuture, Ready};
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
-use std::rc::Rc;
 use std::env;
+use std::rc::Rc;
 
 use crate::auth::models::Claims;
 use crate::shared::error::ApiError;
@@ -71,6 +71,7 @@ where
                 "/api/auth/forgot-password",
                 "/api/auth/reset-password",
                 "/api/open",  // 所有开放 API
+                "/api/files", // 文件管理相关api 路由这里放开权限，但是api内部需要根据参数进行鉴权
                 "/health",
                 "/swagger-ui",
                 "/api-docs",
@@ -127,4 +128,14 @@ pub fn get_user_id_from_request(req: &HttpRequest) -> Result<String, ApiError> {
         .ok_or_else(|| ApiError::Unauthorized("User not authenticated".to_string()))?;
 
     Ok(claims.sub.clone())
+}
+
+pub fn get_user_id_from_request_not_throw(req: &HttpRequest) -> String {
+    let extensions = req.extensions();
+    let claims = extensions.get::<Claims>();
+
+    match claims {
+        Some(claims) => claims.sub.clone(),
+        None => String::new(),
+    }
 }

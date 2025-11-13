@@ -334,6 +334,34 @@ pub async fn retry_task_record(
     }
 }
 
+/// POST /api/instances/task-records/{record_id}/set-pending
+/// 将任务记录状态置为Pending
+pub async fn set_task_record_pending(
+    db: web::Data<DatabaseConnection>,
+    path: web::Path<String>,
+) -> Result<HttpResponse, ApiError> {
+    let record_id = path.into_inner();
+
+    let record = instance_task_records::Entity::find_by_id(&record_id)
+        .one(&**db)
+        .await?;
+
+    match record {
+        Some(record) => {
+            let mut active: instance_task_records::ActiveModel = record.into();
+            active.status = Set(TaskStatus::Pending);
+            active.updated_at = Set(Utc::now().into());
+            active.update(&**db).await?;
+
+            Ok(HttpResponse::Ok().json(json!({
+                "status": "success",
+                "message": "Record set to pending"
+            })))
+        }
+        None => Err(ApiError::NotFound("Task record not found".to_string())),
+    }
+}
+
 /// GET /api/open/instances/tasks
 /// Agent拉取待执行任务（支持长轮询）
 #[utoipa::path(
@@ -607,6 +635,7 @@ pub async fn get_task_instances_with_results(
                 hostname: Some(instance.hostname),
                 ip_address: Some(instance.ip_address),
                 public_ip: instance.public_ip,
+                mac_address: instance.mac_address,
                 os_type: instance
                     .os_type
                     .unwrap_or(crate::shared::enums::OsType::Unknown),

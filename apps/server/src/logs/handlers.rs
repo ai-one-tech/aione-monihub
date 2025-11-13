@@ -14,14 +14,45 @@ pub async fn get_logs(
     let limit = query.limit.unwrap_or(10).max(1).min(100);
     let _offset = (page - 1) * limit;
 
-    let paginator = Logs::find()
-        .filter(Column::LogLevel.eq("INFO")) // 示例过滤条件
-        .paginate(&**db, limit as u64);
+    // 构建查询
+    let mut query_builder = Logs::find();
+
+    // 日志级别
+    if let Some(log_level) = &query.log_level {
+        query_builder = query_builder.filter(Column::LogLevel.eq(log_level));
+    }
+
+    // 用户ID（对应 application_id）
+    if let Some(user_id) = &query.user_id {
+        query_builder = query_builder.filter(Column::ApplicationId.eq(user_id));
+    }
+
+    // 关键字（匹配 message）
+    if let Some(keyword) = &query.keyword {
+        let like_pattern = format!("%{}%", keyword);
+        query_builder = query_builder.filter(Column::Message.like(like_pattern));
+    }
+
+    // 时间范围（timestamp）
+    if let Some(start_date) = &query.start_date {
+        if let Ok(start_time) = chrono::DateTime::parse_from_rfc3339(start_date) {
+            query_builder = query_builder.filter(Column::Timestamp.gte(start_time.naive_utc()));
+        }
+    }
+    if let Some(end_date) = &query.end_date {
+        if let Ok(end_time) = chrono::DateTime::parse_from_rfc3339(end_date) {
+            query_builder = query_builder.filter(Column::Timestamp.lte(end_time.naive_utc()));
+        }
+    }
+
+    // 排序与分页
+    query_builder = query_builder.order_by(Column::Timestamp, Order::Desc);
+    let paginator = query_builder.paginate(&**db, limit as u64);
 
     let total = paginator.num_items().await.map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
     let logs = paginator.fetch_page((page - 1) as u64).await.map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
 
-    // 计算偏移量
+    // 计算偏移量（分页）
     let _offset = (page - 1) * limit;
 
     // 转换为响应格式
@@ -85,6 +116,12 @@ pub async fn export_logs(
         if let Ok(end_time) = chrono::DateTime::parse_from_rfc3339(end_date) {
             query_builder = query_builder.filter(Column::Timestamp.lte(end_time.naive_utc()));
         }
+    }
+
+    // 关键字过滤（message LIKE %keyword%）
+    if let Some(keyword) = &query.keyword {
+        let like_pattern = format!("%{}%", keyword);
+        query_builder = query_builder.filter(Column::Message.like(like_pattern));
     }
 
     // 获取所有匹配的日志数据

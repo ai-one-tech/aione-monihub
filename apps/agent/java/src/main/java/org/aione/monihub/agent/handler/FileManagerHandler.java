@@ -1,20 +1,39 @@
 package org.aione.monihub.agent.handler;
 
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
+import okhttp3.RequestBody;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
 import org.aione.monihub.agent.model.TaskDispatchItem;
 import org.aione.monihub.agent.model.TaskExecutionResult;
 import org.aione.monihub.agent.model.TaskStatus;
 import org.aione.monihub.agent.model.TaskType;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
+import org.aione.monihub.agent.config.AgentConfig;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.BufferedOutputStream;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.FileStore;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import org.aione.monihub.agent.util.TaskLockUtils;
+import org.aione.monihub.agent.util.TaskTempUtils;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * 文件管理处理器
@@ -24,18 +43,14 @@ public class FileManagerHandler implements TaskHandler {
 
     private AgentLogger log;
 
-    private static final String OPERATION_TYPE = "operation_type";
+    @javax.annotation.Resource
+    private OkHttpClient httpClient;
 
-    // 文件操作类型定义
-    public static final String OP_LIST_DIR = "list_directory";
-    public static final String OP_GET_FILE_INFO = "get_file_info";
-    public static final String OP_DELETE_FILE = "delete_file";
-    public static final String OP_RENAME_FILE = "rename_file";
-    public static final String OP_CREATE_DIR = "create_directory";
-    public static final String OP_UPLOAD_FILE = "upload_file";
-    public static final String OP_DOWNLOAD_FILE = "download_file";
-    public static final String OP_COPY_FILE = "copy_file";
-    public static final String OP_MOVE_FILE = "move_file";
+    @javax.annotation.Resource
+    private AgentConfig agentConfig;
+
+    @javax.annotation.Resource
+    private ObjectMapper objectMapper;
 
     @javax.annotation.PostConstruct
     public void init() {
@@ -48,51 +63,51 @@ public class FileManagerHandler implements TaskHandler {
         TaskExecutionResult result = new TaskExecutionResult();
 
         Map<String, Object> taskContent = task.getTaskContent();
-        String operationType = (String) taskContent.get(OPERATION_TYPE);
-        if (operationType == null || operationType.trim().isEmpty()) {
+        String operationTypeStr = (String) taskContent.get("operation");
+        if (operationTypeStr == null || operationTypeStr.trim().isEmpty()) {
             result.setStatus(TaskStatus.failed);
             result.setErrorMessage("没有需要执行的脚本");
             return result;
         }
 
-        log.info("Executing file operation: {}", operationType);
+        log.info("Executing file operation: {}", operationTypeStr);
 
-        try {
+        TaskExecutionResult guarded = TaskLockUtils.guardWithLock("file-manager", task, () -> {
+            FileOperationType operationType = FileOperationType.fromValue(operationTypeStr);
             switch (operationType) {
-                case OP_LIST_DIR:
-                    return executeListDirectory(taskContent);
-                case OP_GET_FILE_INFO:
-                    return executeGetFileInfo(taskContent);
-                case OP_DELETE_FILE:
-                    return executeDeleteFile(taskContent);
-                case OP_RENAME_FILE:
-                    return executeRenameFile(taskContent);
-                case OP_CREATE_DIR:
-                    return executeCreateDirectory(taskContent);
-                case OP_UPLOAD_FILE:
-                    return executeUploadFile(taskContent);
-                case OP_DOWNLOAD_FILE:
-                    return executeDownloadFile(taskContent);
-                case OP_COPY_FILE:
-                    return executeCopyFile(taskContent);
-                case OP_MOVE_FILE:
-                    return executeMoveFile(taskContent);
+                case ListDirectory:
+                    return executeListDirectory(task);
+                case GetFileInfo:
+                    return executeGetFileInfo(task);
+                case DeleteFile:
+                    return executeDeleteFile(task);
+                case RenameFile:
+                    return executeRenameFile(task);
+                case CreateDirectory:
+                    return executeCreateDirectory(task);
+                case UploadFile:
+                    return executeUploadFile(task);
+                case DownloadFile:
+                    return executeDownloadFile(task);
+                case CopyFile:
+                    return executeCopyFile(task);
+                case MoveFile:
+                    return executeMoveFile(task);
                 default:
-                    result.setStatus(TaskStatus.failed);
-                    result.setErrorMessage("无法识别的 操作类型 " + operationType);
-                    return result;
+                    TaskExecutionResult r = new TaskExecutionResult();
+                    r.setStatus(TaskStatus.failed);
+                    r.setErrorMessage("无法识别的 操作类型 " + operationType);
+                    return r;
             }
-        } catch (Exception e) {
-            result.setStatus(TaskStatus.failed);
-            result.setErrorMessage("Operation failed: " + e.getMessage());
-        }
-        return result;
+        });
+        return guarded;
     }
 
     /**
      * 查看目录下的文件列表
      */
-    private TaskExecutionResult executeListDirectory(Map<String, Object> taskContent) throws Exception {
+    private TaskExecutionResult executeListDirectory(TaskDispatchItem task) throws Exception {
+        Map<String, Object> taskContent = task.getTaskContent();
         String directoryPath = (String) taskContent.get("directory_path");
         if (directoryPath == null || directoryPath.trim().isEmpty()) {
             return TaskExecutionResult.failure("Directory path is required");
@@ -146,7 +161,8 @@ public class FileManagerHandler implements TaskHandler {
     /**
      * 查看文件信息
      */
-    private TaskExecutionResult executeGetFileInfo(Map<String, Object> taskContent) throws Exception {
+    private TaskExecutionResult executeGetFileInfo(TaskDispatchItem task) throws Exception {
+        Map<String, Object> taskContent = task.getTaskContent();
         String filePath = (String) taskContent.get("file_path");
         if (filePath == null || filePath.trim().isEmpty()) {
             return TaskExecutionResult.failure("File path is required");
@@ -188,7 +204,8 @@ public class FileManagerHandler implements TaskHandler {
     /**
      * 删除文件或目录
      */
-    private TaskExecutionResult executeDeleteFile(Map<String, Object> taskContent) throws Exception {
+    private TaskExecutionResult executeDeleteFile(TaskDispatchItem task) throws Exception {
+        Map<String, Object> taskContent = task.getTaskContent();
         String filePath = (String) taskContent.get("file_path");
         if (filePath == null || filePath.trim().isEmpty()) {
             return TaskExecutionResult.failure("File path is required");
@@ -238,7 +255,8 @@ public class FileManagerHandler implements TaskHandler {
     /**
      * 文件改名
      */
-    private TaskExecutionResult executeRenameFile(Map<String, Object> taskContent) throws Exception {
+    private TaskExecutionResult executeRenameFile(TaskDispatchItem task) throws Exception {
+        Map<String, Object> taskContent = task.getTaskContent();
         String oldPath = (String) taskContent.get("old_path");
         String newPath = (String) taskContent.get("new_path");
 
@@ -273,7 +291,8 @@ public class FileManagerHandler implements TaskHandler {
     /**
      * 创建目录
      */
-    private TaskExecutionResult executeCreateDirectory(Map<String, Object> taskContent) throws Exception {
+    private TaskExecutionResult executeCreateDirectory(TaskDispatchItem task) throws Exception {
+        Map<String, Object> taskContent = task.getTaskContent();
         String directoryPath = (String) taskContent.get("directory_path");
         if (directoryPath == null || directoryPath.trim().isEmpty()) {
             return TaskExecutionResult.failure("Directory path is required");
@@ -295,83 +314,313 @@ public class FileManagerHandler implements TaskHandler {
     }
 
     /**
-     * 上传文件（模拟 - 实际需要Base64编码的文件内容）
+     * 上传文件（从远程URL下载并保存到指定路径）
      */
-    private TaskExecutionResult executeUploadFile(Map<String, Object> taskContent) throws Exception {
-        String targetPath = (String) taskContent.get("target_path");
-        String fileContent = (String) taskContent.get("file_content");
+    private TaskExecutionResult executeUploadFile(TaskDispatchItem task) throws Exception {
+        Map<String, Object> taskContent = task.getTaskContent();
+        String savePath = (String) taskContent.get("save");
+        if (savePath == null || savePath.trim().isEmpty()) {
+            savePath = (String) taskContent.get("path");
+        }
+        String remoteUrl = (String) taskContent.get("remote_url");
 
-        if (targetPath == null || fileContent == null) {
-            return TaskExecutionResult.failure("Target path and file content are required");
+        if (savePath == null || remoteUrl == null) {
+            return TaskExecutionResult.failure("Target path and remote HTTP URL are required");
         }
 
-        File targetFile = new File(targetPath);
-        if (targetFile.exists()) {
-            boolean overwrite = (Boolean) taskContent.getOrDefault("overwrite", false);
-            if (!overwrite) {
-                return TaskExecutionResult.failure("Target file already exists and overwrite is disabled");
+        // 确定最终的文件路径和名称
+        File saveTarget = new File(savePath);
+        boolean dirIntent = saveTarget.isDirectory()
+                || savePath.endsWith(java.io.File.separator)
+                || savePath.endsWith("/")
+                || savePath.endsWith("\\");
+        File saveFile;
+        if (dirIntent) {
+            String fileName = getFileNameFromUrl(remoteUrl);
+            saveFile = new File(savePath, fileName);
+        } else {
+            saveFile = saveTarget;
+        }
+
+        File partFile = new File(saveFile.getAbsolutePath() + ".part");
+
+        // 确保父目录存在
+        File parentDir = saveFile.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            Files.createDirectories(parentDir.toPath());
+        }
+
+        // 构建客户端（派生更长超时）
+        OkHttpClient client = (this.httpClient != null
+                ? this.httpClient.newBuilder()
+                : new OkHttpClient.Builder())
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(1, TimeUnit.HOURS)
+                .writeTimeout(1, TimeUnit.HOURS)
+                .retryOnConnectionFailure(true)
+                .followRedirects(true)
+                .build();
+
+        // 预检：获取 Content-Length，决定是否自动续传
+        long contentLength = -1L;
+        try {
+            Request headReq = new Request.Builder()
+                    .url(remoteUrl)
+                    .method("HEAD", null)
+                    .build();
+            try (Response headResp = client.newCall(headReq).execute()) {
+                if (headResp.isSuccessful()) {
+                    String cl = headResp.header("Content-Length");
+                    if (cl != null) {
+                        try {
+                            contentLength = Long.parseLong(cl);
+                        } catch (NumberFormatException ignored) {
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
+        boolean autoResume = contentLength >= 10L * 1024L * 1024L;
+        long existingBytes = (autoResume && partFile.exists()) ? partFile.length() : 0L;
+
+        // 若无法获取长度，但存在 .part 文件，则仍按续传处理
+        if (contentLength < 0 && partFile.exists()) {
+            autoResume = true;
+            existingBytes = partFile.length();
+        }
+
+        // 非续传场景清理旧的 .part 文件
+        if (!autoResume && partFile.exists()) {
+            Files.deleteIfExists(partFile.toPath());
+        }
+
+        // 磁盘空间预检（若可获取长度）
+        if (contentLength > 0) {
+            try {
+                FileStore store = Files.getFileStore(saveFile.toPath());
+                long need = contentLength - existingBytes;
+                if (store.getUsableSpace() < need) {
+                    return TaskExecutionResult.failure("Insufficient disk space: need " + need + " bytes");
+                }
+            } catch (Exception ignored) {
             }
         }
 
-        // 确保父目录存在
-        File parentDir = targetFile.getParentFile();
-        if (parentDir != null && !parentDir.exists()) {
-            parentDir.mkdirs();
+        // 构造下载请求
+        Request.Builder reqBuilder = new Request.Builder()
+                .url(remoteUrl)
+                .header("Accept-Encoding", "identity");
+        if (existingBytes > 0) {
+            reqBuilder.header("Range", "bytes=" + existingBytes + "-");
         }
+        Request request = reqBuilder.build();
 
-        // 解码Base64内容并写入文件
-        byte[] content = Base64.getDecoder().decode(fileContent);
-        try (FileOutputStream fos = new FileOutputStream(targetFile)) {
-            fos.write(content);
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                return TaskExecutionResult.failure("Failed to download file from " + remoteUrl + ", HTTP status: " + response.code());
+            }
+
+            ResponseBody responseBody = response.body();
+            if (responseBody == null) {
+                return TaskExecutionResult.failure("Empty response body when downloading file from " + remoteUrl);
+            }
+
+            boolean append = existingBytes > 0;
+            // 如果请求了 Range 但返回 200，说明服务端不支持/忽略 Range，回退为全量下载
+            if (append && response.code() == 200) {
+                append = false;
+                existingBytes = 0L;
+                Files.deleteIfExists(partFile.toPath());
+            }
+
+            long writtenThisTime = 0L;
+            try (InputStream inputStream = responseBody.byteStream();
+                 BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(partFile, append), 1024 * 1024)) {
+                byte[] buffer = new byte[1024 * 1024];
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    bos.write(buffer, 0, bytesRead);
+                    writtenThisTime += bytesRead;
+                }
+            }
+
+            // 成功后原子替换到最终文件
+            Files.move(partFile.toPath(), saveFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+            Map<String, Object> resultData = new HashMap<>();
+            resultData.put("save_path", saveFile.getAbsolutePath());
+            resultData.put("tmp_path", partFile.getAbsolutePath());
+            resultData.put("bytes_written", saveFile.length());
+            if (contentLength > 0) {
+                resultData.put("content_length", contentLength);
+            }
+            resultData.put("resumed", existingBytes > 0);
+
+            return TaskExecutionResult.success(resultData);
         }
+    }
 
-        Map<String, Object> resultData = new HashMap<>();
-        resultData.put("target_path", targetPath);
-        resultData.put("file_size", targetFile.length());
-
-        return TaskExecutionResult.success( resultData);
+    /**
+     * 从URL中提取文件名
+     */
+    private String getFileNameFromUrl(String url) {
+        try {
+            String path = new URL(url).getPath();
+            int lastSlashIndex = path.lastIndexOf('/');
+            if (lastSlashIndex != -1 && lastSlashIndex < path.length() - 1) {
+                return path.substring(lastSlashIndex + 1);
+            }
+        } catch (Exception e) {
+            // 如果解析URL失败，返回默认文件名
+            log.warn("Failed to parse URL to extract filename: " + url, e);
+        }
+        return "downloaded_file";
     }
 
     /**
      * 下载文件（返回Base64编码的文件内容）
      */
-    private TaskExecutionResult executeDownloadFile(Map<String, Object> taskContent) throws Exception {
-        String filePath = (String) taskContent.get("file_path");
+    private TaskExecutionResult executeDownloadFile(TaskDispatchItem task) throws Exception {
+        Map<String, Object> taskContent = task.getTaskContent();
+        String filePath = (String) taskContent.get("path");
         if (filePath == null || filePath.trim().isEmpty()) {
             return TaskExecutionResult.failure("File path is required");
         }
 
-        File file = new File(filePath);
-        if (!file.exists()) {
+        File target = new File(filePath);
+        if (!target.exists()) {
             return TaskExecutionResult.failure("File does not exist: " + filePath);
         }
-        if (!file.isFile()) {
-            return TaskExecutionResult.failure("Path is not a file: " + filePath);
+
+        boolean isDirectory = target.isDirectory();
+        File uploadFile = target;
+        String originalName = target.getName();
+        if (isDirectory) {
+            Path archivesDir = TaskTempUtils.ensureSubDir("archives");
+            String zipName = originalName + ".zip";
+            Path zipPath = archivesDir.resolve(zipName);
+            zipDirectory(target.toPath(), zipPath);
+            uploadFile = zipPath.toFile();
+            originalName = zipName;
+        } else {
+            long maxSize = 10L * 1024L * 1024L;
+            if (target.length() > maxSize) {
+                Path archivesDir = TaskTempUtils.ensureSubDir("archives");
+                String zipName = originalName + ".zip";
+                Path zipPath = archivesDir.resolve(zipName);
+                zipSingleFile(target.toPath(), zipPath, target.getName());
+                uploadFile = zipPath.toFile();
+                originalName = zipName;
+            }
         }
 
-        // 检查文件大小限制（最大10MB）
-        long maxSize = 10 * 1024 * 1024; // 10MB
-        if (file.length() > maxSize) {
-            return TaskExecutionResult.failure("File is too large (max 10MB): " + file.length() + " bytes");
+        String taskId = task.getTaskId();
+        String instanceId = agentConfig.getInstanceId();
+
+        Map<String, Object> initBody = new HashMap<>();
+        initBody.put("file_name", originalName);
+        initBody.put("file_size", uploadFile.length());
+        int chunkSize = 8 * 1024 * 1024;
+        long totalChunks = (uploadFile.length() + chunkSize - 1) / chunkSize;
+        initBody.put("chunk_size", chunkSize);
+        initBody.put("total_chunks", totalChunks);
+        initBody.put("task_id", taskId);
+        initBody.put("instance_id", instanceId);
+        initBody.put("file_extension", getFileExtension(uploadFile));
+        initBody.put("original_file_path", target.getAbsolutePath());
+        initBody.put("is_directory", isDirectory);
+
+        String initUrl = agentConfig.getServerUrl() + "/api/files/upload/init";
+        RequestBody initReqBody = RequestBody.create(MediaType.parse("application/json"), objectMapper.writeValueAsBytes(initBody));
+        Request.Builder initReqBuilder = new Request.Builder().url(initUrl).post(initReqBody);
+        String uploadId;
+        String initDownloadPath = null;
+        Boolean initIsDirectory = null;
+        Boolean initCompressed = null;
+        String initFinalName = null;
+        Long initSize = null;
+        String initServerFilePath = null;
+        try (Response resp = httpClient.newCall(initReqBuilder.build()).execute()) {
+            if (!resp.isSuccessful()) {
+                return TaskExecutionResult.failure("Init upload failed: HTTP " + resp.code());
+            }
+            Map m = objectMapper.readValue(resp.body().bytes(), Map.class);
+            uploadId = (String) m.get("upload_id");
+            Object dp = m.get("download_path");
+            if (dp instanceof String) initDownloadPath = (String) dp;
+            Object idv = m.get("is_directory");
+            if (idv instanceof Boolean) initIsDirectory = (Boolean) idv;
+            Object cp = m.get("compressed");
+            if (cp instanceof Boolean) initCompressed = (Boolean) cp;
+            Object fn = m.get("final_name");
+            if (fn instanceof String) initFinalName = (String) fn;
+            Object sz = m.get("size");
+            if (sz instanceof Number) initSize = ((Number) sz).longValue();
+            Object sfp = m.get("server_file_path");
+            if (sfp instanceof String) initServerFilePath = (String) sfp;
         }
 
-        // 读取文件内容并编码为Base64
-        byte[] fileContent = Files.readAllBytes(file.toPath());
-        String encodedContent = Base64.getEncoder().encodeToString(fileContent);
+        String chunkUrl = agentConfig.getServerUrl() + "/api/files/upload/chunk";
+        MediaType octet = MediaType.parse("application/octet-stream");
+        String fileId = null;
+        String filePathResp = null;
+        boolean completedFlag = false;
+        try (InputStream is = Files.newInputStream(uploadFile.toPath())) {
+            byte[] buf = new byte[chunkSize];
+            long index = 0;
+            int r;
+            while ((r = is.read(buf)) != -1) {
+                MultipartBody.Builder mb = new MultipartBody.Builder().setType(MultipartBody.FORM)
+                        .addFormDataPart("upload_id", uploadId)
+                        .addFormDataPart("chunk_index", String.valueOf(index))
+                        .addFormDataPart("chunk", originalName, RequestBody.create(octet, Arrays.copyOf(buf, r)));
+                Request.Builder chunkReqBuilder = new Request.Builder().url(chunkUrl).post(mb.build());
+                try (Response cr = httpClient.newCall(chunkReqBuilder.build()).execute()) {
+                    if (!cr.isSuccessful()) {
+                        return TaskExecutionResult.failure("Chunk upload failed at index " + index + ": HTTP " + cr.code());
+                    }
+                    Map cm = objectMapper.readValue(cr.body().bytes(), Map.class);
+                    Object c = cm.get("completed");
+                    if (Boolean.TRUE.equals(c)) {
+                        fileId = (String) cm.get("file_id");
+                        filePathResp = (String) cm.get("file_path");
+                        completedFlag = true;
+                        break;
+                    }
+                }
+                index++;
+            }
+        }
+        if (!completedFlag) {
+            return TaskExecutionResult.failure("Upload did not complete");
+        }
 
         Map<String, Object> resultData = new HashMap<>();
-        resultData.put("file_path", filePath);
-        resultData.put("file_size", file.length());
-        resultData.put("file_content", encodedContent);
-        resultData.put("mime_type", Files.probeContentType(file.toPath()));
+        String downloadUrl;
+        if (initDownloadPath != null) {
+            downloadUrl = agentConfig.getServerUrl() + initDownloadPath;
+        } else {
+            downloadUrl = agentConfig.getServerUrl() + "/api/files/download/" + fileId;
+        }
+        resultData.put("download_url", downloadUrl);
+        resultData.put("file_record_id", fileId);
+        resultData.put("is_directory", initIsDirectory != null ? initIsDirectory : isDirectory);
+        boolean compressedVal = initCompressed != null ? initCompressed : (isDirectory || originalName.endsWith(".zip"));
+        resultData.put("compressed", compressedVal);
+        resultData.put("final_name", initFinalName != null ? initFinalName : originalName);
+        resultData.put("size", initSize != null ? initSize : uploadFile.length());
+        resultData.put("server_file_path", filePathResp != null ? filePathResp : initServerFilePath);
 
-        return TaskExecutionResult.success( resultData);
+        return TaskExecutionResult.success("File uploaded", resultData);
     }
 
     /**
      * 复制文件
      */
-    private TaskExecutionResult executeCopyFile(Map<String, Object> taskContent) throws Exception {
+    private TaskExecutionResult executeCopyFile(TaskDispatchItem task) throws Exception {
+        Map<String, Object> taskContent = task.getTaskContent();
         String sourcePath = (String) taskContent.get("source_path");
         String targetPath = (String) taskContent.get("target_path");
 
@@ -411,7 +660,8 @@ public class FileManagerHandler implements TaskHandler {
     /**
      * 移动文件
      */
-    private TaskExecutionResult executeMoveFile(Map<String, Object> taskContent) throws Exception {
+    private TaskExecutionResult executeMoveFile(TaskDispatchItem task) throws Exception {
+        Map<String, Object> taskContent = task.getTaskContent();
         String sourcePath = (String) taskContent.get("source_path");
         String targetPath = (String) taskContent.get("target_path");
 
@@ -457,6 +707,31 @@ public class FileManagerHandler implements TaskHandler {
             return "";
         }
         return name.substring(lastIndexOf + 1);
+    }
+
+    private void zipDirectory(Path sourceDir, Path zipPath) throws Exception {
+        try (ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(zipPath.toFile())))) {
+            Files.walk(sourceDir).forEach(p -> {
+                try {
+                    String entryName = sourceDir.relativize(p).toString();
+                    if (entryName.isEmpty()) return;
+                    if (Files.isDirectory(p)) return;
+                    zos.putNextEntry(new ZipEntry(entryName));
+                    Files.copy(p, zos);
+                    zos.closeEntry();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+    }
+
+    private void zipSingleFile(Path filePath, Path zipPath, String entryName) throws Exception {
+        try (ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(zipPath.toFile())))) {
+            zos.putNextEntry(new ZipEntry(entryName));
+            Files.copy(filePath, zos);
+            zos.closeEntry();
+        }
     }
 
     @Override

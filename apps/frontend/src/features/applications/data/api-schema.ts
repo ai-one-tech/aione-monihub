@@ -194,6 +194,7 @@ export const instanceInfoSchema = z.object({
   hostname: z.string().optional(),
   ip_address: z.string().optional(),
   public_ip: z.string().optional(),
+  mac_address: z.string().optional(),
   os_type: z.string(),
   os_version: z.string().optional(),
   online_status: z.string(),

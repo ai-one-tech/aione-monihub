@@ -76,6 +76,7 @@ public class AgentConfig {
      */
     private boolean debug = false;
 
+
     @Data
     public static class ReportConfig {
         /**

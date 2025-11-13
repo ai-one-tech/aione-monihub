@@ -14,6 +14,7 @@ pub struct LogListQuery {
     pub limit: Option<u32>,
     pub log_level: Option<String>,
     pub user_id: Option<String>,
+    pub keyword: Option<String>,
     pub start_date: Option<String>,
     pub end_date: Option<String>,
 }
