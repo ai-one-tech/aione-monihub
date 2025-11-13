@@ -1,3 +1,4 @@
+use enum_display::EnumDisplay;
 use serde::{Deserialize, Serialize};
 use sea_orm::entity::prelude::*;
 use utoipa::ToSchema;
@@ -137,3 +138,32 @@ pub enum NetworkType {
     #[sea_orm(string_value = "cellular")] Cellular,
     #[sea_orm(string_value = "unknown")] Unknown,
 }
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveActiveEnum, EnumIter, ToSchema)]
+#[sea_orm(rs_type = "String", db_type = "Text")]
+#[serde(rename_all = "snake_case")]
+pub enum LogSource {
+    #[sea_orm(string_value = "server")]
+    Server,
+    #[sea_orm(string_value = "agent")]
+    Agent,
+}
+
+#[derive(EnumDisplay, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveActiveEnum, EnumIter, ToSchema)]
+#[sea_orm(rs_type = "String", db_type = "Text")]
+#[serde(rename_all = "snake_case")]
+pub enum LogLevel {
+    #[sea_orm(string_value = "trace")]
+    Trace,
+    #[sea_orm(string_value = "debug")]
+    Debug,
+    #[sea_orm(string_value = "info")]
+    Info,
+    #[sea_orm(string_value = "warn")]
+    Warn,
+    #[sea_orm(string_value = "error")]
+    Error,
+    #[sea_orm(string_value = "fatal")]
+    Fatal
+}
+

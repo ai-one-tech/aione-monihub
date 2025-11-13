@@ -4,14 +4,15 @@ use crate::instance_reports::models::{
 };
 use crate::shared::error::ApiError;
 use crate::shared::generate_snowflake_id;
-use crate::entities::{instance_records, instances, applications};
-use crate::shared::enums::{Status, OnlineStatus};
+use crate::entities::{instance_records, instances, applications, logs};
+use crate::shared::enums::{Status, OnlineStatus, LogSource};
 use actix_web::{web, HttpResponse, Result};
 use chrono::Utc;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait,
     QueryFilter, QueryOrder, QuerySelect, Set,
 };
+use serde_json::json;
 use rust_decimal::Decimal;
 use std::str::FromStr;
 
@@ -156,6 +157,7 @@ pub async fn report_instance_info(
     let current_report_count = instance.report_count;
     let first_report_at_is_none = instance.first_report_at.is_none();
     
+    let instance_id_db = instance.id.clone();
     let mut instance_update: instances::ActiveModel = instance.into();
     instance_update.agent_type = Set(Some(request.agent_type.clone()));
     instance_update.agent_version = Set(request.agent_version.clone());
@@ -186,7 +188,51 @@ pub async fn report_instance_info(
     instance_update.updated_at = Set(Utc::now().into());
     instance_update.update(&**db).await?;
 
-    // 9. 返回成功响应
+    // 9. 处理代理日志批量写入（可选）
+    let mut log_success_count: u32 = 0;
+    let mut log_failure_count: u32 = 0;
+    if let Some(agent_logs) = &request.agent_logs {
+        for item in agent_logs {
+            let now = Utc::now();
+            let ts = match &item.timestamp {
+                Some(t) => chrono::DateTime::parse_from_rfc3339(t)
+                    .map(|dt| dt.with_timezone(&Utc))
+                    .unwrap_or(now),
+                None => now,
+            };
+
+            let ctx = match &item.context {
+                Some(c) => json!({
+                    "agent_instance_id": request.instance_id,
+                    "instance_id": instance_id_db,
+                    "extra": c,
+                }),
+                None => json!({
+                    "agent_instance_id": request.instance_id,
+                    "instance_id": instance_id_db,
+                }),
+            };
+
+            let active = logs::ActiveModel {
+                id: Set(generate_snowflake_id()),
+                application_id: Set(Some(application_id.clone())),
+                instance_id: Set(Some(instance_id_db.clone())),
+                log_level: Set(item.log_level.clone()),
+                message: Set(item.message.clone()),
+                context: Set(Some(ctx)),
+                log_source: Set(LogSource::Agent),
+                timestamp: Set(ts.into()),
+                created_at: Set(Utc::now().into()),
+            };
+
+            match active.insert(&**db).await {
+                Ok(_) => log_success_count += 1,
+                Err(_) => log_failure_count += 1,
+            }
+        }
+    }
+
+    // 10. 返回成功响应
     let response = InstanceReportResponse {
         status: "success".to_string(),
         message: "Instance report received successfully".to_string(),
@@ -195,6 +241,8 @@ pub async fn report_instance_info(
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs(),
+        log_success_count: Some(log_success_count),
+        log_failure_count: Some(log_failure_count),
     };
 
     Ok(HttpResponse::Ok().json(response))

@@ -3,6 +3,8 @@ package org.aione.monihub.agent.util;
 import lombok.extern.slf4j.Slf4j;
 import org.aione.monihub.agent.config.AgentConfig;
 import org.slf4j.Logger;
+import org.slf4j.helpers.MessageFormatter;
+import org.springframework.boot.logging.LogLevel;
 
 /**
  * Agent日志工具类
@@ -25,24 +27,31 @@ public class AgentLogger {
     public void debug(String msg) {
         if (properties.isDebug()) {
             logger.debug(msg);
+            AgentLogStore.getInstance().append(LogLevel.DEBUG, msg, null);
         }
     }
 
     public void debug(String format, Object arg) {
         if (properties.isDebug()) {
             logger.debug(format, arg);
+            String m = MessageFormatter.format(format, arg).getMessage();
+            AgentLogStore.getInstance().append(LogLevel.DEBUG, m, null);
         }
     }
 
     public void debug(String format, Object arg1, Object arg2) {
         if (properties.isDebug()) {
             logger.debug(format, arg1, arg2);
+            String m = MessageFormatter.format(format, arg1, arg2).getMessage();
+            AgentLogStore.getInstance().append(LogLevel.DEBUG, m, null);
         }
     }
 
     public void debug(String format, Object... arguments) {
         if (properties.isDebug()) {
             logger.debug(format, arguments);
+            String m = MessageFormatter.arrayFormat(format, arguments).getMessage();
+            AgentLogStore.getInstance().append(LogLevel.DEBUG, m, null);
         }
     }
 
@@ -52,24 +61,31 @@ public class AgentLogger {
     public void info(String msg) {
         if (properties.isDebug()) {
             logger.info(msg);
+            AgentLogStore.getInstance().append(LogLevel.INFO, msg, null);
         }
     }
 
     public void info(String format, Object arg) {
         if (properties.isDebug()) {
             logger.info(format, arg);
+            String m = MessageFormatter.format(format, arg).getMessage();
+            AgentLogStore.getInstance().append(LogLevel.INFO, m, null);
         }
     }
 
     public void info(String format, Object arg1, Object arg2) {
         if (properties.isDebug()) {
             logger.info(format, arg1, arg2);
+            String m = MessageFormatter.format(format, arg1, arg2).getMessage();
+            AgentLogStore.getInstance().append(LogLevel.INFO, m, null);
         }
     }
 
     public void info(String format, Object... arguments) {
         if (properties.isDebug()) {
             logger.info(format, arguments);
+            String m = MessageFormatter.arrayFormat(format, arguments).getMessage();
+            AgentLogStore.getInstance().append(LogLevel.INFO, m, null);
         }
     }
 
@@ -78,22 +94,30 @@ public class AgentLogger {
      */
     public void warn(String msg) {
         logger.warn(msg);
+        AgentLogStore.getInstance().append(LogLevel.WARN, msg, null);
     }
 
     public void warn(String format, Object arg) {
         logger.warn(format, arg);
+        String m = MessageFormatter.format(format, arg).getMessage();
+        AgentLogStore.getInstance().append(LogLevel.WARN, m, null);
     }
 
     public void warn(String format, Object arg1, Object arg2) {
         logger.warn(format, arg1, arg2);
+        String m = MessageFormatter.format(format, arg1, arg2).getMessage();
+        AgentLogStore.getInstance().append(LogLevel.WARN, m, null);
     }
 
     public void warn(String format, Object... arguments) {
         logger.warn(format, arguments);
+        String m = MessageFormatter.arrayFormat(format, arguments).getMessage();
+        AgentLogStore.getInstance().append(LogLevel.WARN, m, null);
     }
 
     public void warn(String msg, Throwable t) {
         logger.warn(msg, t);
+        AgentLogStore.getInstance().append(LogLevel.WARN, msg, null);
     }
 
     /**
@@ -101,29 +125,37 @@ public class AgentLogger {
      */
     public void error(String msg) {
         logger.error(msg);
+        AgentLogStore.getInstance().append(LogLevel.ERROR, msg, null);
     }
 
     public void error(String format, Object arg) {
         if (properties.isDebug()) {
             logger.error(format, arg);
+            String m = MessageFormatter.format(format, arg).getMessage();
+            AgentLogStore.getInstance().append(LogLevel.ERROR, m, null);
         }
     }
 
     public void error(String format, Object arg1, Object arg2) {
         if (properties.isDebug()) {
             logger.error(format, arg1, arg2);
+            String m = MessageFormatter.format(format, arg1, arg2).getMessage();
+            AgentLogStore.getInstance().append(LogLevel.ERROR, m, null);
         }
     }
 
     public void error(String format, Object... arguments) {
         if (properties.isDebug()) {
             logger.error(format, arguments);
+            String m = MessageFormatter.arrayFormat(format, arguments).getMessage();
+            AgentLogStore.getInstance().append(LogLevel.ERROR, m, null);
         }
     }
 
     public void error(String msg, Throwable t) {
         if (properties.isDebug()) {
             logger.error(msg, t);
+            AgentLogStore.getInstance().append(LogLevel.ERROR, msg, null);
         }
     }
 }

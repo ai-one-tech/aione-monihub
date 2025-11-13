@@ -95,7 +95,6 @@ pub async fn init_file_upload(
     let current_time = Utc::now();
     let initial_file_path = {
         let original_name = upload_request.file_name.clone();
-        let ext = upload_request.file_extension.clone().unwrap_or_default();
         let instance_id = upload_request.instance_id.clone().unwrap_or_default();
         format!("{}/{}_{}", task_dir, instance_id, original_name)
     };
@@ -144,7 +143,6 @@ pub async fn init_file_upload(
 
     let is_directory = upload_request.is_directory.unwrap_or(false);
     let compressed = is_directory || upload_request.file_name.ends_with(".zip");
-    let ext = upload_request.file_extension.clone().unwrap_or_default();
     let instance_id = upload_request.instance_id.clone().unwrap_or_default();
     let final_name = format!("{}_{}", instance_id, upload_request.file_name);
 

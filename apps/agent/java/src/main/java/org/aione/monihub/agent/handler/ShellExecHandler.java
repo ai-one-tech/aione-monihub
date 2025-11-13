@@ -10,6 +10,7 @@ import org.aione.monihub.agent.util.CommonUtils;
 import org.aione.monihub.agent.util.TaskTempUtils;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,9 +54,9 @@ public class ShellExecHandler implements TaskHandler {
             Files.deleteIfExists(scriptFile);
         }
         Files.createFile(scriptFile);
-        boolean createdByThisInvocation = true;
+        
         try {
-            try (FileWriter writer = new FileWriter(scriptFile.toFile())) {
+            try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(scriptFile.toFile()), CommonUtils.isWindows() ? Charset.forName("GBK") : StandardCharsets.UTF_8)) {
                 writer.write(scriptContent);
             }
             if (!CommonUtils.isWindows()) {
@@ -72,9 +73,7 @@ public class ShellExecHandler implements TaskHandler {
             return executeScript(scriptFile.toFile(), task);
         } finally {
             try {
-                if (createdByThisInvocation) {
-                    Files.deleteIfExists(scriptFile);
-                }
+                Files.deleteIfExists(scriptFile);
             } catch (Exception e) {
                 log.warn("Failed to delete temporary script file: {}", scriptFile, e);
             }
@@ -123,14 +122,14 @@ public class ShellExecHandler implements TaskHandler {
 
         Process process = processBuilder.start();
 
-        StringBuilder output = new StringBuilder();
+        ByteArrayOutputStream outputBytes = new ByteArrayOutputStream();
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         Future<?> future = executorService.submit(() -> {
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    output.append(line).append("\n");
+            try (InputStream is = process.getInputStream()) {
+                byte[] buf = new byte[4096];
+                int n;
+                while ((n = is.read(buf)) != -1) {
+                    outputBytes.write(buf, 0, n);
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -154,7 +153,19 @@ public class ShellExecHandler implements TaskHandler {
 
         executorService.shutdown();
         executorService.awaitTermination(1, TimeUnit.SECONDS);
-        result.put("output", output.toString().trim());
+        byte[] data = outputBytes.toByteArray();
+        String text;
+        if (CommonUtils.isWindows()) {
+            String utf8 = new String(data, StandardCharsets.UTF_8);
+            if (utf8.indexOf('\uFFFD') >= 0) {
+                text = new String(data, Charset.forName("GBK"));
+            } else {
+                text = utf8;
+            }
+        } else {
+            text = new String(data, StandardCharsets.UTF_8);
+        }
+        result.put("output", text.trim());
 
         return result;
     }

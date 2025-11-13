@@ -1,16 +1,17 @@
+use crate::auth::middleware::get_user_id_from_request_not_throw;
+use crate::entities::logs;
+use crate::shared::enums;
+use crate::shared::snowflake::generate_snowflake_id;
 use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
 use actix_web::{web, Error};
-use futures_util::future::{LocalBoxFuture, Ready};
+use chrono::Utc;
 use futures_util::future::ready;
+use futures_util::future::{LocalBoxFuture, Ready};
+use sea_orm::ActiveModelTrait;
+use sea_orm::ActiveValue::Set;
+use serde_json::json;
 use std::rc::Rc;
 use std::time::Instant;
-use sea_orm::ActiveValue::Set;
-use sea_orm::ActiveModelTrait;
-use serde_json::json;
-use crate::shared::snowflake::generate_snowflake_id;
-use crate::entities::logs;
-use chrono::Utc;
-use crate::auth::middleware::get_user_id_from_request_not_throw;
 
 pub struct RequestLoggingMiddleware;
 
@@ -66,10 +67,16 @@ where
         let trace_id = generate_snowflake_id();
         let start = Instant::now();
 
-        let db_opt = req.app_data::<web::Data<sea_orm::DatabaseConnection>>().cloned();
+        let db_opt = req
+            .app_data::<web::Data<sea_orm::DatabaseConnection>>()
+            .cloned();
         let user_id_prefetch = {
             let uid = get_user_id_from_request_not_throw(req.request());
-            if uid.is_empty() { None } else { Some(uid) }
+            if uid.is_empty() {
+                None
+            } else {
+                Some(uid)
+            }
         };
 
         Box::pin(async move {
@@ -78,19 +85,19 @@ where
             let duration_ms = start.elapsed().as_millis() as i64;
 
             if let Some(db) = db_opt {
-                let mut status_code: i32 = 0;
-                let mut log_level = "INFO".to_string();
-
+                
+                let mut log_level = enums::LogLevel::Info;
+                let mut status_code: i32;
                 match &result {
                     Ok(resp) => {
                         status_code = resp.status().as_u16() as i32;
                         if status_code >= 400 {
-                            log_level = "ERROR".to_string();
+                            log_level = enums::LogLevel::Error;
                         }
                     }
                     Err(_) => {
                         status_code = 500;
-                        log_level = "ERROR".to_string();
+                        log_level = enums::LogLevel::Error;
                     }
                 }
 
@@ -98,11 +105,16 @@ where
                     "content_type": "",
                 });
 
-                let query_part = if query.is_empty() { String::new() } else { format!("?{}", query) };
+                let query_part = if query.is_empty() {
+                    String::new()
+                } else {
+                    format!("?{}", query)
+                };
                 let message = format!("{} {}{} -> {}", method, path, query_part, status_code);
 
                 let now = Utc::now();
 
+                let user_id = user_id_prefetch;
                 let context = json!({
                     "method": method,
                     "path": path,
@@ -113,17 +125,17 @@ where
                     "duration_ms": duration_ms,
                     "trace_id": trace_id,
                     "headers": headers,
+                    "user_id": user_id,
                 });
 
-                let user_id = user_id_prefetch;
-
-                let mut active = logs::ActiveModel {
+                let active = logs::ActiveModel {
                     id: Set(generate_snowflake_id()),
-                    application_id: Set(user_id),
+                    application_id: Set(None),
+                    instance_id: Set(None),
                     log_level: Set(log_level),
                     message: Set(message),
                     context: Set(Some(context)),
-                    log_source: Set(Some("http".to_string())),
+                    log_source: Set(enums::LogSource::Server),
                     timestamp: Set(now.into()),
                     created_at: Set(now.into()),
                 };

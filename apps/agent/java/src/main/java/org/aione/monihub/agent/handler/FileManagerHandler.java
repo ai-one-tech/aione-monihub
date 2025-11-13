@@ -76,22 +76,6 @@ public class FileManagerHandler implements TaskHandler {
         }
     }
 
-    /**
-     * 递归删除目录
-     */
-    private boolean deleteDirectory(File directory) {
-        File[] files = directory.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    deleteDirectory(file);
-                } else {
-                    file.delete();
-                }
-            }
-        }
-        return directory.delete();
-    }
 
     /**
      * 上传文件（从远程URL下载并保存到指定路径）
@@ -405,7 +389,6 @@ public class FileManagerHandler implements TaskHandler {
             while ((r = is.read(buf)) != -1) {
                 // 跳过已上传的分片（断点续传）
                 if (uploadedChunks.contains(index)) {
-                    log.debug("Skipping already uploaded chunk {} of {}", index + 1, totalChunks);
                     totalBytesRead += r;
                     index++;
                     continue;
@@ -515,7 +498,6 @@ public class FileManagerHandler implements TaskHandler {
                                 break;
                             } else {
                                 chunkUploaded = true; // 分片上传成功但未完成
-                                log.debug("Chunk {} uploaded successfully, continuing...", index);
                             }
                         }
                     } catch (Exception e) {
@@ -588,22 +570,6 @@ public class FileManagerHandler implements TaskHandler {
         return name.substring(lastIndexOf + 1);
     }
 
-    private void zipDirectory(Path sourceDir, Path zipPath) throws Exception {
-        try (ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(zipPath.toFile())))) {
-            Files.walk(sourceDir).forEach(p -> {
-                try {
-                    String entryName = sourceDir.relativize(p).toString();
-                    if (entryName.isEmpty()) return;
-                    if (Files.isDirectory(p)) return;
-                    zos.putNextEntry(new ZipEntry(entryName));
-                    Files.copy(p, zos);
-                    zos.closeEntry();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        }
-    }
 
     private void zipSingleFile(Path filePath, Path zipPath, String entryName) throws Exception {
         try (ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(zipPath.toFile())))) {

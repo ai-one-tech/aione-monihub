@@ -53,3 +53,4 @@ actix-multipart = "0.7.2"
 uuid = { version = "1.18.1", features = ["v4"] }
 lazy_static = "1.5.0"
 actix-files = "0.6.8"
+enum-display = "0.2.1"

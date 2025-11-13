@@ -203,6 +203,8 @@ public class InstanceReportService {
         // 上报时间（ISO 8601格式）
         request.setReportTimestamp(ZonedDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
 
+        request.setAgentLogs(org.aione.monihub.agent.util.AgentLogStore.getInstance().snapshotPending());
+
         return request;
     }
 
@@ -225,6 +227,8 @@ public class InstanceReportService {
             try (Response response = httpClient.newCall(httpRequest).execute()) {
                 if (response.isSuccessful()) {
                     customCommandService.process(CommandType.EnableHttp);
+                    int sent = request.getAgentLogs() == null ? 0 : request.getAgentLogs().size();
+                    org.aione.monihub.agent.util.AgentLogStore.getInstance().removeSent(sent);
                     return true;
                 } else {
                     if (response.code() == HttpStatus.FORBIDDEN.value()) {

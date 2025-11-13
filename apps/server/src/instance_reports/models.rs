@@ -1,7 +1,7 @@
 use crate::shared::enums::{AgentType, OsType};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
-
+use crate::shared::enums;
 // ===================================================================
 // 实例信息上报请求/响应模型
 // ===================================================================
@@ -27,6 +27,8 @@ pub struct InstanceReportRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub custom_metrics: Option<JsonValue>,
     pub report_timestamp: String, // ISO 8601 format
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub agent_logs: Option<Vec<AgentLogItem>>,
 }
 
 /// 系统信息
@@ -80,6 +82,16 @@ pub struct RuntimeInfo {
     pub thread_count: Option<i32>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AgentLogItem {
+    pub log_level: enums::LogLevel,
+    pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub context: Option<JsonValue>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<String>,
+}
+
 /// 实例信息上报响应
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InstanceReportResponse {
@@ -87,6 +99,10 @@ pub struct InstanceReportResponse {
     pub message: String,
     pub record_id: String,
     pub timestamp: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub log_success_count: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub log_failure_count: Option<u32>,
 }
 
 // ===================================================================

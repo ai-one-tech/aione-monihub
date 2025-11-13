@@ -19,7 +19,7 @@ pub async fn get_logs(
 
     // 日志级别
     if let Some(log_level) = &query.log_level {
-        query_builder = query_builder.filter(Column::LogLevel.eq(log_level));
+        query_builder = query_builder.filter(Column::LogLevel.eq(log_level.clone()));
     }
 
     // 用户ID（对应 application_id）
@@ -42,7 +42,12 @@ pub async fn get_logs(
 
     // 来源过滤（log_source）
     if let Some(source) = &query.source {
-        query_builder = query_builder.filter(Column::LogSource.eq(source));
+        query_builder = query_builder.filter(Column::LogSource.eq(source.clone()));
+    }
+    // 代理实例过滤（使用 log_source 中的 agent 标识）
+    if let Some(agent_instance_id) = &query.agent_instance_id {
+        let expected = format!("agent:java:{}", agent_instance_id);
+        query_builder = query_builder.filter(Column::LogSource.eq(expected));
     }
     if let Some(end_date) = &query.end_date {
         if let Ok(end_time) = chrono::DateTime::parse_from_rfc3339(end_date) {
@@ -115,7 +120,7 @@ pub async fn export_logs(
 
     // 添加日志级别过滤
     if let Some(log_level) = &query.log_level {
-        query_builder = query_builder.filter(Column::LogLevel.eq(log_level));
+        query_builder = query_builder.filter(Column::LogLevel.eq(log_level.clone()));
     }
 
     // 添加用户ID过滤
@@ -149,8 +154,9 @@ pub async fn export_logs(
         .await
         .map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
 
-    // 转换为CSV格式
+    // 转换为CSV格式（添加UTF-8 BOM以避免Excel中文乱码）
     let mut csv_data = String::new();
+    csv_data.push_str("\u{FEFF}");
     csv_data.push_str("ID,LogLevel,UserID,Action,IPAddress,UserAgent,Timestamp,CreatedAt,UpdatedAt\n");
 
     for log in logs {
@@ -162,7 +168,7 @@ pub async fn export_logs(
         csv_data.push_str(&format!(
             "{},\"{}\",\"{}\",\"{}\",\"{}\",\"{}\",\"{}\",\"{}\",\"{}\"\n",
             log.id,
-            log.log_level,
+            log.log_level.to_string(),
             log.application_id.unwrap_or_default(),
             action_escaped,
             ip_address_escaped.unwrap_or_default(),
@@ -173,9 +179,9 @@ pub async fn export_logs(
         ));
     }
 
-    // 设置响应头，指示这是一个CSV文件下载
+    // 设置响应头，指示这是一个CSV文件下载，并声明编码为UTF-8
     let response = HttpResponse::Ok()
-        .content_type("text/csv")
+        .content_type("text/csv; charset=utf-8")
         .insert_header(("Content-Disposition", "attachment; filename=\"logs_export.csv\""))
         .body(csv_data);
 

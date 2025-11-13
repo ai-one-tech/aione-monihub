@@ -3,6 +3,7 @@ package org.aione.monihub.agent.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -52,6 +53,11 @@ public class InstanceReportRequest {
 
     @JsonProperty("report_timestamp")
     private String reportTimestamp;
+
+    @JsonProperty("agent_logs")
+    private List<AgentLogItem> agentLogs;
+
+
 
     @Data
     public static class SystemInfo {

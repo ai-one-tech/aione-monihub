@@ -88,6 +88,8 @@ public class AgentConfig {
          * 上报间隔（秒）
          */
         private long intervalSeconds = 60;
+
+        private int maxLogRetention = 1000;
     }
 
     @Data
