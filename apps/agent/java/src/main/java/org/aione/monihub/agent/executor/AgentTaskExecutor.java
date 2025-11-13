@@ -77,7 +77,7 @@ public class AgentTaskExecutor {
     public TaskExecutionResult execute(TaskDispatchItem task) {
         long startTime = System.currentTimeMillis();
 
-        return TaskLockUtils.guardWithLock("processTask", task, () -> {
+        return TaskLockUtils.guardWithLock("process-task_" + task.getTaskId(), task, () -> {
             TaskExecutionResult result = new TaskExecutionResult();
             try {
                 // 查找任务处理器

@@ -101,7 +101,7 @@ pub async fn login(
             Ok(HttpResponse::Unauthorized().json("用户名或密码错误"))
         }
         Err(err) => {
-            eprintln!("Database error during login: {:?}", err);
+            log::error!("Database error during login: {:?}", err);
             Ok(HttpResponse::InternalServerError().json("数据库错误"))
         }
     }
@@ -137,11 +137,11 @@ pub async fn forgot_password(
             match users_module.create_password_reset_token(&user.id).await {
                 Ok(token) => {
                     // 模拟发送邮件（在实际应用中，这里应该调用邮件服务）
-                    println!(
+                    log::info!(
                         "为用户 {} 发送密码重置邮件，重置令牌: {}",
                         forgot_req.email, token
                     );
-                    println!(
+                    log::info!(
                         "重置链接: http://localhost:3000/reset-password?token={}",
                         token
                     );
@@ -149,7 +149,7 @@ pub async fn forgot_password(
                     Ok(HttpResponse::Ok().json("密码重置邮件已发送"))
                 }
                 Err(err) => {
-                    eprintln!("生成重置令牌失败: {:?}", err);
+                    log::error!("生成重置令牌失败: {:?}", err);
                     Err(ApiError::InternalServerError(
                         "生成重置令牌失败".to_string(),
                     ))
@@ -203,11 +203,11 @@ pub async fn reset_password(
                 .await
             {
                 Ok(()) => {
-                    println!("用户 {} 密码重置成功", user_id);
+                    log::info!("用户 {} 密码重置成功", user_id);
                     Ok(HttpResponse::Ok().json("密码重置成功"))
                 }
                 Err(err) => {
-                    eprintln!("更新密码失败: {:?}", err);
+                    log::error!("更新密码失败: {:?}", err);
                     Err(ApiError::InternalServerError("更新密码失败".to_string()))
                 }
             }
@@ -217,7 +217,7 @@ pub async fn reset_password(
             Err(ApiError::BadRequest("无效的或已过期的令牌".to_string()))
         }
         Err(err) => {
-            eprintln!("验证重置令牌失败: {:?}", err);
+            log::error!("验证重置令牌失败: {:?}", err);
             Err(ApiError::InternalServerError("验证令牌失败".to_string()))
         }
     }
@@ -242,7 +242,7 @@ pub async fn validate_token(req: HttpRequest) -> Result<HttpResponse, ApiError> 
     match super::middleware::get_user_id_from_request(&req) {
         Ok(user_id) => {
             // User is authenticated
-            println!("Token is valid for user ID: {}", user_id);
+            log::info!("Token is valid for user ID: {}", user_id);
             Ok(HttpResponse::Ok().json("Token is valid"))
         }
         Err(e) => {
@@ -299,7 +299,7 @@ pub async fn get_current_user(
         }
         Ok(None) => Ok(HttpResponse::NotFound().json("User not found")),
         Err(err) => {
-            eprintln!("Database error: {:?}", err);
+            log::error!("Database error: {:?}", err);
             Ok(HttpResponse::InternalServerError().json("Database error"))
         }
     }

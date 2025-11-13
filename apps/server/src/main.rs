@@ -1,5 +1,5 @@
 use actix_cors::Cors;
-use actix_web::{middleware::Logger, web, App, HttpServer};
+use actix_web::{web, App, HttpServer};
 use env_logger;
 use std::io;
 use utoipa::OpenApi;
@@ -203,12 +203,11 @@ use aione_monihub_server::maintenance::scheduler::start_all_scheduled_tasks;
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
-    env_logger::init();
-
-    println!("Starting AiOne MoniHub API server with PostgresSQL...");
 
     // Load .env file
     dotenv::dotenv().ok();
+
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("error")).init();
 
     // Initialize database connection
     let database_url =
@@ -225,7 +224,7 @@ async fn main() -> io::Result<()> {
     let server_port = std::env::var("SERVER_PORT").unwrap_or_else(|_| "9080".to_string());
     let bind_address = format!("{}:{}", server_host, server_port);
 
-    println!("服务器将在 http://{} 上启动", bind_address);
+    log::info!("服务器将在 http://{} 上启动", bind_address);
 
     let db_connection = db_manager.get_connection().clone();
 
@@ -244,7 +243,6 @@ async fn main() -> io::Result<()> {
                     .allow_any_header() // 允许所有请求头
                     .supports_credentials(), // 支持cookies和认证信息
             )
-            .wrap(Logger::default())
             .wrap(AuthMiddleware) // 添加JWT认证中间件
             // Swagger UI
             .service(

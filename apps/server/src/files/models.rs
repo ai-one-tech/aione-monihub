@@ -5,6 +5,7 @@ use utoipa::ToSchema;
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct FileUploadRequest {
     pub file_name: String,
+    pub is_zip: bool,
     pub file_size: i64,
     pub chunk_size: i64,
     pub total_chunks: i64,

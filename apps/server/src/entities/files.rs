@@ -10,8 +10,8 @@ pub struct Model {
     pub file_size: i64,
     pub file_path: String,
     pub uploaded_by: String,
-    pub uploaded_at: DateTimeWithTimeZone,
-    pub updated_at: DateTimeWithTimeZone,
+    pub uploaded_at: DateTime,
+    pub updated_at: DateTime,
     // 新增字段
     pub task_id: Option<String>,
     pub instance_id: Option<String>,

@@ -4,15 +4,9 @@ package org.aione.monihub.agent.handler;
  * 文件操作类型枚举
  */
 public enum FileOperationType {
-    ListDirectory("list_directory"),
-    GetFileInfo("get_file_info"),
-    DeleteFile("delete_file"),
-    RenameFile("rename_file"),
-    CreateDirectory("create_directory"),
     UploadFile("upload_file"),
     DownloadFile("download_file"),
-    CopyFile("copy_file"),
-    MoveFile("move_file");
+    ;
 
     private final String value;
 

@@ -97,11 +97,7 @@ pub async fn init_file_upload(
         let original_name = upload_request.file_name.clone();
         let ext = upload_request.file_extension.clone().unwrap_or_default();
         let instance_id = upload_request.instance_id.clone().unwrap_or_default();
-        if !ext.is_empty() {
-            format!("{}/{}_{}.{}", task_dir, instance_id, original_name, ext)
-        } else {
-            format!("{}/{}_{}", task_dir, instance_id, original_name)
-        }
+        format!("{}/{}_{}", task_dir, instance_id, original_name)
     };
     let file_model = files::ActiveModel {
         id: sea_orm::Set(file_id.clone()),
@@ -109,8 +105,8 @@ pub async fn init_file_upload(
         file_size: sea_orm::Set(upload_request.file_size),
         file_path: sea_orm::Set(initial_file_path.clone()),
         uploaded_by: sea_orm::Set(_user_id.clone()),
-        uploaded_at: sea_orm::Set(current_time.into()),
-        updated_at: sea_orm::Set(current_time.into()),
+        uploaded_at: sea_orm::Set(current_time.naive_utc()),
+        updated_at: sea_orm::Set(current_time.naive_utc()),
         task_id: sea_orm::Set(upload_request.task_id.clone()),
         instance_id: sea_orm::Set(upload_request.instance_id.clone()),
         file_extension: sea_orm::Set(upload_request.file_extension.clone()),
@@ -150,11 +146,8 @@ pub async fn init_file_upload(
     let compressed = is_directory || upload_request.file_name.ends_with(".zip");
     let ext = upload_request.file_extension.clone().unwrap_or_default();
     let instance_id = upload_request.instance_id.clone().unwrap_or_default();
-    let final_name = if !ext.is_empty() {
-        format!("{}_{}.{}", instance_id, upload_request.file_name, ext)
-    } else {
-        format!("{}_{}", instance_id, upload_request.file_name)
-    };
+    let final_name = format!("{}_{}", instance_id, upload_request.file_name);
+
     let download_path = format!("/api/files/download/{}", file_id);
 
     Ok(HttpResponse::Ok().json(FileUploadResponse {
@@ -367,7 +360,7 @@ async fn merge_chunks_and_update_db(
         id: sea_orm::Set(session.file_id.clone()),
         file_path: sea_orm::Set(file_path.clone()),
         file_size: sea_orm::Set(session.file_size),
-        updated_at: sea_orm::Set(current_time.into()),
+        updated_at: sea_orm::Set(current_time.naive_utc()),
         ..Default::default()
     };
     files::Entity::update(am).exec(&**db).await.map_err(|e| {
@@ -474,7 +467,7 @@ pub async fn complete_file_upload(
         id: sea_orm::Set(session.file_id.clone()),
         file_path: sea_orm::Set(file_path.clone()),
         file_size: sea_orm::Set(session.file_size),
-        updated_at: sea_orm::Set(current_time.into()),
+        updated_at: sea_orm::Set(current_time.naive_utc()),
         ..Default::default()
     };
     files::Entity::update(am).exec(&**db).await.map_err(|e| {

@@ -7,15 +7,12 @@ import org.aione.monihub.agent.model.TaskType;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
 import org.aione.monihub.agent.util.CommonUtils;
-import org.aione.monihub.agent.util.TaskLockUtils;
 import org.aione.monihub.agent.util.TaskTempUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.HashSet;
 import java.util.Map;
@@ -52,40 +49,36 @@ public class ShellExecHandler implements TaskHandler {
         String scriptExtension = CommonUtils.isWindows() ? ".bat" : ".sh";
         Path scriptsDir = TaskTempUtils.ensureSubDir("scripts");
         Path scriptFile = scriptsDir.resolve(task.getTaskId() + scriptExtension);
-        TaskExecutionResult guarded = TaskLockUtils.guardWithLock("shell-exec", task, () -> {
-            if (Files.exists(scriptFile)) {
-                Files.deleteIfExists(scriptFile);
+        if (Files.exists(scriptFile)) {
+            Files.deleteIfExists(scriptFile);
+        }
+        Files.createFile(scriptFile);
+        boolean createdByThisInvocation = true;
+        try {
+            try (FileWriter writer = new FileWriter(scriptFile.toFile())) {
+                writer.write(scriptContent);
             }
-            Files.createFile(scriptFile);
-            boolean createdByThisInvocation = true;
+            if (!CommonUtils.isWindows()) {
+                Set<PosixFilePermission> permissions = new HashSet<>();
+                permissions.add(PosixFilePermission.OWNER_READ);
+                permissions.add(PosixFilePermission.OWNER_WRITE);
+                permissions.add(PosixFilePermission.OWNER_EXECUTE);
+                permissions.add(PosixFilePermission.GROUP_READ);
+                permissions.add(PosixFilePermission.GROUP_EXECUTE);
+                permissions.add(PosixFilePermission.OTHERS_READ);
+                permissions.add(PosixFilePermission.OTHERS_EXECUTE);
+                Files.setPosixFilePermissions(scriptFile, permissions);
+            }
+            return executeScript(scriptFile.toFile(), task);
+        } finally {
             try {
-                try (FileWriter writer = new FileWriter(scriptFile.toFile())) {
-                    writer.write(scriptContent);
+                if (createdByThisInvocation) {
+                    Files.deleteIfExists(scriptFile);
                 }
-                if (!CommonUtils.isWindows()) {
-                    Set<PosixFilePermission> permissions = new HashSet<>();
-                    permissions.add(PosixFilePermission.OWNER_READ);
-                    permissions.add(PosixFilePermission.OWNER_WRITE);
-                    permissions.add(PosixFilePermission.OWNER_EXECUTE);
-                    permissions.add(PosixFilePermission.GROUP_READ);
-                    permissions.add(PosixFilePermission.GROUP_EXECUTE);
-                    permissions.add(PosixFilePermission.OTHERS_READ);
-                    permissions.add(PosixFilePermission.OTHERS_EXECUTE);
-                    Files.setPosixFilePermissions(scriptFile, permissions);
-                }
-                return executeScript(scriptFile.toFile(), task);
-            } finally {
-                try {
-                    if (createdByThisInvocation) {
-                        Files.deleteIfExists(scriptFile);
-                    }
-                } catch (Exception e) {
-                    log.warn("Failed to delete temporary script file: {}", scriptFile, e);
-                }
+            } catch (Exception e) {
+                log.warn("Failed to delete temporary script file: {}", scriptFile, e);
             }
-        });
-
-        return guarded;
+        }
 
     }
 

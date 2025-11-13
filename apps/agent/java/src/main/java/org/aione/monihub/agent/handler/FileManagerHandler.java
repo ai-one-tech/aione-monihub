@@ -1,37 +1,27 @@
 package org.aione.monihub.agent.handler;
 
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
-import okhttp3.RequestBody;
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import okhttp3.*;
+import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.model.TaskDispatchItem;
 import org.aione.monihub.agent.model.TaskExecutionResult;
 import org.aione.monihub.agent.model.TaskStatus;
 import org.aione.monihub.agent.model.TaskType;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
-import org.aione.monihub.agent.config.AgentConfig;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.aione.monihub.agent.util.TaskTempUtils;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.BufferedOutputStream;
 import java.io.InputStream;
 import java.net.URL;
-import java.nio.file.Files;
 import java.nio.file.FileStore;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import org.aione.monihub.agent.util.TaskLockUtils;
-import org.aione.monihub.agent.util.TaskTempUtils;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -72,166 +62,17 @@ public class FileManagerHandler implements TaskHandler {
 
         log.info("Executing file operation: {}", operationTypeStr);
 
-        TaskExecutionResult guarded = TaskLockUtils.guardWithLock("file-manager", task, () -> {
-            FileOperationType operationType = FileOperationType.fromValue(operationTypeStr);
-            switch (operationType) {
-                case ListDirectory:
-                    return executeListDirectory(task);
-                case GetFileInfo:
-                    return executeGetFileInfo(task);
-                case DeleteFile:
-                    return executeDeleteFile(task);
-                case RenameFile:
-                    return executeRenameFile(task);
-                case CreateDirectory:
-                    return executeCreateDirectory(task);
-                case UploadFile:
-                    return executeUploadFile(task);
-                case DownloadFile:
-                    return executeDownloadFile(task);
-                case CopyFile:
-                    return executeCopyFile(task);
-                case MoveFile:
-                    return executeMoveFile(task);
-                default:
-                    TaskExecutionResult r = new TaskExecutionResult();
-                    r.setStatus(TaskStatus.failed);
-                    r.setErrorMessage("无法识别的 操作类型 " + operationType);
-                    return r;
-            }
-        });
-        return guarded;
-    }
-
-    /**
-     * 查看目录下的文件列表
-     */
-    private TaskExecutionResult executeListDirectory(TaskDispatchItem task) throws Exception {
-        Map<String, Object> taskContent = task.getTaskContent();
-        String directoryPath = (String) taskContent.get("directory_path");
-        if (directoryPath == null || directoryPath.trim().isEmpty()) {
-            return TaskExecutionResult.failure("Directory path is required");
-        }
-
-        File directory = new File(directoryPath);
-        if (!directory.exists()) {
-            return TaskExecutionResult.failure("Directory does not exist: " + directoryPath);
-        }
-        if (!directory.isDirectory()) {
-            return TaskExecutionResult.failure("Path is not a directory: " + directoryPath);
-        }
-
-        File[] files = directory.listFiles();
-        if (files == null) {
-            return TaskExecutionResult.failure("Cannot read directory: " + directoryPath);
-        }
-
-        List<Map<String, Object>> fileList = new ArrayList<>();
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-        for (File file : files) {
-            Map<String, Object> fileInfo = new HashMap<>();
-            fileInfo.put("name", file.getName());
-            fileInfo.put("path", file.getAbsolutePath());
-            fileInfo.put("is_directory", file.isDirectory());
-            fileInfo.put("size", file.length());
-            fileInfo.put("last_modified", dateFormat.format(new Date(file.lastModified())));
-            fileInfo.put("can_read", file.canRead());
-            fileInfo.put("can_write", file.canWrite());
-            fileInfo.put("can_execute", file.canExecute());
-
-            fileList.add(fileInfo);
-        }
-
-        // 按名称排序
-        fileList.sort((f1, f2) -> {
-            String name1 = (String) f1.get("name");
-            String name2 = (String) f2.get("name");
-            return name1.compareToIgnoreCase(name2);
-        });
-
-        Map<String, Object> resultData = new HashMap<>();
-        resultData.put("directory_path", directoryPath);
-        resultData.put("file_count", fileList.size());
-        resultData.put("files", fileList);
-
-        return TaskExecutionResult.success("Directory listing completed", resultData);
-    }
-
-    /**
-     * 查看文件信息
-     */
-    private TaskExecutionResult executeGetFileInfo(TaskDispatchItem task) throws Exception {
-        Map<String, Object> taskContent = task.getTaskContent();
-        String filePath = (String) taskContent.get("file_path");
-        if (filePath == null || filePath.trim().isEmpty()) {
-            return TaskExecutionResult.failure("File path is required");
-        }
-
-        File file = new File(filePath);
-        if (!file.exists()) {
-            return TaskExecutionResult.failure("File does not exist: " + filePath);
-        }
-
-        Path path = Paths.get(filePath);
-        BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
-
-        Map<String, Object> fileInfo = new HashMap<>();
-        fileInfo.put("name", file.getName());
-        fileInfo.put("path", file.getAbsolutePath());
-        fileInfo.put("is_directory", file.isDirectory());
-        fileInfo.put("is_file", file.isFile());
-        fileInfo.put("size", file.length());
-        fileInfo.put("last_modified", new Date(file.lastModified()));
-        fileInfo.put("creation_time", new Date(attrs.creationTime().toMillis()));
-        fileInfo.put("last_access", new Date(attrs.lastAccessTime().toMillis()));
-        fileInfo.put("can_read", file.canRead());
-        fileInfo.put("can_write", file.canWrite());
-        fileInfo.put("can_execute", file.canExecute());
-        fileInfo.put("is_hidden", file.isHidden());
-
-        if (file.isFile()) {
-            fileInfo.put("extension", getFileExtension(file));
-            fileInfo.put("mime_type", Files.probeContentType(path));
-        }
-
-        Map<String, Object> resultData = new HashMap<>();
-        resultData.put("file_info", fileInfo);
-
-        return TaskExecutionResult.success("File information retrieved", resultData);
-    }
-
-    /**
-     * 删除文件或目录
-     */
-    private TaskExecutionResult executeDeleteFile(TaskDispatchItem task) throws Exception {
-        Map<String, Object> taskContent = task.getTaskContent();
-        String filePath = (String) taskContent.get("file_path");
-        if (filePath == null || filePath.trim().isEmpty()) {
-            return TaskExecutionResult.failure("File path is required");
-        }
-
-        File file = new File(filePath);
-        if (!file.exists()) {
-            return TaskExecutionResult.success("File does not exist, nothing to delete");
-        }
-
-        boolean recursive = (Boolean) taskContent.getOrDefault("recursive", false);
-        boolean deleted = false;
-
-        if (file.isDirectory() && recursive) {
-            deleted = deleteDirectory(file);
-        } else {
-            deleted = file.delete();
-        }
-
-        if (deleted) {
-            Map<String, Object> resultData = new HashMap<>();
-            resultData.put("deleted_path", filePath);
-            resultData.put("was_directory", file.isDirectory());
-            return TaskExecutionResult.success("File deleted successfully", resultData);
-        } else {
-            return TaskExecutionResult.failure("Failed to delete file: " + filePath);
+        FileOperationType operationType = FileOperationType.fromValue(operationTypeStr);
+        switch (operationType) {
+            case UploadFile:
+                return executeUploadFile(task);
+            case DownloadFile:
+                return executeDownloadFile(task);
+            default:
+                TaskExecutionResult r = new TaskExecutionResult();
+                r.setStatus(TaskStatus.failed);
+                r.setErrorMessage("无法识别的 操作类型 " + operationType);
+                return r;
         }
     }
 
@@ -250,67 +91,6 @@ public class FileManagerHandler implements TaskHandler {
             }
         }
         return directory.delete();
-    }
-
-    /**
-     * 文件改名
-     */
-    private TaskExecutionResult executeRenameFile(TaskDispatchItem task) throws Exception {
-        Map<String, Object> taskContent = task.getTaskContent();
-        String oldPath = (String) taskContent.get("old_path");
-        String newPath = (String) taskContent.get("new_path");
-
-        if (oldPath == null || newPath == null) {
-            return TaskExecutionResult.failure("Old path and new path are required");
-        }
-
-        File oldFile = new File(oldPath);
-        if (!oldFile.exists()) {
-            return TaskExecutionResult.failure("Source file does not exist: " + oldPath);
-        }
-
-        File newFile = new File(newPath);
-        if (newFile.exists()) {
-            boolean overwrite = (Boolean) taskContent.getOrDefault("overwrite", false);
-            if (!overwrite) {
-                return TaskExecutionResult.failure("Target file already exists and overwrite is disabled");
-            }
-        }
-
-        boolean renamed = oldFile.renameTo(newFile);
-        if (renamed) {
-            Map<String, Object> resultData = new HashMap<>();
-            resultData.put("old_path", oldPath);
-            resultData.put("new_path", newPath);
-            return TaskExecutionResult.success("File renamed successfully", resultData);
-        } else {
-            return TaskExecutionResult.failure("Failed to rename file from " + oldPath + " to " + newPath);
-        }
-    }
-
-    /**
-     * 创建目录
-     */
-    private TaskExecutionResult executeCreateDirectory(TaskDispatchItem task) throws Exception {
-        Map<String, Object> taskContent = task.getTaskContent();
-        String directoryPath = (String) taskContent.get("directory_path");
-        if (directoryPath == null || directoryPath.trim().isEmpty()) {
-            return TaskExecutionResult.failure("Directory path is required");
-        }
-
-        File directory = new File(directoryPath);
-        if (directory.exists()) {
-            return TaskExecutionResult.success("Directory already exists");
-        }
-
-        boolean created = directory.mkdirs();
-        if (created) {
-            Map<String, Object> resultData = new HashMap<>();
-            resultData.put("directory_path", directoryPath);
-            return TaskExecutionResult.success(resultData);
-        } else {
-            return TaskExecutionResult.failure("Failed to create directory: " + directoryPath);
-        }
     }
 
     /**
@@ -359,6 +139,8 @@ public class FileManagerHandler implements TaskHandler {
                 .writeTimeout(1, TimeUnit.HOURS)
                 .retryOnConnectionFailure(true)
                 .followRedirects(true)
+                .connectionPool(new okhttp3.ConnectionPool(10, 5, TimeUnit.MINUTES))
+                .protocols(Arrays.asList(okhttp3.Protocol.HTTP_1_1)) // 强制使用HTTP/1.1避免HTTP/2相关问题
                 .build();
 
         // 预检：获取 Content-Length，决定是否自动续传
@@ -494,26 +276,26 @@ public class FileManagerHandler implements TaskHandler {
             return TaskExecutionResult.failure("File does not exist: " + filePath);
         }
 
+        boolean isZip = false;
         boolean isDirectory = target.isDirectory();
         File uploadFile = target;
         String originalName = target.getName();
         if (isDirectory) {
-            Path archivesDir = TaskTempUtils.ensureSubDir("archives");
-            String zipName = originalName + ".zip";
-            Path zipPath = archivesDir.resolve(zipName);
-            zipDirectory(target.toPath(), zipPath);
-            uploadFile = zipPath.toFile();
-            originalName = zipName;
+            isZip = true;
         } else {
             long maxSize = 10L * 1024L * 1024L;
             if (target.length() > maxSize) {
-                Path archivesDir = TaskTempUtils.ensureSubDir("archives");
-                String zipName = originalName + ".zip";
-                Path zipPath = archivesDir.resolve(zipName);
-                zipSingleFile(target.toPath(), zipPath, target.getName());
-                uploadFile = zipPath.toFile();
-                originalName = zipName;
+                isZip = true;
             }
+        }
+
+        if (isZip) {
+            Path archivesDir = TaskTempUtils.ensureSubDir("archives");
+            String zipName = originalName + ".zip";
+            Path zipPath = archivesDir.resolve(zipName);
+            zipSingleFile(target.toPath(), zipPath, target.getName());
+            uploadFile = zipPath.toFile();
+            originalName = zipName;
         }
 
         String taskId = task.getTaskId();
@@ -521,6 +303,7 @@ public class FileManagerHandler implements TaskHandler {
 
         Map<String, Object> initBody = new HashMap<>();
         initBody.put("file_name", originalName);
+        initBody.put("is_zip", isZip);
         initBody.put("file_size", uploadFile.length());
         int chunkSize = 8 * 1024 * 1024;
         long totalChunks = (uploadFile.length() + chunkSize - 1) / chunkSize;
@@ -567,29 +350,206 @@ public class FileManagerHandler implements TaskHandler {
         String fileId = null;
         String filePathResp = null;
         boolean completedFlag = false;
-        try (InputStream is = Files.newInputStream(uploadFile.toPath())) {
-            byte[] buf = new byte[chunkSize];
-            long index = 0;
-            int r;
-            while ((r = is.read(buf)) != -1) {
-                MultipartBody.Builder mb = new MultipartBody.Builder().setType(MultipartBody.FORM)
-                        .addFormDataPart("upload_id", uploadId)
-                        .addFormDataPart("chunk_index", String.valueOf(index))
-                        .addFormDataPart("chunk", originalName, RequestBody.create(octet, Arrays.copyOf(buf, r)));
-                Request.Builder chunkReqBuilder = new Request.Builder().url(chunkUrl).post(mb.build());
-                try (Response cr = httpClient.newCall(chunkReqBuilder.build()).execute()) {
-                    if (!cr.isSuccessful()) {
-                        return TaskExecutionResult.failure("Chunk upload failed at index " + index + ": HTTP " + cr.code());
-                    }
-                    Map cm = objectMapper.readValue(cr.body().bytes(), Map.class);
-                    Object c = cm.get("completed");
-                    if (Boolean.TRUE.equals(c)) {
-                        fileId = (String) cm.get("file_id");
-                        filePathResp = (String) cm.get("file_path");
-                        completedFlag = true;
-                        break;
+
+        // 配置分片上传参数 - 智能重试策略
+        int maxRetries = 3;
+        long retryDelayMs = 1000; // 初始重试延迟1秒
+        int currentChunkSize = chunkSize;
+        boolean adaptiveChunkSize = true; // 启用自适应分片大小
+        int minChunkSize = 1024 * 1024; // 最小分片大小1MB
+
+        // 为分片上传创建专用的HTTP客户端，配置更合适的超时
+        OkHttpClient chunkClient = httpClient.newBuilder()
+                .connectTimeout(60, TimeUnit.SECONDS)  // 分片上传需要更长的连接超时
+                .readTimeout(5, TimeUnit.MINUTES)     // 分片上传需要更长的读取超时
+                .writeTimeout(5, TimeUnit.MINUTES)    // 分片上传需要更长的写入超时
+                .connectionPool(new okhttp3.ConnectionPool(5, 2, TimeUnit.MINUTES))
+                .protocols(Arrays.asList(okhttp3.Protocol.HTTP_1_1))
+                .build();
+
+        // 支持断点续传：检查已上传的分片
+        Set<Long> uploadedChunks = new HashSet<>();
+        String resumeUrl = agentConfig.getServerUrl() + "/api/files/upload/resume";
+        try {
+            Request resumeReq = new Request.Builder()
+                    .url(resumeUrl + "?upload_id=" + uploadId)
+                    .get()
+                    .build();
+            try (Response resumeResp = chunkClient.newCall(resumeReq).execute()) {
+                if (resumeResp.isSuccessful()) {
+                    Map resumeData = objectMapper.readValue(resumeResp.body().bytes(), Map.class);
+                    List<Integer> completedChunks = (List<Integer>) resumeData.get("completed_chunks");
+                    if (completedChunks != null) {
+                        completedChunks.forEach(chunk -> uploadedChunks.add(chunk.longValue()));
+                        log.info("Resuming upload from chunk {} of {}, already completed: {} chunks",
+                                uploadedChunks.size(), totalChunks, uploadedChunks.size());
                     }
                 }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to check upload resume status, starting from beginning: {}", e.getMessage());
+        }
+
+        try (InputStream is = Files.newInputStream(uploadFile.toPath())) {
+            byte[] buf = new byte[currentChunkSize];
+            long index = 0;
+            int r;
+            int consecutiveFailures = 0; // 连续失败计数器
+            long totalBytesRead = 0; // 跟踪已读取的字节数
+
+            // 支持mark/reset以便重新读取数据
+            if (is.markSupported()) {
+                is.mark(currentChunkSize * 2); // 标记当前位置，允许重置
+            }
+
+            while ((r = is.read(buf)) != -1) {
+                // 跳过已上传的分片（断点续传）
+                if (uploadedChunks.contains(index)) {
+                    log.debug("Skipping already uploaded chunk {} of {}", index + 1, totalChunks);
+                    totalBytesRead += r;
+                    index++;
+                    continue;
+                }
+
+                boolean chunkUploaded = false;
+                int retryCount = 0;
+                int currentRetryChunkSize = currentChunkSize; // 当前重试的分片大小
+
+                while (!chunkUploaded && retryCount < maxRetries) {
+                    try {
+                        // 自适应分片大小调整：如果连续失败，减小分片大小
+                        if (retryCount > 0 && adaptiveChunkSize && consecutiveFailures > 1) {
+                            int newChunkSize = Math.max(minChunkSize, currentRetryChunkSize / 2);
+                            if (newChunkSize < currentRetryChunkSize && is.markSupported()) {
+                                log.info("Reducing chunk size from {} to {} bytes due to consecutive failures",
+                                        currentRetryChunkSize, newChunkSize);
+                                currentRetryChunkSize = newChunkSize;
+                                // 重新调整缓冲区大小并重置流位置
+                                buf = new byte[currentRetryChunkSize];
+                                is.reset(); // 重置到标记位置
+                                r = is.read(buf, 0, currentRetryChunkSize);
+                                if (r == -1) break;
+                            }
+                        }
+
+                        // 创建分片数据（避免不必要的数组复制）
+                        RequestBody chunkBody = RequestBody.create(octet, buf, 0, r);
+                        MultipartBody.Builder mb = new MultipartBody.Builder().setType(MultipartBody.FORM)
+                                .addFormDataPart("upload_id", uploadId)
+                                .addFormDataPart("chunk_index", String.valueOf(index))
+                                .addFormDataPart("chunk_size", String.valueOf(r))
+                                .addFormDataPart("chunk", originalName, chunkBody);
+
+                        Request.Builder chunkReqBuilder = new Request.Builder()
+                                .url(chunkUrl)
+                                .post(mb.build())
+                                .header("Connection", "keep-alive")
+                                .header("Accept", "application/json")
+                                .header("Content-Length", String.valueOf(r)); // 明确指定内容长度
+
+                        log.info("Uploading chunk {}/{} for uploadId: {}, size: {} bytes, attempt: {}/{}, consecutiveFailures: {}",
+                                index + 1, totalChunks, uploadId, r, retryCount + 1, maxRetries, consecutiveFailures);
+
+                        try (Response cr = chunkClient.newCall(chunkReqBuilder.build()).execute()) {
+                            if (!cr.isSuccessful()) {
+                                String errorBody = "";
+                                try {
+                                    errorBody = new String(cr.body().bytes());
+                                } catch (Exception e) {
+                                    log.warn("Failed to read error response body", e);
+                                }
+
+                                consecutiveFailures++;
+                                log.warn("Chunk upload failed at index {}: HTTP {} - {}, attempt: {}/{}, consecutiveFailures: {}, error body: {}",
+                                        index, cr.code(), cr.message(), retryCount + 1, maxRetries, consecutiveFailures, errorBody);
+
+                                // 特定错误码的特殊处理
+                                if (cr.code() == 413) { // Request Entity Too Large
+                                    if (adaptiveChunkSize && currentRetryChunkSize > minChunkSize) {
+                                        log.info("Server returned 413, significantly reducing chunk size");
+                                        currentRetryChunkSize = Math.max(minChunkSize, currentRetryChunkSize / 4);
+                                        retryCount--; // 不消耗重试次数
+                                        Thread.sleep(2000); // 等待2秒后重试
+                                        continue;
+                                    }
+                                } else if (cr.code() >= 500 && cr.code() < 600) {
+                                    // 服务器错误，等待更长时间
+                                    log.info("Server error detected, waiting longer before retry");
+                                    Thread.sleep(retryDelayMs * (retryCount + 2));
+                                }
+
+                                if (retryCount < maxRetries - 1) {
+                                    retryCount++;
+                                    Thread.sleep(retryDelayMs * retryCount); // 指数退避
+                                    continue;
+                                } else {
+                                    return TaskExecutionResult.failure(String.format(
+                                            "Chunk upload failed at index %d after %d retries. HTTP %d - %s, error: %s, consecutiveFailures: %d",
+                                            index, maxRetries, cr.code(), cr.message(), errorBody, consecutiveFailures));
+                                }
+                            }
+
+                            // 重置连续失败计数器
+                            if (consecutiveFailures > 0) {
+                                log.info("Chunk upload succeeded, resetting consecutive failures counter from {} to 0", consecutiveFailures);
+                                consecutiveFailures = 0;
+                            }
+
+                            // 更新字节计数
+                            totalBytesRead += r;
+
+                            // 更新流的标记位置
+                            if (is.markSupported() && index < totalChunks - 1) {
+                                is.mark(currentChunkSize * 2);
+                            }
+
+                            Map cm = objectMapper.readValue(cr.body().bytes(), Map.class);
+                            Object c = cm.get("completed");
+                            if (Boolean.TRUE.equals(c)) {
+                                fileId = (String) cm.get("file_id");
+                                filePathResp = (String) cm.get("file_path");
+                                completedFlag = true;
+                                log.info("File upload completed, fileId: {}, total chunks: {}, final chunk size: {} bytes",
+                                        fileId, index + 1, r);
+                                chunkUploaded = true;
+                                break;
+                            } else {
+                                chunkUploaded = true; // 分片上传成功但未完成
+                                log.debug("Chunk {} uploaded successfully, continuing...", index);
+                            }
+                        }
+                    } catch (Exception e) {
+                        consecutiveFailures++;
+                        log.warn("Exception during chunk upload at index {}, attempt: {}/{}, consecutiveFailures: {}, error: {}",
+                                index, retryCount + 1, maxRetries, consecutiveFailures, e.getMessage());
+
+                        if (retryCount < maxRetries - 1) {
+                            retryCount++;
+                            Thread.sleep(retryDelayMs * retryCount);
+                        } else {
+                            return TaskExecutionResult.failure(String.format(
+                                    "Chunk upload failed at index %d after %d retries, consecutiveFailures: %d, error: %s",
+                                    index, maxRetries, consecutiveFailures, e.getMessage()));
+                        }
+                    }
+                }
+
+                if (!chunkUploaded) {
+                    // 收集更多诊断信息
+                    String diagnosticInfo = String.format(
+                            "Chunk upload failed diagnostics - Index: %d, UploadId: %s, File: %s, OriginalChunkSize: %d, " +
+                                    "CurrentChunkSize: %d, TotalChunks: %d, Retries: %d, FileSize: %d bytes, ConsecutiveFailures: %d",
+                            index, uploadId, originalName, chunkSize, currentRetryChunkSize,
+                            totalChunks, maxRetries, uploadFile.length(), consecutiveFailures
+                    );
+                    log.error("All retry attempts failed for chunk upload. {}", diagnosticInfo);
+
+                    return TaskExecutionResult.failure(
+                            String.format("Failed to upload chunk at index %d after %d retries (consecutive failures: %d). %s",
+                                    index, maxRetries, consecutiveFailures, diagnosticInfo)
+                    );
+                }
+
                 index++;
             }
         }
@@ -614,87 +574,6 @@ public class FileManagerHandler implements TaskHandler {
         resultData.put("server_file_path", filePathResp != null ? filePathResp : initServerFilePath);
 
         return TaskExecutionResult.success("File uploaded", resultData);
-    }
-
-    /**
-     * 复制文件
-     */
-    private TaskExecutionResult executeCopyFile(TaskDispatchItem task) throws Exception {
-        Map<String, Object> taskContent = task.getTaskContent();
-        String sourcePath = (String) taskContent.get("source_path");
-        String targetPath = (String) taskContent.get("target_path");
-
-        if (sourcePath == null || targetPath == null) {
-            return TaskExecutionResult.failure("Source path and target path are required");
-        }
-
-        File sourceFile = new File(sourcePath);
-        if (!sourceFile.exists()) {
-            return TaskExecutionResult.failure("Source file does not exist: " + sourcePath);
-        }
-
-        File targetFile = new File(targetPath);
-        if (targetFile.exists()) {
-            boolean overwrite = (Boolean) taskContent.getOrDefault("overwrite", false);
-            if (!overwrite) {
-                return TaskExecutionResult.failure("Target file already exists and overwrite is disabled");
-            }
-        }
-
-        // 确保目标目录存在
-        File parentDir = targetFile.getParentFile();
-        if (parentDir != null && !parentDir.exists()) {
-            parentDir.mkdirs();
-        }
-
-        Files.copy(sourceFile.toPath(), targetFile.toPath());
-
-        Map<String, Object> resultData = new HashMap<>();
-        resultData.put("source_path", sourcePath);
-        resultData.put("target_path", targetPath);
-        resultData.put("file_size", targetFile.length());
-
-        return TaskExecutionResult.success(resultData);
-    }
-
-    /**
-     * 移动文件
-     */
-    private TaskExecutionResult executeMoveFile(TaskDispatchItem task) throws Exception {
-        Map<String, Object> taskContent = task.getTaskContent();
-        String sourcePath = (String) taskContent.get("source_path");
-        String targetPath = (String) taskContent.get("target_path");
-
-        if (sourcePath == null || targetPath == null) {
-            return TaskExecutionResult.failure("Source path and target path are required");
-        }
-
-        File sourceFile = new File(sourcePath);
-        if (!sourceFile.exists()) {
-            return TaskExecutionResult.failure("Source file does not exist: " + sourcePath);
-        }
-
-        File targetFile = new File(targetPath);
-        if (targetFile.exists()) {
-            boolean overwrite = (Boolean) taskContent.getOrDefault("overwrite", false);
-            if (!overwrite) {
-                return TaskExecutionResult.failure("Target file already exists and overwrite is disabled");
-            }
-        }
-
-        // 确保目标目录存在
-        File parentDir = targetFile.getParentFile();
-        if (parentDir != null && !parentDir.exists()) {
-            parentDir.mkdirs();
-        }
-
-        Files.move(sourceFile.toPath(), targetFile.toPath());
-
-        Map<String, Object> resultData = new HashMap<>();
-        resultData.put("source_path", sourcePath);
-        resultData.put("target_path", targetPath);
-
-        return TaskExecutionResult.success(resultData);
     }
 
     /**
