@@ -226,6 +226,20 @@ public class InstanceReportService {
 
             try (Response response = httpClient.newCall(httpRequest).execute()) {
                 if (response.isSuccessful()) {
+                    String respBody = response.body() != null ? response.body().string() : null;
+                    if (respBody != null && !respBody.isEmpty()) {
+                        org.aione.monihub.agent.model.InstanceReportResponse resp = objectMapper.readValue(respBody, org.aione.monihub.agent.model.InstanceReportResponse.class);
+                        if (resp.getAgentConfig() != null) {
+                            org.aione.monihub.agent.config.LocalConfig local = org.aione.monihub.agent.util.LocalConfigUtil.getConfig();
+                            if (local == null) {
+                                local = new org.aione.monihub.agent.config.LocalConfig();
+                            }
+                            local.setInstanceId(properties.getInstanceId());
+                            local.setAgentConfig(resp.getAgentConfig());
+                            org.aione.monihub.agent.util.LocalConfigUtil.updateConfig(local);
+                            org.aione.monihub.agent.util.AgentConfigOverrideApplier.apply(properties, resp.getAgentConfig());
+                        }
+                    }
                     customCommandService.process(CommandType.EnableHttp);
                     int sent = request.getAgentLogs() == null ? 0 : request.getAgentLogs().size();
                     org.aione.monihub.agent.util.AgentLogStore.getInstance().removeSent(sent);

@@ -1,0 +1,24 @@
+[package]
+name = "monihub-agent-rs"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "process", "time"] }
+reqwest = { version = "0.12", features = ["json", "multipart"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+sysinfo = { version = "0.33", features = ["serde"] }
+os_info = "3"
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+walkdir = "2"
+zip = { version = "0.6", default-features = false, features = ["deflate"] }
+anyhow = "1"
+thiserror = "1"
+clap = { version = "4", features = ["derive"] }
+dirs = "5"
+gethostname = "0.4"
+local-ip-address = "0.5"
+mac_address = "1"

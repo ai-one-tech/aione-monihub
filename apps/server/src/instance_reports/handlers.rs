@@ -75,6 +75,7 @@ pub async fn report_instance_info(
             last_report_at: Set(None),
             report_count: Set(None),
             custom_fields: Set(request.custom_fields.clone()),
+            agent_config: Set(None),
             agent_type: Set(Some(request.agent_type.clone())),
             agent_version: Set(request.agent_version.clone()),
             cpu_usage_percent: Set(None),
@@ -157,6 +158,7 @@ pub async fn report_instance_info(
     let current_report_count = instance.report_count;
     let first_report_at_is_none = instance.first_report_at.is_none();
     
+    let agent_config_value = instance.agent_config.clone();
     let instance_id_db = instance.id.clone();
     let mut instance_update: instances::ActiveModel = instance.into();
     instance_update.agent_type = Set(Some(request.agent_type.clone()));
@@ -243,6 +245,7 @@ pub async fn report_instance_info(
             .as_secs(),
         log_success_count: Some(log_success_count),
         log_failure_count: Some(log_failure_count),
+        agent_config: agent_config_value,
     };
 
     Ok(HttpResponse::Ok().json(response))

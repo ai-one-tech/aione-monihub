@@ -54,6 +54,8 @@ pub struct InstanceResponse {
     pub report_count: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub custom_fields: Option<JsonValue>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub agent_config: Option<JsonValue>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -152,6 +154,7 @@ impl InstanceResponse {
             last_report_at: entity.last_report_at.map(|v| v.to_rfc3339()),
             report_count: entity.report_count,
             custom_fields: entity.custom_fields,
+            agent_config: entity.agent_config,
             created_at: entity.created_at.to_rfc3339(),
             updated_at: entity.updated_at.to_rfc3339(),
         }
@@ -183,6 +186,7 @@ impl InstanceCreateRequest {
             last_report_at: Set(None),
             report_count: Set(Some(0)),
             custom_fields: Set(self.custom_fields.clone()),
+            agent_config: Set(None),
             agent_type: Set(None),
             agent_version: Set(None),
             cpu_usage_percent: Set(None),

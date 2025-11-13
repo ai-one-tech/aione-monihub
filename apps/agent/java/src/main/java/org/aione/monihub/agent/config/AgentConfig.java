@@ -67,11 +67,6 @@ public class AgentConfig {
     private TaskConfig task = new TaskConfig();
 
     /**
-     * 文件配置
-     */
-    private FileConfig file = new FileConfig();
-
-    /**
      * Debug模式开关，默认关闭
      */
     private boolean debug = false;
@@ -89,6 +84,9 @@ public class AgentConfig {
          */
         private long intervalSeconds = 60;
 
+        /**
+         * 最大日志数
+         */
         private int maxLogRetention = 1000;
     }
 
@@ -120,16 +118,4 @@ public class AgentConfig {
         private int maxConcurrentTasks = 5;
     }
 
-    @Data
-    public static class FileConfig {
-        /**
-         * 上传目录
-         */
-        private String uploadDir = "/tmp/monihub/uploads";
-
-        /**
-         * 最大上传大小（MB）
-         */
-        private int maxUploadSizeMb = 100;
-    }
 }
