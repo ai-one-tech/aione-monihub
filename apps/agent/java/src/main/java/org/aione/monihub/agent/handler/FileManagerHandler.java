@@ -1,24 +1,7 @@
 package org.aione.monihub.agent.handler;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.net.URL;
-import java.nio.file.FileStore;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import okhttp3.*;
 import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.model.TaskDispatchItem;
 import org.aione.monihub.agent.model.TaskExecutionResult;
@@ -29,15 +12,19 @@ import org.aione.monihub.agent.util.AgentLoggerFactory;
 import org.aione.monihub.agent.util.CommonUtils;
 import org.aione.monihub.agent.util.TaskTempUtils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.FileStore;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * 文件管理处理器
@@ -213,8 +200,8 @@ public class FileManagerHandler implements TaskHandler {
             }
 
             try (InputStream inputStream = responseBody.byteStream();
-                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(partFile, append),
-                            1024 * 1024)) {
+                 BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(partFile, append),
+                         1024 * 1024)) {
                 byte[] buffer = new byte[1024 * 1024];
                 int bytesRead;
                 while ((bytesRead = inputStream.read(buffer)) != -1) {
@@ -281,7 +268,7 @@ public class FileManagerHandler implements TaskHandler {
 
             // 判断是否是压缩文件，需要定义常见压缩文件的格式
             boolean isCompressedFile = false;
-            String[] zipExtensions = { ".zip", ".rar", ".7z", ".tar", ".gz" };
+            String[] zipExtensions = {".zip", ".rar", ".7z", ".tar", ".gz"};
             for (String ext : zipExtensions) {
                 if (originalName.toLowerCase().endsWith(ext)) {
                     isCompressedFile = true;

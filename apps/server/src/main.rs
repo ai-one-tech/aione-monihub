@@ -65,8 +65,6 @@ use aione_monihub_server::{DatabaseManager, WsServer};
         aione_monihub_server::instance_tasks::handlers::get_task_instances_with_results,
         aione_monihub_server::files::handlers::init_file_upload,
         aione_monihub_server::files::handlers::upload_file_chunk,
-        aione_monihub_server::files::handlers::complete_file_upload,
-        aione_monihub_server::files::handlers::check_upload_status,
         aione_monihub_server::files::handlers::download_file
     ),
     components(
@@ -131,8 +129,6 @@ use aione_monihub_server::{DatabaseManager, WsServer};
             aione_monihub_server::files::models::FileUploadResponse,
             aione_monihub_server::files::models::FileChunkUploadRequest,
             aione_monihub_server::files::models::FileChunkUploadResponse,
-            aione_monihub_server::files::models::FileUploadCompleteRequest,
-            aione_monihub_server::files::models::FileUploadCompleteResponse,
             aione_monihub_server::files::models::FileInfo
         )
     ),

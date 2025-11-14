@@ -79,6 +79,21 @@ pub struct FileInfo {
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct FileInfoWithUrl {
+    pub id: String,
+    pub file_name: String,
+    pub file_size: i64,
+    pub file_path: String,
+    pub uploaded_at: DateTime<Utc>,
+    pub uploaded_by: String,
+    pub download_url: String,
+    pub task_id: Option<String>,
+    pub instance_id: Option<String>,
+    pub file_extension: Option<String>,
+    pub original_file_path: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct FileListQuery {
     pub task_id: String,
     pub instance_id: String,
@@ -89,4 +104,9 @@ pub struct FileListQuery {
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct FileListResponse {
     pub data: Vec<FileInfo>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct FileListResponseWithUrl {
+    pub data: Vec<FileInfoWithUrl>,
 }

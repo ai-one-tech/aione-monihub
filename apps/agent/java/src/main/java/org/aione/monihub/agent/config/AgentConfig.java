@@ -1,6 +1,5 @@
 package org.aione.monihub.agent.config;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import org.aione.monihub.agent.util.LocalConfigUtil;
 import org.apache.logging.log4j.util.Strings;

@@ -19,9 +19,9 @@ export function ExecutionResultPanel({ selectedInstanceResult, selectedTaskType,
   }
 
   return (
-    <div className="flex-1 rounded-lg border bg-gray-50 dark:bg-accent p-4 overflow-auto min_h-0">
-      <div className="h-full space-y-4">
-        <div className="grid grid-cols-2 gap-4 text-sm">
+    <div className="flex-1 flex flex-col min-h-0 rounded-lg border bg-gray-50 dark:bg-accent p-4">
+      <div className="flex flex-col min-h-0 space-y-4">
+        <div className="grid grid-cols-2 gap-4 text-sm shrink-0">
           {selectedInstanceResult.execution_record.duration_ms && (
             <div>
               <span className="font-medium">执行时长:</span>
@@ -41,7 +41,7 @@ export function ExecutionResultPanel({ selectedInstanceResult, selectedTaskType,
           )}
         </div>
 
-        <ScrollArea className='flex-1'>
+        <div className='flex-1 overflow-auto min-h-0'>
           {selectedInstanceResult.execution_record.status === 'success' && (
             <div>
               {selectedInstanceResult.execution_record.result_message && (
@@ -56,7 +56,7 @@ export function ExecutionResultPanel({ selectedInstanceResult, selectedTaskType,
               )}
 
               {selectedInstanceResult.execution_record.result_data && (
-                <div className="flex-1">
+                <div className="flex-1 min-h-0">
                   <div className="flex items-center justify-between mb-1">
                     <div className="font-medium text-sm text-primary">输出数据:</div>
                     <Button
@@ -208,7 +208,7 @@ export function ExecutionResultPanel({ selectedInstanceResult, selectedTaskType,
               )}
             </div>
           )}
-        </ScrollArea>
+        </div>
 
       </div>
     </div>

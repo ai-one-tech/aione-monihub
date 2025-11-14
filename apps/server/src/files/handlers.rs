@@ -1,9 +1,9 @@
 use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse, Result};
-use chrono::Utc;
+use chrono::{Utc, TimeZone};
 use futures_util::StreamExt as _;
 use lazy_static::lazy_static;
-use sea_orm::{DatabaseConnection, EntityTrait};
+use sea_orm::{DatabaseConnection, EntityTrait, Order, QueryOrder, QueryFilter, ColumnTrait};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::path::Path;
@@ -18,11 +18,7 @@ use crate::entities::files;
 use crate::shared::error::ApiError;
 
 // 引入模型
-use super::models::{
-    FileChunkUploadResponse, FileUploadCompleteRequest, FileUploadCompleteResponse,
-    FileUploadRequest, FileUploadResponse,
-};
-use super::models::{FileInfo, FileListQuery, FileListResponse};
+use super::models::{FileChunkUploadResponse, FileInfoWithUrl, FileListResponseWithUrl, FileUploadCompleteRequest, FileUploadCompleteResponse, FileUploadRequest, FileUploadResponse, FileListQuery};
 
 // 临时存储上传信息的结构（实际项目中应该使用数据库）
 lazy_static! {
@@ -34,7 +30,6 @@ struct UploadSession {
     upload_id: String,
     file_name: String,
     file_size: i64,
-    chunk_size: i64,
     total_chunks: i64,
     uploaded_chunks: Vec<bool>,
     file_path: String,
@@ -42,8 +37,6 @@ struct UploadSession {
     // 新增字段
     task_id: Option<String>,
     instance_id: Option<String>,
-    file_extension: Option<String>,
-    original_file_path: Option<String>,
     completing: bool,
 }
 
@@ -124,15 +117,12 @@ pub async fn init_file_upload(
         upload_id: file_id.clone(),
         file_name: upload_request.file_name.clone(),
         file_size: upload_request.file_size,
-        chunk_size: upload_request.chunk_size,
         total_chunks: upload_request.total_chunks,
         uploaded_chunks: vec![false; upload_request.total_chunks as usize],
         file_path: format!("{}/{}", task_dir, file_id),
         file_id: file_id.clone(),
         task_id: upload_request.task_id.clone(),
         instance_id: upload_request.instance_id.clone(),
-        file_extension: upload_request.file_extension.clone(),
-        original_file_path: upload_request.original_file_path.clone(),
         completing: false,
     };
 
@@ -572,26 +562,10 @@ pub async fn download_file(
         .into_response(&req))
 }
 
-#[utoipa::path(
-    get,
-    path = "/api/files",
-    params(
-        ("task_id" = String, Query, description = "Task ID"),
-        ("instance_id" = String, Query, description = "Instance ID"),
-        ("order_by" = String, Query, description = "Order by field", example = "uploaded_at"),
-        ("order" = String, Query, description = "asc or desc", example = "asc")
-    ),
-    responses(
-        (status = 200, description = "Files list", body = FileListResponse),
-        (status = 400, description = "Bad request"),
-        (status = 401, description = "Unauthorized"),
-        (status = 500, description = "Internal server error")
-    ),
-    security(("bearer_auth" = [])),
-    tag = "Files"
-)]
+#[allow(clippy::unused_async)]
 pub async fn get_files(
     db: web::Data<DatabaseConnection>,
+    req: HttpRequest,
     query: web::Query<FileListQuery>,
 ) -> Result<HttpResponse, ApiError> {
     let task_id = query.task_id.clone();
@@ -599,8 +573,6 @@ pub async fn get_files(
     if task_id.is_empty() || instance_id.is_empty() {
         return Err(ApiError::BadRequest("task_id and instance_id are required".to_string()));
     }
-
-    use sea_orm::{ColumnTrait, QueryFilter, QueryOrder, Order};
 
     let mut select = files::Entity::find()
         .filter(files::Column::TaskId.eq(Some(task_id)))
@@ -627,15 +599,30 @@ pub async fn get_files(
         .await
         .map_err(|e| ApiError::InternalServerError(format!("Failed to query files: {}", e)))?;
 
-    let data: Vec<FileInfo> = rows
+    let proto = req
+        .headers()
+        .get("X-Forwarded-Proto")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("http");
+    let fhost = req
+        .headers()
+        .get("X-Forwarded-Host")
+        .and_then(|v| v.to_str().ok());
+    let host = fhost
+        .or_else(|| req.headers().get("Host").and_then(|v| v.to_str().ok()))
+        .unwrap_or("localhost");
+    let base_url = format!("{}://{}", proto, host);
+
+    let data: Vec<FileInfoWithUrl> = rows
         .into_iter()
-        .map(|m| FileInfo {
-            id: m.id,
+        .map(|m| FileInfoWithUrl {
+            id: m.id.clone(),
             file_name: m.file_name,
             file_size: m.file_size,
             file_path: m.file_path,
-            uploaded_at: chrono::DateTime::<chrono::Utc>::from_utc(m.uploaded_at, chrono::Utc),
+            uploaded_at: chrono::Utc.from_utc_datetime(&m.uploaded_at),
             uploaded_by: m.uploaded_by,
+            download_url: format!("{}/api/files/download/{}", base_url, m.id),
             task_id: m.task_id,
             instance_id: m.instance_id,
             file_extension: m.file_extension,
@@ -643,5 +630,5 @@ pub async fn get_files(
         })
         .collect();
 
-    Ok(HttpResponse::Ok().json(FileListResponse { data }))
+    Ok(HttpResponse::Ok().json(FileListResponseWithUrl { data }))
 }

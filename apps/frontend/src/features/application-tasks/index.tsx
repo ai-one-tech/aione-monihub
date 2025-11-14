@@ -775,8 +775,8 @@ export function ApplicationTasks() {
             </Card>
 
             {/* 执行结果 / 文件夹 */}
-            <Card className="p-4 flex flex-col">
-              <Tabs defaultValue="result" className="flex-1 flex flex-col">
+            <Card className="p-4 flex flex-col h-full min-h-0">
+              <Tabs defaultValue="result" className="flex h-full flex-col">
                 <div className="flex items-center justify-between mb-2 shrink-0">
                   <TabsList>
                     <TabsTrigger value="result">执行结果</TabsTrigger>
@@ -808,7 +808,7 @@ export function ApplicationTasks() {
                     </Button>
                   </div>
                 </div>
-                <TabsContent value="result" className="flex-1 h-full flex flex-col min-h-0 overflow-auto">
+                <TabsContent value="result" className="flex-1 flex flex-col min-h-0">
                   <ExecutionResultPanel selectedInstanceResult={selectedInstanceResult} selectedTaskType={selectedTaskType} copyToClipboard={copyToClipboard} />
                 </TabsContent>
                 <TabsContent value="files" className="flex-1 flex flex-col min-h-0">
@@ -816,6 +816,7 @@ export function ApplicationTasks() {
                 </TabsContent>
               </Tabs>
             </Card>
+
           </div>
         </div>
       </div>
@@ -1023,6 +1024,8 @@ type FileItem = {
   file_name: string
   file_size: number
   uploaded_at: string
+  file_path?: string
+  download_url?: string
 }
 
 function TaskFilesPane({ selectedTask, selectedInstanceId }: TaskFilesPaneProps) {
@@ -1072,9 +1075,15 @@ function TaskFilesPane({ selectedTask, selectedInstanceId }: TaskFilesPaneProps)
     return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
   }
 
+  const copyToClipboard = (file: FileItem) => {
+    navigator.clipboard.writeText(file.download_url || '')
+    toast.success('下载地址已复制')
+  }
+
   const handleDownload = async (file: FileItem) => {
     try {
-      const { blob, fileName } = await apiClient.download(`/api/files/download/${file.id}`)
+      const endpoint = file.download_url || `/api/files/download/${file.id}`
+      const { blob, fileName } = await apiClient.download(endpoint)
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -1094,12 +1103,15 @@ function TaskFilesPane({ selectedTask, selectedInstanceId }: TaskFilesPaneProps)
       {files.length === 0 ? (
         <div className="text-center text-gray-500 py-8">未找到关联文件</div>
       ) : (
-        <div className="flex flex-col overflow-auto gap-4">
+        <div className="flex flex-col overflow-auto gap-3">
           {files.map((f) => (
             <Card key={f.id} className="p-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="font-medium truncate" title={f.file_name}>{f.file_name}</div>
-                <Button size="sm" variant="outline" onClick={() => handleDownload(f)}>下载</Button>
+                <div>
+                  <Button size="sm" variant="outline" onClick={() => copyToClipboard(f)}>复制路径</Button>
+                  <Button className='ml-1' size="sm" variant="outline" onClick={() => handleDownload(f)}>下载</Button>
+                </div>
               </div>
               <div className="text-sm text-gray-600 space-y-1">
                 <div>大小：{fmtSize(f.file_size)}</div>

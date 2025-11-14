@@ -87,7 +87,7 @@ where
             if let Some(db) = db_opt {
                 
                 let mut log_level = enums::LogLevel::Info;
-                let mut status_code: i32;
+                let status_code: i32;
                 match &result {
                     Ok(resp) => {
                         status_code = resp.status().as_u16() as i32;
