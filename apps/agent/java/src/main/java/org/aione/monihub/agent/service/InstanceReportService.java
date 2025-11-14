@@ -79,7 +79,7 @@ public class InstanceReportService {
         // 延迟10秒后开始首次上报，然后按固定间隔执行
         scheduler.scheduleAtFixedRate(
                 this::reportInstance,
-                1,
+                5,
                 intervalSeconds,
                 TimeUnit.SECONDS
         );
@@ -109,6 +109,7 @@ public class InstanceReportService {
         try {
             if (!agentConfig.getReport().isEnabled()) {
                 log.info("Instance report is disabled");
+                Thread.sleep(30 * 1000);
                 return;
             }
 

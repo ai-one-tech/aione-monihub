@@ -48,7 +48,7 @@ public class InstanceTaskService {
             thread.setDaemon(true);
             return thread;
         });
-        this.taskDispatcher = Executors.newFixedThreadPool(3, r -> {
+        this.taskDispatcher = Executors.newFixedThreadPool(6, r -> {
             Thread thread = new Thread(r, "task-dispatcher");
             thread.setDaemon(true);
             return thread;
@@ -65,7 +65,15 @@ public class InstanceTaskService {
         running = true;
         scheduler.execute(() -> {
             while (running) {
-                pollTasks();
+                boolean needSleep = pollTasks();
+                if (needSleep) {
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
             }
         });
     }
@@ -103,14 +111,15 @@ public class InstanceTaskService {
     /**
      * 拉取任务
      */
-    private void pollTasks() {
+    private boolean pollTasks() {
         try {
             ObjectMapper objectMapper = CommonUtils.getObjectMapper();
             InstanceConfig.TaskConfig taskCfg = agentConfig.getTask();
 
             if (taskCfg == null || !taskCfg.isEnabled()) {
                 log.info("Task service is disabled");
-                return;
+                Thread.sleep(30 * 1000);
+                return true;
             }
             log.info("Polling tasks for instance: {}", agentConfig.getAgentInstanceId());
 
@@ -149,7 +158,6 @@ public class InstanceTaskService {
                     log.warn("Failed to poll tasks, status: {}", response.code());
                 }
             }
-
         } catch (SocketTimeoutException e) {
             log.info("next polling tasks");
         } catch (Exception e) {
@@ -158,7 +166,9 @@ public class InstanceTaskService {
                 Thread.sleep(1000 * 5);
             } catch (InterruptedException ignore) {
             }
+            return true;
         }
+        return false;
     }
 
     /**
