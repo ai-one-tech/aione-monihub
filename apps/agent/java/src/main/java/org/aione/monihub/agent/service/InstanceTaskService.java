@@ -1,6 +1,7 @@
 package org.aione.monihub.agent.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.SneakyThrows;
 import okhttp3.*;
 import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.config.InstanceConfig;
@@ -8,6 +9,7 @@ import org.aione.monihub.agent.executor.AgentTaskExecutor;
 import org.aione.monihub.agent.model.*;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
+import org.aione.monihub.agent.util.CommonUtils;
 
 import java.net.SocketTimeoutException;
 import java.time.ZonedDateTime;
@@ -30,9 +32,6 @@ public class InstanceTaskService {
 
     @javax.annotation.Resource
     private OkHttpClient httpClient;
-
-    @javax.annotation.Resource
-    private ObjectMapper objectMapper;
 
     @javax.annotation.Resource
     private AgentTaskExecutor agentTaskExecutor;
@@ -87,8 +86,10 @@ public class InstanceTaskService {
     /**
      * 拉取任务
      */
+    @SneakyThrows
     private void pollTasks() {
         try {
+            ObjectMapper objectMapper = CommonUtils.getObjectMapper();
             InstanceConfig.TaskConfig taskCfg = agentConfig.getTask();
 
             if (taskCfg == null || !taskCfg.isEnabled()) {
@@ -137,6 +138,7 @@ public class InstanceTaskService {
             log.info("next polling tasks");
         } catch (Exception e) {
             log.error("Error polling tasks", e);
+            Thread.sleep(1000 * 5);
         }
     }
 
@@ -178,6 +180,8 @@ public class InstanceTaskService {
     private void submitResult(TaskDispatchItem task, TaskExecutionResult result) {
         int maxRetries = 10;
         int retryCount = 0;
+
+        ObjectMapper objectMapper = CommonUtils.getObjectMapper();
 
         while (retryCount < maxRetries) {
             try {

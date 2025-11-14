@@ -3,10 +3,10 @@ package org.aione.monihub.agent.collector;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.MapType;
-import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.model.RuntimeInfo;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
+import org.aione.monihub.agent.util.CommonUtils;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.lang.management.ManagementFactory;
@@ -24,9 +24,6 @@ import java.util.*;
 public class RuntimeInfoCollector {
 
     private AgentLogger log;
-
-    @javax.annotation.Resource
-    private ObjectMapper objectMapper;
 
     @Value("${spring.profiles.active:-}")
     private String profiles;
@@ -148,6 +145,7 @@ public class RuntimeInfoCollector {
         // 添加关键的Java系统属性
         String customFields = Optional.ofNullable(System.getProperty("custom_fields")).orElse("{}");
         try {
+            ObjectMapper objectMapper = CommonUtils.getObjectMapper();
             MapType mapType = objectMapper.getTypeFactory().constructMapType(Map.class, String.class, Object.class);
             Map<String, Object> customFieldMap = objectMapper.readValue(customFields, mapType);
             if (customFieldMap != null) {
@@ -168,6 +166,7 @@ public class RuntimeInfoCollector {
         // 添加关键的Java系统属性
         String customFields = Optional.ofNullable(System.getProperty("custom_metrics")).orElse("{}");
         try {
+            ObjectMapper objectMapper = CommonUtils.getObjectMapper();
             env.putAll(propertiesMap);
             MapType mapType = objectMapper.getTypeFactory().constructMapType(Map.class, String.class, Object.class);
             Map<String, Object> customFieldMap = objectMapper.readValue(customFields, mapType);

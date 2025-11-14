@@ -207,7 +207,7 @@ async fn main() -> io::Result<()> {
     // Load .env file
     dotenv::dotenv().ok();
 
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("error")).init();
+    env_logger::init();
 
     // Initialize database connection
     let database_url =

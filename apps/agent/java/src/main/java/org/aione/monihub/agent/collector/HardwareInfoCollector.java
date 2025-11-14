@@ -1,6 +1,5 @@
 package org.aione.monihub.agent.collector;
 
-import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.model.HardwareInfo;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;

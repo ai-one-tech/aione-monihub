@@ -10,7 +10,8 @@ import java.nio.file.Path;
 import java.util.concurrent.Callable;
 
 public final class TaskLockUtils {
-    private TaskLockUtils() {}
+    private TaskLockUtils() {
+    }
 
     public static TaskExecutionResult guardWithLock(String scope, TaskDispatchItem task, Callable<TaskExecutionResult> action) {
         Path locksDir = TaskTempUtils.ensureSubDir("locks");

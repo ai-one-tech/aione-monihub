@@ -87,9 +87,6 @@ public class AgentTaskExecutor {
                     result.setErrorMessage("Unsupported task type: " + task.getTaskType());
                     result.setStatus(TaskStatus.failed);
                 } else {
-                    // 使用Future进行超时控制
-                    Integer timeoutSeconds = task.getTimeoutSeconds();
-
                     Future<TaskExecutionResult> future = executorService.submit(() ->
                             handler.execute(task)
                     );

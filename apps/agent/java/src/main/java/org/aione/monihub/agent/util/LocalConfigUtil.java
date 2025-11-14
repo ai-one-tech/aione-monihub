@@ -14,7 +14,7 @@ public class LocalConfigUtil {
     public static void updateConfig(LocalConfig localConfig) {
         try {
             if (localConfig != null) {
-                ObjectMapper objectMapper = SpringContextUtils.getBean(ObjectMapper.class);
+                ObjectMapper objectMapper = CommonUtils.getObjectMapper();
                 String content = objectMapper.writeValueAsString(localConfig);
                 FileUtils.writeFile(LOCAL_CONFIG_PATH, content);
             }
@@ -27,7 +27,7 @@ public class LocalConfigUtil {
         try {
             String content = FileUtils.readFile(LOCAL_CONFIG_PATH);
             if (Strings.isNotBlank(content)) {
-                ObjectMapper objectMapper = SpringContextUtils.getBean(ObjectMapper.class);
+                ObjectMapper objectMapper = CommonUtils.getObjectMapper();
                 return objectMapper.readValue(content, LocalConfig.class);
             }
         } catch (JsonProcessingException e) {

@@ -10,7 +10,7 @@ import java.util.Map;
  * 任务执行结果
  */
 @lombok.Data
-@Accessors(chain=true)
+@Accessors(chain = true)
 public class TaskExecutionResult {
     private TaskStatus status;
 
@@ -35,7 +35,7 @@ public class TaskExecutionResult {
     }
 
     public TaskExecutionResult put(String key, Object value) {
-        if(resultData == null){
+        if (resultData == null) {
             resultData = new HashMap<>();
         }
         resultData.put(key, value);

@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * 任务结果提交请求模型
  * 对应后端 TaskResultSubmitRequest 模型
- * 
+ * <p>
  * 用于向服务端回传任务执行结果
  */
 @Data

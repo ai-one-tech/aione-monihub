@@ -54,7 +54,7 @@ public class ShellExecHandler implements TaskHandler {
             Files.deleteIfExists(scriptFile);
         }
         Files.createFile(scriptFile);
-        
+
         try {
             try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(scriptFile.toFile()), CommonUtils.isWindows() ? Charset.forName("GBK") : StandardCharsets.UTF_8)) {
                 writer.write(scriptContent);

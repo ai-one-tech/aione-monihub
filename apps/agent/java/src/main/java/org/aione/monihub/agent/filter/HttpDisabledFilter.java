@@ -1,7 +1,6 @@
 package org.aione.monihub.agent.filter;
 
 import lombok.Getter;
-import org.springframework.stereotype.Component;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletResponse;

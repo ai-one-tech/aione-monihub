@@ -6,7 +6,7 @@ monihub:
     # 服务端URL
     server-url: ${AGENT_SERVER_URL:http://localhost:9080}
     # Debug模式，开启后会打印详细日志，默认关闭
-    debug: ${AGENT_DEBUG:true}
+    debug: ${AGENT_DEBUG:false}
 # Spring Boot 配置
 spring:
   application:

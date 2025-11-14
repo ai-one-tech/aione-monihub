@@ -1,6 +1,7 @@
 package org.aione.monihub.agent.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.SneakyThrows;
 import okhttp3.*;
 import org.aione.monihub.agent.collector.HardwareInfoCollector;
 import org.aione.monihub.agent.collector.NetworkInfoCollector;
@@ -12,6 +13,7 @@ import org.aione.monihub.agent.model.*;
 import org.aione.monihub.agent.util.AgentLogStore;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
+import org.aione.monihub.agent.util.CommonUtils;
 import org.springframework.http.HttpStatus;
 
 import javax.annotation.Resource;
@@ -36,9 +38,6 @@ public class InstanceReportService {
 
     @javax.annotation.Resource
     private OkHttpClient httpClient;
-
-    @javax.annotation.Resource
-    private ObjectMapper objectMapper;
 
     @javax.annotation.Resource
     private SystemInfoCollector systemInfoCollector;
@@ -105,13 +104,14 @@ public class InstanceReportService {
     /**
      * 上报实例信息
      */
+    @SneakyThrows
     private void reportInstance() {
         try {
             if (!agentConfig.getReport().isEnabled()) {
                 log.info("Instance report is disabled");
                 return;
             }
-            
+
             // 构建上报请求
             InstanceReportRequest request = buildReportRequest();
 
@@ -211,62 +211,44 @@ public class InstanceReportService {
     /**
      * 发送上报请求
      */
+    @SneakyThrows
     private boolean sendReport(InstanceReportRequest request) {
-        try {
-            String json = objectMapper.writeValueAsString(request);
-            String url = agentConfig.getServerUrl() + "/api/open/instances/report";
-            log.info("Sending report request to {}: {}", url, json);
 
-            int maxRetries = 3;
-            for (int attempt = 1; attempt <= maxRetries; attempt++) {
-                RequestBody body = RequestBody.create(JSON, json);
-                Request.Builder builder = new Request.Builder().url(url).post(body);
-                if (attempt > 1) {
-                    builder.header("Connection", "close");
+        ObjectMapper objectMapper = CommonUtils.getObjectMapper();
+        String json = objectMapper.writeValueAsString(request);
+        String url = agentConfig.getServerUrl() + "/api/open/instances/report";
+        log.info("Sending report request to {}: {}", url);
+
+        RequestBody body = RequestBody.create(JSON, json);
+        Request.Builder builder = new Request.Builder().url(url).post(body);
+        Request httpRequest = builder.build();
+
+        try (Response response = httpClient.newCall(httpRequest).execute()) {
+            if (response.isSuccessful()) {
+                String respBody = response.body() != null ? response.body().string() : null;
+                if (respBody != null && !respBody.isEmpty()) {
+                    InstanceReportResponse resp = objectMapper.readValue(respBody, InstanceReportResponse.class);
+                    if (resp.getConfig() != null) {
+                        InstanceConfig config = resp.getConfig();
+                        agentConfig.setDebug(config.isDebug());
+                        agentConfig.setTask(config.getTask());
+                        agentConfig.setReport(config.getReport());
+                    }
                 }
-                Request httpRequest = builder.build();
 
-                try (Response response = httpClient.newCall(httpRequest).execute()) {
-                    if (response.isSuccessful()) {
-                        String respBody = response.body() != null ? response.body().string() : null;
-                        if (respBody != null && !respBody.isEmpty()) {
-                            InstanceReportResponse resp = objectMapper.readValue(respBody, InstanceReportResponse.class);
-                            if (resp.getConfig() != null) {
-                                InstanceConfig config = resp.getConfig();
-                                agentConfig.setDebug(config.isDebug());
-                                agentConfig.setTask(config.getTask());
-                                agentConfig.setReport(config.getReport());
-                            }
-                        }
-
-                        int sent = request.getAgentLogs() == null ? 0 : request.getAgentLogs().size();
-                        AgentLogStore.getInstance().removeSent(sent);
-                        return true;
-                    } else {
-                        if (response.code() == HttpStatus.FORBIDDEN.value()) {
-                            customCommandService.process(CommandType.DisableHttp);
-                            return false;
-                        }
-                        log.warn("Report failed with status: {}", response.code());
-                        return false;
-                    }
-                } catch (Exception e) {
-                    String msg = e.getMessage() == null ? "" : e.getMessage();
-                    boolean retryable =
-                            (e instanceof java.net.SocketException && (msg.contains("Broken pipe") || msg.contains("Connection reset")))
-                                    || (e instanceof java.net.SocketTimeoutException);
-                    if (retryable && attempt < maxRetries) {
-                        log.warn("Retrying report due to error: {}, attempt: {}", msg, attempt);
-                        continue;
-                    }
-                    log.error("Error sending report", e);
+                int sent = request.getAgentLogs() == null ? 0 : request.getAgentLogs().size();
+                AgentLogStore.getInstance().removeSent(sent);
+                return true;
+            } else {
+                if (response.code() == HttpStatus.FORBIDDEN.value()) {
+                    customCommandService.process(CommandType.DisableHttp);
                     return false;
                 }
+                log.warn("Report failed with status: {}", response.code());
+                return false;
             }
-            return false;
-        } catch (Exception outer) {
-            log.error("Error sending report", outer);
-            return false;
+
         }
+
     }
 }

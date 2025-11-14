@@ -7,24 +7,26 @@ Java Agent 提供了灵活的任务处理机制，可以轻松扩展支持新的
 ## 当前支持的任务类型
 
 ### 1. execute_command
+
 - **类型标识**: `execute_command`
 - **处理器**: `ExecuteCommandHandler`
 - **功能**: 执行单条系统命令
 - **参数**:
-  - `command`: 要执行的命令字符串
-  - `workdir`: 工作目录（可选）
-  - `env`: 环境变量（可选）
-  - `timeout_seconds`: 超时时间（可选）
+    - `command`: 要执行的命令字符串
+    - `workdir`: 工作目录（可选）
+    - `env`: 环境变量（可选）
+    - `timeout_seconds`: 超时时间（可选）
 
 ### 2. shell_exec
+
 - **类型标识**: `shell_exec`
 - **处理器**: `ShellExecHandler`
 - **功能**: 执行完整的shell脚本
 - **参数**:
-  - `script_content`: shell脚本内容
-  - `workdir`: 工作目录（可选）
-  - `env`: 环境变量（可选）
-  - `timeout_seconds`: 超时时间（可选）
+    - `script_content`: shell脚本内容
+    - `workdir`: 工作目录（可选）
+    - `env`: 环境变量（可选）
+    - `timeout_seconds`: 超时时间（可选）
 
 ## 扩展新任务类型的步骤
 
@@ -46,7 +48,7 @@ import org.aione.monihub.agent.util.AgentLoggerFactory;
 import java.util.Map;
 
 public class MyNewTaskHandler implements TaskHandler {
-    
+
     private AgentLogger log;
     private static final String TASK_TYPE = "my_new_task_type";
 
@@ -59,14 +61,14 @@ public class MyNewTaskHandler implements TaskHandler {
     public TaskResult execute(Map<String, Object> taskContent) throws Exception {
         // 实现任务执行逻辑
         log.info("Executing {} task", TASK_TYPE);
-        
+
         // 解析任务参数
         String param1 = (String) taskContent.get("param1");
         Integer param2 = (Integer) taskContent.get("param2");
-        
+
         // 执行任务逻辑
         // ...
-        
+
         // 返回结果
         return TaskResult.success("Task completed successfully");
     }
@@ -98,21 +100,25 @@ public MyNewTaskHandler myNewTaskHandler() {
 ## 任务处理器设计规范
 
 ### 1. 输入参数
+
 - 从 `taskContent` Map中获取参数
 - 处理参数缺失和类型转换异常
 - 提供合理的默认值
 
 ### 2. 错误处理
+
 - 使用 `TaskResult.failure()` 返回错误结果
 - 记录详细的错误日志
 - 考虑超时和资源清理
 
 ### 3. 输出结果
+
 - 使用 `TaskResult.success()` 返回成功结果
 - 可以在 `resultData` 中返回结构化数据
 - 包含执行耗时和详细状态信息
 
 ### 4. 资源管理
+
 - 及时释放系统资源（文件句柄、进程等）
 - 实现异常安全，确保资源清理
 - 考虑并发执行时的资源隔离
@@ -149,6 +155,7 @@ public class ServiceDeployHandler implements TaskHandler {
 ## 测试新任务类型
 
 ### 1. 单元测试
+
 ```java
 @Test
 public void testMyNewTaskHandler() {
@@ -162,6 +169,7 @@ public void testMyNewTaskHandler() {
 ```
 
 ### 2. 集成测试
+
 - 启动Agent服务
 - 通过服务端下发测试任务
 - 验证任务执行结果

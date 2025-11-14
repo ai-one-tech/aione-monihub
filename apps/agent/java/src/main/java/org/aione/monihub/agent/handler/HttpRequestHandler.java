@@ -2,13 +2,13 @@ package org.aione.monihub.agent.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
-import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.model.TaskDispatchItem;
 import org.aione.monihub.agent.model.TaskExecutionResult;
 import org.aione.monihub.agent.model.TaskStatus;
 import org.aione.monihub.agent.model.TaskType;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
+import org.aione.monihub.agent.util.CommonUtils;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
@@ -23,12 +23,6 @@ public class HttpRequestHandler implements TaskHandler {
     @javax.annotation.Resource
     private OkHttpClient httpClient;
 
-    @javax.annotation.Resource
-    private AgentConfig agentConfig;
-
-    @javax.annotation.Resource
-    private ObjectMapper objectMapper;
-
     @PostConstruct
     public void init() {
         this.log = AgentLoggerFactory.getLogger(HttpRequestHandler.class);
@@ -36,6 +30,7 @@ public class HttpRequestHandler implements TaskHandler {
 
     @Override
     public TaskExecutionResult execute(TaskDispatchItem task) throws Exception {
+        ObjectMapper objectMapper = CommonUtils.getObjectMapper();
         Map<String, Object> content = task.getTaskContent();
         String method = str(content.get("method"), "GET");
         String url = str(content.get("url"), null);

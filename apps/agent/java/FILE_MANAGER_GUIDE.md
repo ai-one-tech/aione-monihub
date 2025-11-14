@@ -15,9 +15,11 @@
 **操作类型：** `list_directory`
 
 **参数：**
+
 - `directory_path` (必需): 要查看的目录路径
 
 **示例：**
+
 ```json
 {
   "operation_type": "list_directory",
@@ -26,6 +28,7 @@
 ```
 
 **返回结果：**
+
 ```json
 {
   "code": 0,
@@ -54,9 +57,11 @@
 **操作类型：** `get_file_info`
 
 **参数：**
+
 - `file_path` (必需): 文件路径
 
 **示例：**
+
 ```json
 {
   "operation_type": "get_file_info",
@@ -65,6 +70,7 @@
 ```
 
 **返回结果：**
+
 ```json
 {
   "code": 0,
@@ -95,10 +101,12 @@
 **操作类型：** `delete_file`
 
 **参数：**
+
 - `file_path` (必需): 要删除的文件或目录路径
 - `recursive` (可选): 是否递归删除目录，默认false
 
 **示例：**
+
 ```json
 {
   "operation_type": "delete_file",
@@ -108,6 +116,7 @@
 ```
 
 **返回结果：**
+
 ```json
 {
   "code": 0,
@@ -124,11 +133,13 @@
 **操作类型：** `rename_file`
 
 **参数：**
+
 - `old_path` (必需): 原文件路径
 - `new_path` (必需): 新文件路径
 - `overwrite` (可选): 是否覆盖已存在文件，默认false
 
 **示例：**
+
 ```json
 {
   "operation_type": "rename_file",
@@ -143,9 +154,11 @@
 **操作类型：** `create_directory`
 
 **参数：**
+
 - `directory_path` (必需): 要创建的目录路径
 
 **示例：**
+
 ```json
 {
   "operation_type": "create_directory",
@@ -158,11 +171,13 @@
 **操作类型：** `upload_file`
 
 **参数：**
+
 - `target_path` (必需): 目标文件路径
 - `file_content` (必需): Base64编码的文件内容
 - `overwrite` (可选): 是否覆盖已存在文件，默认false
 
 **示例：**
+
 ```json
 {
   "operation_type": "upload_file",
@@ -177,11 +192,13 @@
 **操作类型：** `download_file`
 
 **参数：**
+
 - `file_path` (必需): 要下载的文件路径
 
 **注意：** 文件大小限制为10MB
 
 **示例：**
+
 ```json
 {
   "operation_type": "download_file",
@@ -190,6 +207,7 @@
 ```
 
 **返回结果：**
+
 ```json
 {
   "code": 0,
@@ -208,11 +226,13 @@
 **操作类型：** `copy_file`
 
 **参数：**
+
 - `source_path` (必需): 源文件路径
 - `target_path` (必需): 目标文件路径
 - `overwrite` (可选): 是否覆盖已存在文件，默认false
 
 **示例：**
+
 ```json
 {
   "operation_type": "copy_file",
@@ -227,11 +247,13 @@
 **操作类型：** `move_file`
 
 **参数：**
+
 - `source_path` (必需): 源文件路径
 - `target_path` (必需): 目标文件路径
 - `overwrite` (可选): 是否覆盖已存在文件，默认false
 
 **示例：**
+
 ```json
 {
   "operation_type": "move_file",

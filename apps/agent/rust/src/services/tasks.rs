@@ -4,7 +4,6 @@ use tokio::time::{sleep, Duration};
 use tokio::sync::Semaphore;
 
 pub async fn start(state: AppState) {
-    let interval = state.cfg.task.poll_interval_seconds;
     let sem = std::sync::Arc::new(Semaphore::new(state.cfg.task.max_concurrent_tasks));
     let st = state.clone();
     tokio::spawn(async move {

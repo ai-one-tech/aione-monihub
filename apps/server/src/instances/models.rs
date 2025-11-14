@@ -230,7 +230,6 @@ pub struct ReportConfig {
 #[serde(default)]
 pub struct TaskConfig {
     pub enabled: bool,
-    pub poll_interval_seconds: u64,
     pub long_poll_timeout_seconds: u32,
 }
 
@@ -262,7 +261,6 @@ impl Default for TaskConfig {
     fn default() -> Self {
         Self {
             enabled: true,
-            poll_interval_seconds: 1,
             long_poll_timeout_seconds: 30,
         }
     }

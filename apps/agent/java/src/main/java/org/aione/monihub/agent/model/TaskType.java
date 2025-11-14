@@ -7,12 +7,12 @@ import lombok.Getter;
  */
 @Getter
 public enum TaskType {
-    
+
     /**
      * Shell脚本执行任务
      */
     shell_exec("shell_exec"),
-    
+
     /**
      * 执行代码
      */
@@ -22,7 +22,7 @@ public enum TaskType {
      * 文件管理任务
      */
     file_manager("file_manager"),
-    
+
     /**
      * 自定义命令任务
      */
@@ -31,10 +31,10 @@ public enum TaskType {
 
     /**
      * -- GETTER --
-     *  获取枚举值
+     * 获取枚举值
      */
     private final String value;
-    
+
     TaskType(String value) {
         this.value = value;
     }
@@ -50,7 +50,7 @@ public enum TaskType {
         }
         throw new IllegalArgumentException("Unknown task type: " + value);
     }
-    
+
     /**
      * 检查是否为有效的任务类型
      */

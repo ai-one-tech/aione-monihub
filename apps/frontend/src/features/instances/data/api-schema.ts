@@ -78,7 +78,6 @@ export const reportConfigSchema = z.object({
 
 export const taskConfigSchema = z.object({
   enabled: z.boolean().default(true),
-  poll_interval_seconds: z.number().default(1),
   long_poll_timeout_seconds: z.number().default(30),
 })
 

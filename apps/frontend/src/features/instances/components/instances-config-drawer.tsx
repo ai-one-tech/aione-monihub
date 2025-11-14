@@ -169,19 +169,6 @@ export function InstancesConfigDrawer() {
                   />
                   <FormField
                     control={form.control}
-                    name='task.poll_interval_seconds'
-                    render={({ field }) => (
-                      <FormItem className='mt-4'>
-                        <FormLabel>任务拉取间隔（秒）</FormLabel>
-                        <FormControl>
-                          <Input type='number' value={field.value} onChange={(e) => field.onChange(parseInt(e.target.value || '0'))} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
                     name='task.long_poll_timeout_seconds'
                     render={({ field }) => (
                       <FormItem className='mt-4'>

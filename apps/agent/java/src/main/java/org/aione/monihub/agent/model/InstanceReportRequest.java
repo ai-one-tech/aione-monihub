@@ -58,7 +58,6 @@ public class InstanceReportRequest {
     private List<AgentLogItem> agentLogs;
 
 
-
     @Data
     public static class SystemInfo {
         @JsonProperty("os_type")

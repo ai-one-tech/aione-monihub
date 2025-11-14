@@ -9,6 +9,7 @@ import org.aione.monihub.agent.model.TaskStatus;
 import org.aione.monihub.agent.model.TaskType;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
+import org.aione.monihub.agent.util.CommonUtils;
 import org.aione.monihub.agent.util.TaskTempUtils;
 
 import java.io.BufferedOutputStream;
@@ -38,9 +39,6 @@ public class FileManagerHandler implements TaskHandler {
 
     @javax.annotation.Resource
     private AgentConfig agentConfig;
-
-    @javax.annotation.Resource
-    private ObjectMapper objectMapper;
 
     @javax.annotation.PostConstruct
     public void init() {
@@ -249,6 +247,7 @@ public class FileManagerHandler implements TaskHandler {
      * 下载文件（返回Base64编码的文件内容）
      */
     private TaskExecutionResult executeDownloadFile(TaskDispatchItem task) throws Exception {
+        ObjectMapper objectMapper = CommonUtils.getObjectMapper();
         Map<String, Object> taskContent = task.getTaskContent();
         String filePath = (String) taskContent.get("path");
         if (filePath == null || filePath.trim().isEmpty()) {

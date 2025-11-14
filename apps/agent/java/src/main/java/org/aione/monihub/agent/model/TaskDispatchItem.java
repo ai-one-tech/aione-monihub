@@ -35,6 +35,7 @@ public class TaskDispatchItem {
 
     /**
      * 获取安全的超时时间
+     *
      * @return
      */
     public Integer getSafeTimeoutSeconds() {

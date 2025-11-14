@@ -1,5 +1,6 @@
 package org.aione.monihub.agent.config;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 @Data
@@ -30,22 +31,27 @@ public class InstanceConfig {
         /**
          * 是否启用代理
          */
+        @JsonProperty("proxy_enabled")
         private boolean proxyEnabled = false;
         /**
          * 代理地址
          */
+        @JsonProperty("proxy_host")
         private String proxyHost;
         /**
          * 代理端口
          */
+        @JsonProperty("proxy_port")
         private int proxyPort;
         /**
          * 代理用户名
          */
+        @JsonProperty("proxy_username")
         private String proxyUsername;
         /**
          * 代理密码
          */
+        @JsonProperty("proxy_password")
         private String proxyPassword;
     }
 
@@ -59,11 +65,13 @@ public class InstanceConfig {
         /**
          * 上报间隔（秒）
          */
+        @JsonProperty("interval_seconds")
         private long intervalSeconds = 60;
 
         /**
          * 最大日志数
          */
+        @JsonProperty("max_log_retention")
         private int maxLogRetention = 1000;
     }
 
@@ -77,6 +85,7 @@ public class InstanceConfig {
         /**
          * 长轮询超时（秒）
          */
+        @JsonProperty("long_poll_timeout_seconds")
         private int longPollTimeoutSeconds = 30;
 
         public int getLongPollTimeoutSeconds() {

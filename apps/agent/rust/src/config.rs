@@ -22,8 +22,8 @@ pub struct ReportConfig { pub enabled: bool, pub interval_seconds: u64 }
 impl Default for ReportConfig { fn default() -> Self { Self { enabled: true, interval_seconds: 30 } } }
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct TaskConfig { pub enabled: bool, pub poll_interval_seconds: u64, pub long_poll_enabled: bool, pub long_poll_timeout_seconds: u64, pub max_concurrent_tasks: usize }
-impl Default for TaskConfig { fn default() -> Self { Self { enabled: true, poll_interval_seconds: 10, long_poll_enabled: true, long_poll_timeout_seconds: 30, max_concurrent_tasks: 2 } } }
+pub struct TaskConfig { pub enabled: bool, pub long_poll_enabled: bool, pub long_poll_timeout_seconds: u64, pub max_concurrent_tasks: usize }
+impl Default for TaskConfig { fn default() -> Self { Self { enabled: true, long_poll_enabled: true, long_poll_timeout_seconds: 30, max_concurrent_tasks: 2 } } }
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct FileConfig { pub upload_dir: String, pub max_upload_size_mb: u64 }
