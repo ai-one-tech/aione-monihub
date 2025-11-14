@@ -77,3 +77,16 @@ pub struct FileInfo {
     pub file_extension: Option<String>,
     pub original_file_path: Option<String>,
 }
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct FileListQuery {
+    pub task_id: String,
+    pub instance_id: String,
+    pub order_by: Option<String>,
+    pub order: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct FileListResponse {
+    pub data: Vec<FileInfo>,
+}

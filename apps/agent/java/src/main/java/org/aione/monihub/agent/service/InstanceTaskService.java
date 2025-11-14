@@ -112,10 +112,10 @@ public class InstanceTaskService {
                 log.info("Task service is disabled");
                 return;
             }
-            log.info("Polling tasks for instance: {}", agentConfig.getInstanceId());
+            log.info("Polling tasks for instance: {}", agentConfig.getAgentInstanceId());
 
             // 构建拉取任务的URL
-            String url = agentConfig.getServerUrl() + "/api/open/instances/tasks?agent_instance_id=" + agentConfig.getInstanceId();
+            String url = agentConfig.getServerUrl() + "/api/open/instances/tasks?agent_instance_id=" + agentConfig.getAgentInstanceId();
 
             int timeoutSeconds = taskCfg.getLongPollTimeoutSeconds();
             if (timeoutSeconds > 0) {
@@ -206,7 +206,7 @@ public class InstanceTaskService {
             try {
                 TaskResultSubmitRequest request = new TaskResultSubmitRequest();
                 request.setRecordId(task.getRecordId());
-                request.setAgentInstanceId(agentConfig.getInstanceId());
+                request.setAgentInstanceId(agentConfig.getAgentInstanceId());
                 request.setStatus(result.getStatus());
                 request.setResultCode(result.getResultCode());
                 request.setResultMessage(result.getResultMessage());

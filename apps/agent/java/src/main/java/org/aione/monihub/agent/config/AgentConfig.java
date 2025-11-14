@@ -1,5 +1,6 @@
 package org.aione.monihub.agent.config;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import org.aione.monihub.agent.util.LocalConfigUtil;
 import org.apache.logging.log4j.util.Strings;
@@ -15,26 +16,31 @@ import java.util.UUID;
 public class AgentConfig extends InstanceConfig {
 
     /**
-     * 实例ID
+     * 本地的实例ID
      */
-    private String instanceId;
+    private String agentInstanceId;
 
-    public String getInstanceId() {
-        if (Strings.isEmpty(instanceId)) {
+    public String getAgentInstanceId() {
+        if (Strings.isEmpty(agentInstanceId)) {
             // 读取本地文件的实例ID
             LocalConfig config = LocalConfigUtil.getConfig();
             if (config != null && Strings.isNotEmpty(config.getInstanceId())) {
-                instanceId = config.getInstanceId();
+                agentInstanceId = config.getInstanceId();
             }
 
-            if (Strings.isEmpty(instanceId)) {
+            if (Strings.isEmpty(agentInstanceId)) {
                 UUID uuid = UUID.randomUUID();
-                instanceId = uuid.toString();
-                LocalConfigUtil.updateConfig(new LocalConfig().setInstanceId(instanceId));
+                agentInstanceId = uuid.toString();
+                LocalConfigUtil.updateConfig(new LocalConfig().setInstanceId(agentInstanceId));
             }
         }
-        return instanceId;
+        return agentInstanceId;
     }
+
+    /**
+     * 服务端分配的实例ID
+     */
+    private String instanceId;
 
     /**
      * 应用编码

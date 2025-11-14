@@ -203,6 +203,7 @@ pub struct TaskDispatchResponse {
 pub struct TaskDispatchItem {
     pub task_id: String,
     pub record_id: String,
+    pub instance_id: String,
     pub task_type: TaskType,
     pub task_content: JsonValue,
     pub timeout_seconds: i32,

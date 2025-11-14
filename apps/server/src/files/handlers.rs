@@ -22,6 +22,7 @@ use super::models::{
     FileChunkUploadResponse, FileUploadCompleteRequest, FileUploadCompleteResponse,
     FileUploadRequest, FileUploadResponse,
 };
+use super::models::{FileInfo, FileListQuery, FileListResponse};
 
 // 临时存储上传信息的结构（实际项目中应该使用数据库）
 lazy_static! {
@@ -322,12 +323,7 @@ async fn merge_chunks_and_update_db(
         ApiError::InternalServerError(format!("Failed to create target directory: {}", e))
     })?;
     let instance_id = session.instance_id.clone().unwrap_or_default();
-    let ext = session.file_extension.clone().unwrap_or_default();
-    let final_name = if !ext.is_empty() {
-        format!("{}_{}.{}", instance_id, session.file_name, ext)
-    } else {
-        format!("{}_{}", instance_id, session.file_name)
-    };
+    let final_name = format!("{}_{}", instance_id, session.file_name);
     let file_path = format!("{}/{}", base_dir, final_name);
     let mut file = fs::File::create(&file_path)
         .await
@@ -420,12 +416,7 @@ pub async fn complete_file_upload(
         ApiError::InternalServerError(format!("Failed to create target directory: {}", e))
     })?;
     let instance_id = session.instance_id.clone().unwrap_or_default();
-    let ext = session.file_extension.clone().unwrap_or_default();
-    let final_name = if !ext.is_empty() {
-        format!("{}_{}.{}", instance_id, session.file_name, ext)
-    } else {
-        format!("{}_{}", instance_id, session.file_name)
-    };
+    let final_name = format!("{}_{}", instance_id, session.file_name);
     let file_path = format!("{}/{}", base_dir, final_name);
     let mut file = fs::File::create(&file_path)
         .await
@@ -579,4 +570,78 @@ pub async fn download_file(
     Ok(actix_files::NamedFile::open(file_path)
         .map_err(|e| ApiError::InternalServerError(format!("Failed to open file: {}", e)))?
         .into_response(&req))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/files",
+    params(
+        ("task_id" = String, Query, description = "Task ID"),
+        ("instance_id" = String, Query, description = "Instance ID"),
+        ("order_by" = String, Query, description = "Order by field", example = "uploaded_at"),
+        ("order" = String, Query, description = "asc or desc", example = "asc")
+    ),
+    responses(
+        (status = 200, description = "Files list", body = FileListResponse),
+        (status = 400, description = "Bad request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(("bearer_auth" = [])),
+    tag = "Files"
+)]
+pub async fn get_files(
+    db: web::Data<DatabaseConnection>,
+    query: web::Query<FileListQuery>,
+) -> Result<HttpResponse, ApiError> {
+    let task_id = query.task_id.clone();
+    let instance_id = query.instance_id.clone();
+    if task_id.is_empty() || instance_id.is_empty() {
+        return Err(ApiError::BadRequest("task_id and instance_id are required".to_string()));
+    }
+
+    use sea_orm::{ColumnTrait, QueryFilter, QueryOrder, Order};
+
+    let mut select = files::Entity::find()
+        .filter(files::Column::TaskId.eq(Some(task_id)))
+        .filter(files::Column::InstanceId.eq(Some(instance_id)));
+
+    let order_by = query.order_by.clone().unwrap_or_else(|| "uploaded_at".to_string());
+    let order = query.order.clone().unwrap_or_else(|| "asc".to_string());
+
+    let asc = order.eq_ignore_ascii_case("asc");
+    match order_by.as_str() {
+        "file_name" => {
+            if asc { select = select.order_by(files::Column::FileName, Order::Asc); } else { select = select.order_by(files::Column::FileName, Order::Desc); }
+        }
+        "file_size" => {
+            if asc { select = select.order_by(files::Column::FileSize, Order::Asc); } else { select = select.order_by(files::Column::FileSize, Order::Desc); }
+        }
+        _ => {
+            if asc { select = select.order_by(files::Column::UploadedAt, Order::Asc); } else { select = select.order_by(files::Column::UploadedAt, Order::Desc); }
+        }
+    }
+
+    let rows = select
+        .all(&**db)
+        .await
+        .map_err(|e| ApiError::InternalServerError(format!("Failed to query files: {}", e)))?;
+
+    let data: Vec<FileInfo> = rows
+        .into_iter()
+        .map(|m| FileInfo {
+            id: m.id,
+            file_name: m.file_name,
+            file_size: m.file_size,
+            file_path: m.file_path,
+            uploaded_at: chrono::DateTime::<chrono::Utc>::from_utc(m.uploaded_at, chrono::Utc),
+            uploaded_by: m.uploaded_by,
+            task_id: m.task_id,
+            instance_id: m.instance_id,
+            file_extension: m.file_extension,
+            original_file_path: m.original_file_path,
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(FileListResponse { data }))
 }

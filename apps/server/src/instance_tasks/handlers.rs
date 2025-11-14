@@ -453,6 +453,7 @@ pub async fn get_instance_tasks(
                     tasks.push(TaskDispatchItem {
                         task_id: task.id.clone(),
                         record_id: record.id.clone(),
+                        instance_id: instance.id.clone(),
                         task_type: task.task_type,
                         task_content: task.task_content,
                         timeout_seconds: task.timeout_seconds.unwrap_or(300),

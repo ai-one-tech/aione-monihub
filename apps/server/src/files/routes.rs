@@ -11,6 +11,7 @@ use super::handlers::{
 pub fn file_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/files")
+            .route("", web::get().to(super::handlers::get_files))
             // 初始化文件上传
             .route("/upload/init", web::post().to(init_file_upload))
             // 上传文件块

@@ -98,6 +98,7 @@ pub struct InstanceReportResponse {
     pub status: String,
     pub message: String,
     pub record_id: String,
+    pub instance_id: String,
     pub timestamp: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub log_success_count: Option<u32>,

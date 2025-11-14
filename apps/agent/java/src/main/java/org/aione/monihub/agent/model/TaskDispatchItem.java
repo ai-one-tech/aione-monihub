@@ -17,6 +17,9 @@ public class TaskDispatchItem {
     @JsonProperty("record_id")
     private String recordId;
 
+    @JsonProperty("instance_id")
+    private String instanceId;
+
     @JsonProperty("task_type")
     private TaskType taskType;
 

@@ -239,6 +239,7 @@ pub async fn report_instance_info(
         status: "success".to_string(),
         message: "Instance report received successfully".to_string(),
         record_id,
+        instance_id: instance_id_db.clone(),
         timestamp: std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()

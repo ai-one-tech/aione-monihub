@@ -1,7 +1,24 @@
 package org.aione.monihub.agent.handler;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import okhttp3.*;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.FileStore;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
 import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.model.TaskDispatchItem;
 import org.aione.monihub.agent.model.TaskExecutionResult;
@@ -12,19 +29,15 @@ import org.aione.monihub.agent.util.AgentLoggerFactory;
 import org.aione.monihub.agent.util.CommonUtils;
 import org.aione.monihub.agent.util.TaskTempUtils;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.net.URL;
-import java.nio.file.FileStore;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 /**
  * 文件管理处理器
@@ -73,7 +86,6 @@ public class FileManagerHandler implements TaskHandler {
                 return r;
         }
     }
-
 
     /**
      * 上传文件（从远程URL下载并保存到指定路径）
@@ -183,7 +195,8 @@ public class FileManagerHandler implements TaskHandler {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                return TaskExecutionResult.failure("Failed to download file from " + remoteUrl + ", HTTP status: " + response.code());
+                return TaskExecutionResult
+                        .failure("Failed to download file from " + remoteUrl + ", HTTP status: " + response.code());
             }
 
             ResponseBody responseBody = response.body();
@@ -199,14 +212,13 @@ public class FileManagerHandler implements TaskHandler {
                 Files.deleteIfExists(partFile.toPath());
             }
 
-            long writtenThisTime = 0L;
             try (InputStream inputStream = responseBody.byteStream();
-                 BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(partFile, append), 1024 * 1024)) {
+                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(partFile, append),
+                            1024 * 1024)) {
                 byte[] buffer = new byte[1024 * 1024];
                 int bytesRead;
                 while ((bytesRead = inputStream.read(buffer)) != -1) {
                     bos.write(buffer, 0, bytesRead);
-                    writtenThisTime += bytesRead;
                 }
             }
 
@@ -266,8 +278,19 @@ public class FileManagerHandler implements TaskHandler {
         if (isDirectory) {
             isZip = true;
         } else {
+
+            // 判断是否是压缩文件，需要定义常见压缩文件的格式
+            boolean isCompressedFile = false;
+            String[] zipExtensions = { ".zip", ".rar", ".7z", ".tar", ".gz" };
+            for (String ext : zipExtensions) {
+                if (originalName.toLowerCase().endsWith(ext)) {
+                    isCompressedFile = true;
+                    break;
+                }
+            }
+
             long maxSize = 10L * 1024L * 1024L;
-            if (target.length() > maxSize) {
+            if (target.length() > maxSize && !isCompressedFile) {
                 isZip = true;
             }
         }
@@ -281,9 +304,6 @@ public class FileManagerHandler implements TaskHandler {
             originalName = zipName;
         }
 
-        String taskId = task.getTaskId();
-        String instanceId = agentConfig.getInstanceId();
-
         Map<String, Object> initBody = new HashMap<>();
         initBody.put("file_name", originalName);
         initBody.put("is_zip", isZip);
@@ -292,14 +312,15 @@ public class FileManagerHandler implements TaskHandler {
         long totalChunks = (uploadFile.length() + chunkSize - 1) / chunkSize;
         initBody.put("chunk_size", chunkSize);
         initBody.put("total_chunks", totalChunks);
-        initBody.put("task_id", taskId);
-        initBody.put("instance_id", instanceId);
+        initBody.put("task_id", task.getTaskId());
+        initBody.put("instance_id", task.getInstanceId());
         initBody.put("file_extension", getFileExtension(uploadFile));
         initBody.put("original_file_path", target.getAbsolutePath());
         initBody.put("is_directory", isDirectory);
 
         String initUrl = agentConfig.getServerUrl() + "/api/files/upload/init";
-        RequestBody initReqBody = RequestBody.create(MediaType.parse("application/json"), objectMapper.writeValueAsBytes(initBody));
+        RequestBody initReqBody = RequestBody.create(MediaType.parse("application/json"),
+                objectMapper.writeValueAsBytes(initBody));
         Request.Builder initReqBuilder = new Request.Builder().url(initUrl).post(initReqBody);
         String uploadId;
         String initDownloadPath = null;
@@ -315,17 +336,23 @@ public class FileManagerHandler implements TaskHandler {
             Map m = objectMapper.readValue(resp.body().bytes(), Map.class);
             uploadId = (String) m.get("upload_id");
             Object dp = m.get("download_path");
-            if (dp instanceof String) initDownloadPath = (String) dp;
+            if (dp instanceof String)
+                initDownloadPath = (String) dp;
             Object idv = m.get("is_directory");
-            if (idv instanceof Boolean) initIsDirectory = (Boolean) idv;
+            if (idv instanceof Boolean)
+                initIsDirectory = (Boolean) idv;
             Object cp = m.get("compressed");
-            if (cp instanceof Boolean) initCompressed = (Boolean) cp;
+            if (cp instanceof Boolean)
+                initCompressed = (Boolean) cp;
             Object fn = m.get("final_name");
-            if (fn instanceof String) initFinalName = (String) fn;
+            if (fn instanceof String)
+                initFinalName = (String) fn;
             Object sz = m.get("size");
-            if (sz instanceof Number) initSize = ((Number) sz).longValue();
+            if (sz instanceof Number)
+                initSize = ((Number) sz).longValue();
             Object sfp = m.get("server_file_path");
-            if (sfp instanceof String) initServerFilePath = (String) sfp;
+            if (sfp instanceof String)
+                initServerFilePath = (String) sfp;
         }
 
         String chunkUrl = agentConfig.getServerUrl() + "/api/files/upload/chunk";
@@ -343,9 +370,9 @@ public class FileManagerHandler implements TaskHandler {
 
         // 为分片上传创建专用的HTTP客户端，配置更合适的超时
         OkHttpClient chunkClient = httpClient.newBuilder()
-                .connectTimeout(60, TimeUnit.SECONDS)  // 分片上传需要更长的连接超时
-                .readTimeout(5, TimeUnit.MINUTES)     // 分片上传需要更长的读取超时
-                .writeTimeout(5, TimeUnit.MINUTES)    // 分片上传需要更长的写入超时
+                .connectTimeout(60, TimeUnit.SECONDS) // 分片上传需要更长的连接超时
+                .readTimeout(5, TimeUnit.MINUTES) // 分片上传需要更长的读取超时
+                .writeTimeout(5, TimeUnit.MINUTES) // 分片上传需要更长的写入超时
                 .connectionPool(new okhttp3.ConnectionPool(5, 2, TimeUnit.MINUTES))
                 .protocols(Arrays.asList(okhttp3.Protocol.HTTP_1_1))
                 .build();
@@ -410,7 +437,8 @@ public class FileManagerHandler implements TaskHandler {
                                 buf = new byte[currentRetryChunkSize];
                                 is.reset(); // 重置到标记位置
                                 r = is.read(buf, 0, currentRetryChunkSize);
-                                if (r == -1) break;
+                                if (r == -1)
+                                    break;
                             }
                         }
 
@@ -429,7 +457,8 @@ public class FileManagerHandler implements TaskHandler {
                                 .header("Accept", "application/json")
                                 .header("Content-Length", String.valueOf(r)); // 明确指定内容长度
 
-                        log.info("Uploading chunk {}/{} for uploadId: {}, size: {} bytes, attempt: {}/{}, consecutiveFailures: {}",
+                        log.info(
+                                "Uploading chunk {}/{} for uploadId: {}, size: {} bytes, attempt: {}/{}, consecutiveFailures: {}",
                                 index + 1, totalChunks, uploadId, r, retryCount + 1, maxRetries, consecutiveFailures);
 
                         try (Response cr = chunkClient.newCall(chunkReqBuilder.build()).execute()) {
@@ -442,8 +471,10 @@ public class FileManagerHandler implements TaskHandler {
                                 }
 
                                 consecutiveFailures++;
-                                log.warn("Chunk upload failed at index {}: HTTP {} - {}, attempt: {}/{}, consecutiveFailures: {}, error body: {}",
-                                        index, cr.code(), cr.message(), retryCount + 1, maxRetries, consecutiveFailures, errorBody);
+                                log.warn(
+                                        "Chunk upload failed at index {}: HTTP {} - {}, attempt: {}/{}, consecutiveFailures: {}, error body: {}",
+                                        index, cr.code(), cr.message(), retryCount + 1, maxRetries, consecutiveFailures,
+                                        errorBody);
 
                                 // 特定错误码的特殊处理
                                 if (cr.code() == 413) { // Request Entity Too Large
@@ -467,13 +498,15 @@ public class FileManagerHandler implements TaskHandler {
                                 } else {
                                     return TaskExecutionResult.failure(String.format(
                                             "Chunk upload failed at index %d after %d retries. HTTP %d - %s, error: %s, consecutiveFailures: %d",
-                                            index, maxRetries, cr.code(), cr.message(), errorBody, consecutiveFailures));
+                                            index, maxRetries, cr.code(), cr.message(), errorBody,
+                                            consecutiveFailures));
                                 }
                             }
 
                             // 重置连续失败计数器
                             if (consecutiveFailures > 0) {
-                                log.info("Chunk upload succeeded, resetting consecutive failures counter from {} to 0", consecutiveFailures);
+                                log.info("Chunk upload succeeded, resetting consecutive failures counter from {} to 0",
+                                        consecutiveFailures);
                                 consecutiveFailures = 0;
                             }
 
@@ -491,7 +524,8 @@ public class FileManagerHandler implements TaskHandler {
                                 fileId = (String) cm.get("file_id");
                                 filePathResp = (String) cm.get("file_path");
                                 completedFlag = true;
-                                log.info("File upload completed, fileId: {}, total chunks: {}, final chunk size: {} bytes",
+                                log.info(
+                                        "File upload completed, fileId: {}, total chunks: {}, final chunk size: {} bytes",
                                         fileId, index + 1, r);
                                 chunkUploaded = true;
                                 break;
@@ -501,7 +535,8 @@ public class FileManagerHandler implements TaskHandler {
                         }
                     } catch (Exception e) {
                         consecutiveFailures++;
-                        log.warn("Exception during chunk upload at index {}, attempt: {}/{}, consecutiveFailures: {}, error: {}",
+                        log.warn(
+                                "Exception during chunk upload at index {}, attempt: {}/{}, consecutiveFailures: {}, error: {}",
                                 index, retryCount + 1, maxRetries, consecutiveFailures, e.getMessage());
 
                         if (retryCount < maxRetries - 1) {
@@ -518,17 +553,17 @@ public class FileManagerHandler implements TaskHandler {
                 if (!chunkUploaded) {
                     // 收集更多诊断信息
                     String diagnosticInfo = String.format(
-                            "Chunk upload failed diagnostics - Index: %d, UploadId: %s, File: %s, OriginalChunkSize: %d, " +
+                            "Chunk upload failed diagnostics - Index: %d, UploadId: %s, File: %s, OriginalChunkSize: %d, "
+                                    +
                                     "CurrentChunkSize: %d, TotalChunks: %d, Retries: %d, FileSize: %d bytes, ConsecutiveFailures: %d",
                             index, uploadId, originalName, chunkSize, currentRetryChunkSize,
-                            totalChunks, maxRetries, uploadFile.length(), consecutiveFailures
-                    );
+                            totalChunks, maxRetries, uploadFile.length(), consecutiveFailures);
                     log.error("All retry attempts failed for chunk upload. {}", diagnosticInfo);
 
                     return TaskExecutionResult.failure(
-                            String.format("Failed to upload chunk at index %d after %d retries (consecutive failures: %d). %s",
-                                    index, maxRetries, consecutiveFailures, diagnosticInfo)
-                    );
+                            String.format(
+                                    "Failed to upload chunk at index %d after %d retries (consecutive failures: %d). %s",
+                                    index, maxRetries, consecutiveFailures, diagnosticInfo));
                 }
 
                 index++;
@@ -548,7 +583,8 @@ public class FileManagerHandler implements TaskHandler {
         resultData.put("download_url", downloadUrl);
         resultData.put("file_record_id", fileId);
         resultData.put("is_directory", initIsDirectory != null ? initIsDirectory : isDirectory);
-        boolean compressedVal = initCompressed != null ? initCompressed : (isDirectory || originalName.endsWith(".zip"));
+        boolean compressedVal = initCompressed != null ? initCompressed
+                : (isDirectory || originalName.endsWith(".zip"));
         resultData.put("compressed", compressedVal);
         resultData.put("final_name", initFinalName != null ? initFinalName : originalName);
         resultData.put("size", initSize != null ? initSize : uploadFile.length());
@@ -569,9 +605,9 @@ public class FileManagerHandler implements TaskHandler {
         return name.substring(lastIndexOf + 1);
     }
 
-
     private void zipSingleFile(Path filePath, Path zipPath, String entryName) throws Exception {
-        try (ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(zipPath.toFile())))) {
+        try (ZipOutputStream zos = new ZipOutputStream(
+                new BufferedOutputStream(new FileOutputStream(zipPath.toFile())))) {
             zos.putNextEntry(new ZipEntry(entryName));
             Files.copy(filePath, zos);
             zos.closeEntry();

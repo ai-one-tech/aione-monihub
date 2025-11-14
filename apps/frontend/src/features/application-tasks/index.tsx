@@ -1,17 +1,18 @@
 import { getRouteApi } from '@tanstack/react-router'
 import { Main } from '@/components/layout/main'
 import { Card } from '@/components/ui/card'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { Button } from '@/components/ui/button'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter, SheetClose } from '@/components/ui/sheet'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { LongText } from '@/components/long-text'
 import { Label } from '@/components/ui/label'
 import { ChevronRight, CheckCircle, RefreshCw, Copy, Network } from 'lucide-react'
+import { ExecutionResultPanel } from './execution-result'
 import { OS_TYPE_OPTIONS } from '@/features/instances/data/api-schema'
 import React, { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -20,6 +21,7 @@ import { applicationsApi } from '@/features/applications/api/applications-api'
 import { useApplicationInstances } from '@/features/applications/hooks/use-application-instances'
 import { Switch } from '@/components/ui/switch'
 import { CodeEditor } from '@/components/code-editor'
+import { apiClient } from '@/lib/api-client'
 
 const route = getRouteApi('/_authenticated/application-tasks')
 
@@ -148,6 +150,13 @@ export function ApplicationTasks() {
   const getOSLabel = (os?: string) => {
     const found = OS_TYPE_OPTIONS.find(o => o.value === os)
     return found?.label || os || 'Unknown'
+  }
+
+  const formatIp = (ip?: string) => {
+    const s = ip || ''
+    if (!s) return '未知IP'
+    const i = s.indexOf(',')
+    return i >= 0 ? s.slice(0, i) : s
   }
 
   // 渲染不同任务类型的参数输入表单
@@ -509,7 +518,7 @@ export function ApplicationTasks() {
                               <TooltipTrigger asChild>
                                 <div className="text-xs text-gray-500 inline-flex items-center gap-1">
                                   <Network className="w-3 h-3" />
-                                  <span>{instance.ip_address || '未知IP'}</span>
+                                  <span>{formatIp(instance.ip_address)}</span>
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent sideOffset={8}>
@@ -595,7 +604,7 @@ export function ApplicationTasks() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full min-h-0">
             {/* 任务历史 */}
             <Card className="p-4 flex flex-col h-full min-h-0">
-              <div className="flex items-center justify-between mb-4 flex-shrink-0">
+              <div className="flex items-center justify-between mb-4 shrink-0">
                 <h3 className="text-lg font-semibold">任务历史</h3>
                 <div className="flex items-center gap-2">
                   <Button
@@ -645,7 +654,7 @@ export function ApplicationTasks() {
 
             {/* 相关实例 */}
             <Card className="p-4 flex flex-col h-full min-h-0">
-              <div className="flex items-center justify-between mb-4 flex-shrink-0">
+              <div className="flex items-center justify-between mb-4 shrink-0">
                 <h3 className="text-lg font-semibold">相关实例</h3>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-2 pr-2">
@@ -713,7 +722,7 @@ export function ApplicationTasks() {
                           <TooltipTrigger asChild>
                             <div className="text-sm text-gray-500 truncate max-w-[160px] inline-flex items-center gap-1">
                               <Network className="w-3 h-3" />
-                              <span>{taskInstance.instance.ip_address || '未知IP'}</span>
+                              <span>{formatIp(taskInstance.instance.ip_address)}</span>
                             </div>
                           </TooltipTrigger>
                           <TooltipContent sideOffset={8}>
@@ -765,292 +774,47 @@ export function ApplicationTasks() {
               </ScrollArea>
             </Card>
 
-            {/* 执行结果 */}
-            <Card className="p-4 flex flex-col h-full min-h-0">
-              <div className="flex items-center justify-between mb-4 shrink-0">
-                <h3 className="text-lg font-semibold">执行结果</h3>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    disabled={!selectedInstanceResult}
-                    onClick={async () => {
-                      if (!selectedInstanceResult) return
-                      const recordId = selectedInstanceResult.execution_record?.id
-                      if (!recordId) {
-                        toast.error('未找到执行记录ID')
-                        return
-                      }
-                      try {
-                        await applicationsApi.setTaskRecordPending(recordId)
-                        toast.success('已重置为待执行')
-                        if (selectedTask) {
-                          queryClient.invalidateQueries({ queryKey: ['task-instances', selectedTask] })
+            {/* 执行结果 / 文件夹 */}
+            <Card className="p-4 flex flex-col">
+              <Tabs defaultValue="result" className="flex-1 flex flex-col">
+                <div className="flex items-center justify-between mb-2 shrink-0">
+                  <TabsList>
+                    <TabsTrigger value="result">执行结果</TabsTrigger>
+                    <TabsTrigger value="files">文件夹</TabsTrigger>
+                  </TabsList>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      disabled={!selectedInstanceResult}
+                      onClick={async () => {
+                        if (!selectedInstanceResult) return
+                        const recordId = selectedInstanceResult.execution_record?.id
+                        if (!recordId) {
+                          toast.error('未找到执行记录ID')
+                          return
                         }
-                      } catch (e) {
-                        toast.error('重试失败')
-                      }
-                    }}
-                  >
-                    重试
-                  </Button>
+                        try {
+                          await applicationsApi.setTaskRecordPending(recordId)
+                          toast.success('已重置为待执行')
+                          if (selectedTask) {
+                            queryClient.invalidateQueries({ queryKey: ['task-instances', selectedTask] })
+                          }
+                        } catch (e) {
+                          toast.error('重试失败')
+                        }
+                      }}
+                    >
+                      重试
+                    </Button>
+                  </div>
                 </div>
-              </div>
-              <div className="flex-1 rounded-lg border bg-gray-50 dark:bg-accent p-4 overflow-auto min-h-0">
-                {selectedInstanceResult ? (
-                  <div className="space-y-4">
-                    {/* 基础信息 */}
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-
-                      {/* 执行时长 */}
-                      {selectedInstanceResult.execution_record.duration_ms && (
-                        <div>
-                          <span className="font-medium">执行时长:</span>
-                          <div className="text-gray-600">
-                            {(selectedInstanceResult.execution_record.duration_ms / 1000).toFixed(2)}秒
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 结束时间 */}
-                      {selectedInstanceResult.execution_record.end_time && (
-                        <div>
-                          <span className="font-medium">结束时间:</span>
-                          <div className="text-gray-600">
-                            {new Date(selectedInstanceResult.execution_record.end_time).toLocaleString()}
-                          </div>
-                        </div>
-                      )}
-
-                    </div>
-
-                    {/* 根据状态显示不同内容 */}
-                    {selectedInstanceResult.execution_record.status === 'success' && (
-                      <div>
-
-                        {/* 成功状态的结果消息 */}
-                        {selectedInstanceResult.execution_record.result_message && (
-                          <div>
-                            <div className="font-medium text-sm mb-1 text-green-700">执行结果:</div>
-                            <div className="text-sm text-gray-700 bg-green-50 p-3 rounded border border-green-200">
-                              {typeof selectedInstanceResult.execution_record.result_message === 'string'
-                                ? selectedInstanceResult.execution_record.result_message
-                                : JSON.stringify(selectedInstanceResult.execution_record.result_message, null, 2)
-                              }
-                            </div>
-                          </div>
-                        )}
-
-                        {/* 成功状态的结果数据 */}
-                        {selectedInstanceResult.execution_record.result_data && (
-                          <div className='flex-1'>
-                            <div className="flex items-center justify-between mb-1">
-                              <div className="font-medium text-sm text-primary">输出数据:</div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0 text-gray-400 hover:text-gray-400 dark:text-gray-400 dark:hover:text-gray-200"
-                                onClick={() => {
-                                  const content = (() => {
-                                    const isShellTask = selectedTaskType === 'shell_exec';
-
-                                    if (isShellTask && typeof selectedInstanceResult.execution_record.result_data === 'object') {
-                                      const resultObj = selectedInstanceResult.execution_record.result_data as any;
-                                      if (resultObj.output) {
-                                        return resultObj.output;
-                                      }
-                                    }
-
-                                    return typeof selectedInstanceResult.execution_record.result_data === 'string'
-                                      ? selectedInstanceResult.execution_record.result_data
-                                      : JSON.stringify(selectedInstanceResult.execution_record.result_data, null, 2);
-                                  })();
-                                  copyToClipboard(content);
-                                }}
-                              >
-                                <Copy className="h-3 w-3" />
-                              </Button>
-                            </div>
-                            {(() => {
-                              const isShellTask = ['shell_exec', 'run_code'].includes(selectedTaskType || '');
-
-                              // 如果是shell任务且result_data是包含output的JSON对象
-                              if (isShellTask && typeof selectedInstanceResult.execution_record.result_data === 'object') {
-                                const resultObj = selectedInstanceResult.execution_record.result_data as any;
-                                if (resultObj.output !== undefined && resultObj.output !== null) {
-                                  return (
-                                    <pre className="text-sm font-mono text-white bg-gray-800 p-3 rounded border border-green-200 dark:text-gray-800 dark:bg-white dark:border-green-800 whitespace-pre-wrap">
-                                      {typeof resultObj.output === 'string'
-                                        ? resultObj.output
-                                        : JSON.stringify(resultObj.output, null, 2)
-                                      }
-                                    </pre>
-                                  );
-                                }
-                              }
-
-                              // 默认显示
-                              return (
-                                <pre className="text-sm font-mono text-white bg-gray-800 p-3 rounded border border-green-200 dark:text-gray-800 dark:bg-white dark:border-green-800 whitespace-pre-wrap">
-                                  {typeof selectedInstanceResult.execution_record.result_data === 'string'
-                                    ? selectedInstanceResult.execution_record.result_data
-                                    : JSON.stringify(selectedInstanceResult.execution_record.result_data, null, 2)
-                                  }
-                                </pre>
-                              );
-                            })()}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {selectedInstanceResult.execution_record.status === 'failed' && (
-                      <div className="space-y-3">
-                        {/* 重试次数 */}
-                        {/* {selectedInstanceResult.execution_record.retry_attempt !== undefined && selectedInstanceResult.execution_record.retry_attempt !== null && (
-                          <div>
-                            <span className="font-medium">重试次数:</span>
-                            <div className="text-gray-600">{selectedInstanceResult.execution_record.retry_attempt}</div>
-                          </div>
-                        )} */}
-
-
-                        {/* 失败状态的错误消息 */}
-                        {selectedInstanceResult.execution_record.error_message && (
-                          <div>
-                            <div className="font-medium text-sm mb-1 text-red-700">错误信息:</div>
-                            <div className="text-sm text-red-600 bg-red-50 p-3 rounded border border-red-200">
-                              {typeof selectedInstanceResult.execution_record.error_message === 'string'
-                                ? selectedInstanceResult.execution_record.error_message
-                                : JSON.stringify(selectedInstanceResult.execution_record.error_message, null, 2)
-                              }
-                            </div>
-                          </div>
-                        )}
-
-                        {/* 失败状态的结果消息 */}
-                        {selectedInstanceResult.execution_record.result_message && (
-                          <div>
-                            <div className="font-medium text-sm mb-1 text-red-700">失败详情:</div>
-                            <div className="text-sm text-gray-700 bg-red-50 p-3 rounded border border-red-200">
-                              {typeof selectedInstanceResult.execution_record.result_message === 'string'
-                                ? selectedInstanceResult.execution_record.result_message
-                                : JSON.stringify(selectedInstanceResult.execution_record.result_message, null, 2)
-                              }
-                            </div>
-                          </div>
-                        )}
-
-                        {/* 失败状态的结果数据 */}
-                        {selectedInstanceResult.execution_record.result_data && (
-                          <div>
-                            <div className="font-medium text-sm mb-1 text-red-700">错误数据:</div>
-                            {(() => {
-                              const isShellTask = selectedTaskType === 'shell_exec';
-
-                              // 如果是shell任务且result_data是包含output的JSON对象
-                              if (isShellTask && typeof selectedInstanceResult.execution_record.result_data === 'object') {
-                                const resultObj = selectedInstanceResult.execution_record.result_data as any;
-                                if (resultObj.output !== undefined && resultObj.output !== null) {
-                                  return (
-                                    <pre className="text-sm font-mono text-gray-800 bg-red-50 p-3 rounded border border-red-200 whitespace-pre-wrap max-h-96 overflow-auto">
-                                      {typeof resultObj.output === 'string'
-                                        ? resultObj.output
-                                        : JSON.stringify(resultObj.output, null, 2)
-                                      }
-                                    </pre>
-                                  );
-                                }
-                              }
-
-                              // 默认显示
-                              return (
-                                <pre className="text-sm font-mono text-gray-800 bg-red-50 p-3 rounded border border-red-200 whitespace-pre-wrap max-h-96 overflow-auto">
-                                  {typeof selectedInstanceResult.execution_record.result_data === 'string'
-                                    ? selectedInstanceResult.execution_record.result_data
-                                    : JSON.stringify(selectedInstanceResult.execution_record.result_data, null, 2)
-                                  }
-                                </pre>
-                              );
-                            })()}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* 其他状态（运行中、已分发等）的显示 */}
-                    {selectedInstanceResult.execution_record.status !== 'success' && selectedInstanceResult.execution_record.status !== 'failed' && (
-                      <div className="space-y-3">
-
-
-                        {/* 结果消息 */}
-                        {selectedInstanceResult.execution_record.result_message && (
-                          <div>
-                            <div className="font-medium text-sm mb-1">状态消息:</div>
-                            <div className="text-sm text-gray-600 bg-white p-3 rounded border">
-                              {typeof selectedInstanceResult.execution_record.result_message === 'string'
-                                ? selectedInstanceResult.execution_record.result_message
-                                : JSON.stringify(selectedInstanceResult.execution_record.result_message, null, 2)
-                              }
-                            </div>
-                          </div>
-                        )}
-
-                        {/* 错误消息（如果有的话） */}
-                        {selectedInstanceResult.execution_record.error_message && (
-                          <div>
-                            <div className="font-medium text-sm mb-1 text-orange-700">警告信息:</div>
-                            <div className="text-sm text-orange-600 bg-orange-50 p-3 rounded border border-orange-200">
-                              {typeof selectedInstanceResult.execution_record.error_message === 'string'
-                                ? selectedInstanceResult.execution_record.error_message
-                                : JSON.stringify(selectedInstanceResult.execution_record.error_message, null, 2)
-                              }
-                            </div>
-                          </div>
-                        )}
-
-                        {/* 结果数据 */}
-                        {selectedInstanceResult.execution_record.result_data && (
-                          <div>
-                            <div className="font-medium text-sm mb-1">当前数据:</div>
-                            {(() => {
-                              const isShellTask = selectedTaskType === 'shell_exec';
-
-                              // 如果是shell任务且result_data是包含output的JSON对象
-                              if (isShellTask && typeof selectedInstanceResult.execution_record.result_data === 'object') {
-                                const resultObj = selectedInstanceResult.execution_record.result_data as any;
-                                if (resultObj.output !== undefined && resultObj.output !== null) {
-                                  return (
-                                    <pre className="text-sm font-mono text-gray-800 bg-white p-3 rounded border whitespace-pre-wrap max-h-96 overflow-auto">
-                                      {typeof resultObj.output === 'string'
-                                        ? resultObj.output
-                                        : JSON.stringify(resultObj.output, null, 2)
-                                      }
-                                    </pre>
-                                  );
-                                }
-                              }
-
-                              // 默认显示
-                              return (
-                                <pre className="text-sm font-mono text-gray-800 bg-white p-3 rounded border whitespace-pre-wrap max-h-96 overflow-auto">
-                                  {typeof selectedInstanceResult.execution_record.result_data === 'string'
-                                    ? selectedInstanceResult.execution_record.result_data
-                                    : JSON.stringify(selectedInstanceResult.execution_record.result_data, null, 2)
-                                  }
-                                </pre>
-                              );
-                            })()}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center text-gray-500 py-8">
-                    <p>请先选择一个任务，然后选择实例查看执行结果</p>
-                  </div>
-                )}
-              </div>
+                <TabsContent value="result" className="flex-1 h-full flex flex-col min-h-0 overflow-auto">
+                  <ExecutionResultPanel selectedInstanceResult={selectedInstanceResult} selectedTaskType={selectedTaskType} copyToClipboard={copyToClipboard} />
+                </TabsContent>
+                <TabsContent value="files" className="flex-1 flex flex-col min-h-0">
+                  <TaskFilesPane selectedTask={selectedTask} selectedInstanceId={selectedInstanceResult?.instance?.id} />
+                </TabsContent>
+              </Tabs>
             </Card>
           </div>
         </div>
@@ -1246,6 +1010,106 @@ function HttpParamsDrawer({ open, onOpenChange, params, onChange }: HttpParamsDr
         </SheetFooter>
       </SheetContent>
     </Sheet>
+  )
+}
+
+interface TaskFilesPaneProps {
+  selectedTask: string | null
+  selectedInstanceId?: string
+}
+
+type FileItem = {
+  id: string
+  file_name: string
+  file_size: number
+  uploaded_at: string
+}
+
+function TaskFilesPane({ selectedTask, selectedInstanceId }: TaskFilesPaneProps) {
+  const enabled = !!(selectedTask && selectedInstanceId)
+  const { data, isLoading, isError, refetch } = useQuery<{ data: FileItem[] } | undefined>({
+    queryKey: ['task-files', selectedTask, selectedInstanceId],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        task_id: String(selectedTask),
+        instance_id: String(selectedInstanceId),
+        order_by: 'uploaded_at',
+        order: 'asc',
+      })
+      const res = await apiClient.get<{ data: FileItem[] }>(`/api/files?${params.toString()}`)
+      return res.data
+    },
+    enabled,
+    refetchOnWindowFocus: false,
+  })
+
+  if (!enabled) {
+    return (
+      <div className="text-center text-gray-500 py-8">
+        <p>请先选择实例以查看关联文件</p>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="text-center text-gray-500 py-8">加载中…</div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="text-center text-red-600 py-8">文件查询失败</div>
+    )
+  }
+
+  const files = data?.data || []
+
+  const fmtSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
+  }
+
+  const handleDownload = async (file: FileItem) => {
+    try {
+      const { blob, fileName } = await apiClient.download(`/api/files/download/${file.id}`)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = fileName || file.file_name
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+      toast.success('开始下载')
+    } catch (e) {
+      toast.error('下载失败')
+    }
+  }
+
+  return (
+    <div className="flex-1 overflow-auto">
+      {files.length === 0 ? (
+        <div className="text-center text-gray-500 py-8">未找到关联文件</div>
+      ) : (
+        <div className="flex flex-col overflow-auto gap-4">
+          {files.map((f) => (
+            <Card key={f.id} className="p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="font-medium truncate" title={f.file_name}>{f.file_name}</div>
+                <Button size="sm" variant="outline" onClick={() => handleDownload(f)}>下载</Button>
+              </div>
+              <div className="text-sm text-gray-600 space-y-1">
+                <div>大小：{fmtSize(f.file_size)}</div>
+                <div>上传完成时间：{new Date(f.uploaded_at).toLocaleString()}</div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 

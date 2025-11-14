@@ -222,6 +222,49 @@ class ApiClient {
     return this.request<T>(endpoint, { ...options, method: 'GET' })
   }
 
+  async download(endpoint: string, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<{ blob: Blob; fileName?: string; status: number; statusText: string; headers: Headers }> {
+    const url = `${this.config.baseURL}${endpoint}`
+    const headers: Record<string, string> = {}
+    Object.entries(this.config.headers).forEach(([key, value]) => { headers[key] = value })
+    if (options?.headers) {
+      if (options.headers instanceof Headers) {
+        options.headers.forEach((value, key) => { headers[key] = value })
+      } else if (typeof options.headers === 'object') {
+        Object.entries(options.headers).forEach(([key, value]) => { if (typeof value === 'string') headers[key] = value })
+      }
+    }
+    const authHeaders = this.addAuthHeader(headers, options?.skipAuth)
+    const requestOptions: RequestOptions = { credentials: 'include', ...options, method: 'GET', headers: authHeaders }
+    const response = await this.fetchWithTimeout(url, requestOptions)
+    if (!response.ok) {
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+      try {
+        const errorData = await response.clone().json()
+        if (errorData && typeof errorData === 'object') {
+          if (typeof errorData.message === 'string' && errorData.message.length > 0) {
+            errorMessage = errorData.message
+          } else if (typeof errorData.error === 'string' && errorData.error.length > 0) {
+            errorMessage = errorData.error
+          }
+        }
+      } catch {
+        try {
+          const text = await response.text()
+          if (text && text.length > 0) { errorMessage = text }
+        } catch {}
+      }
+      throw new ApiError(errorMessage, response.status, response)
+    }
+    const blob = await response.blob()
+    const disp = response.headers.get('Content-Disposition') || ''
+    let fileName: string | undefined
+    const match = /filename\*=UTF-8''([^;]+)|filename="([^"]+)"/i.exec(disp)
+    if (match) {
+      fileName = decodeURIComponent(match[1] || match[2])
+    }
+    return { blob, fileName, status: response.status, statusText: response.statusText, headers: response.headers }
+  }
+
   /**
    * POST请求
    */

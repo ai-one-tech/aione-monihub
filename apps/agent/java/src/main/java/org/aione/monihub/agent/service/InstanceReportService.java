@@ -148,7 +148,7 @@ public class InstanceReportService {
         RuntimeInfo runtimeInfo = runtimeInfoCollector.collect();
 
         InstanceReportRequest request = new InstanceReportRequest();
-        request.setInstanceId(agentConfig.getInstanceId());
+        request.setInstanceId(agentConfig.getAgentInstanceId());
         request.setApplicationCode(agentConfig.getApplicationCode());
         request.setAgentType(agentConfig.getAgentType());
         request.setAgentVersion(agentConfig.getAgentVersion());
