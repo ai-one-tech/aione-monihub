@@ -4,7 +4,6 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter, SheetClose } from '@/components/ui/sheet'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -19,6 +18,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { applicationsApi } from '@/features/applications/api/applications-api'
 import { useApplicationInstances } from '@/features/applications/hooks/use-application-instances'
+import { Switch } from '@/components/ui/switch'
+import { CodeEditor } from '@/components/code-editor'
 
 const route = getRouteApi('/_authenticated/application-tasks')
 
@@ -40,7 +41,7 @@ export function ApplicationTasks() {
   })
   const [taskType, setTaskType] = useState('shell_exec')
   const [httpDrawerOpen, setHttpDrawerOpen] = useState(false)
-  const [httpParams, setHttpParams] = useState<any>({ method: 'GET', url: '', headers: [], query: [], body_type: 'none', timeout_seconds: 60, allow_redirects: false, verify_tls: true, parts: [], form_fields: [], raw_body: '', content_type: 'text/plain', json_body: {} })
+  const [httpParams, setHttpParams] = useState<any>({ method: 'GET', url: '', headers: [], query: [], body_type: 'none', timeout_seconds: 60, allow_redirects: false, verify_tls: false, parts: [], form_fields: [], raw_body: '', content_type: 'text/plain', json_body: {} })
 
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false)
   const [refreshIntervalMs, setRefreshIntervalMs] = useState(1000)
@@ -124,7 +125,8 @@ export function ApplicationTasks() {
       'shell_exec': '执行Shell',
       'run_code': '运行Code',
       'file_manager': '文件管理',
-      'custom_command': '自定义命令'
+      'custom_command': '自定义命令',
+      'http_request': 'HTTP请求',
     }
     return typeMap[taskType] || taskType
   }
@@ -153,24 +155,26 @@ export function ApplicationTasks() {
     switch (taskType) {
       case 'shell_exec':
         return (
-          <div>
-            <Textarea
-              placeholder="请输入Shell脚本"
-              value={shellScript}
-              onChange={(e) => setShellScript(e.target.value)}
-              rows={2}
-            />
-          </div>
+          <CodeEditor
+            language="shell"
+            value={shellScript}
+            onChange={(v: string) => setShellScript(v)}
+            minHeight={140}
+            autoResize={false}
+            className="h-[130px] overflow-auto"
+          />
         )
 
       case 'run_code':
         return (
           <div className="space-y-3">
-            <Textarea
-              placeholder="请输入要执行的代码"
+            <CodeEditor
+              language="java"
               value={codeContent}
-              onChange={(e) => setCodeContent(e.target.value)}
-              rows={2}
+              onChange={(v: string) => setCodeContent(v)}
+              minHeight={140}
+              autoResize={false}
+              className="h-[130px] overflow-auto"
             />
           </div>
         )
@@ -182,7 +186,7 @@ export function ApplicationTasks() {
               <select
                 value={fileManagerOperation}
                 onChange={(e) => setFileManagerOperation(e.target.value)}
-                className="flex-1 min-w-[120px] p-2 border border-input rounded-md bg-background text-sm"
+                className="flex-1 min-w-[126px] p-2 border border-input rounded-md bg-background text-sm"
               >
                 <option value="upload_file">上传文件</option>
                 <option value="download_file">下载文件</option>
@@ -258,7 +262,7 @@ export function ApplicationTasks() {
   React.useEffect(() => {
     if (!!selectedTask && hasActiveInstances) {
       setAutoRefreshEnabled(true)
-    }else{
+    } else {
       setAutoRefreshEnabled(false)
     }
   }, [selectedTask, hasActiveInstances])
@@ -364,8 +368,8 @@ export function ApplicationTasks() {
       setCustomCommand('')
       // setSelectedInstances([])
 
-      // 刷新任务列表和实例数据
-      // 发起任务后不再自动刷新任务列表与应用实例列表
+      // 刷新任务列表
+      queryClient.invalidateQueries({ queryKey: ['tasks', search.applicationId] })
 
       // 延迟一下再选中新任务，确保数据已刷新
       setTimeout(() => {
@@ -561,7 +565,7 @@ export function ApplicationTasks() {
                     <div className="rounded border p-3 text-sm">
                       <div className="font-medium">概览</div>
                       <div className="mt-1 text-muted-foreground">{httpParams.method} {httpParams.url || '未设置URL'}</div>
-                      <div className="mt-1">头部 {(Array.isArray(httpParams.headers)?httpParams.headers:[]).length} · 查询 {(Array.isArray(httpParams.query)?httpParams.query:[]).length} · 体 {httpParams.body_type}</div>
+                      <div className="mt-1">头部 {(Array.isArray(httpParams.headers) ? httpParams.headers : []).length} · 查询 {(Array.isArray(httpParams.query) ? httpParams.query : []).length} · 体 {httpParams.body_type}</div>
                     </div>
                   </div>
                 )}
@@ -1056,6 +1060,40 @@ function HttpParamsDrawer({ open, onOpenChange, params, onChange }: HttpParamsDr
   const [local, setLocal] = React.useState<any>(params)
   React.useEffect(() => { if (open) setLocal(params) }, [open])
   const setField = (k: string, v: any) => setLocal({ ...local, [k]: v })
+  const [jsonText, setJsonText] = React.useState<string>('')
+  const [jsonInvalid, setJsonInvalid] = React.useState<boolean>(false)
+
+  React.useEffect(() => {
+    if (!open) return
+    try {
+      const t = JSON.stringify(local.json_body || {}, null, 2)
+      setJsonText(t)
+      setJsonInvalid(false)
+    } catch {
+      setJsonText('{}')
+      setJsonInvalid(false)
+    }
+  }, [open])
+
+
+
+  // 监听方法变化，自动调整 body 相关设置
+  React.useEffect(() => {
+    if (!local.method) return;
+
+    // 如果方法是 GET、HEAD、OPTIONS，隐藏 body 并清空
+    if (['GET', 'HEAD', 'OPTIONS'].includes(local.method)) {
+      setField('body_type', 'none');
+      if (local.json_body) setField('json_body', {});
+      if (local.form_fields) setField('form_fields', []);
+    }
+    // 如果方法是 POST、PUT、DELETE、PATCH，默认设置为 json
+    else if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(local.method)) {
+      if (local.body_type === 'none') {
+        setField('body_type', 'json');
+      }
+    }
+  }, [local.method])
   const setKV = (k: 'headers' | 'query' | 'form_fields' | 'parts', idx: number, key: string, value: string) => {
     const arr = Array.isArray(local[k]) ? [...local[k]] : []
     arr[idx] = { ...(arr[idx] || {}), name: key, value }
@@ -1066,114 +1104,139 @@ function HttpParamsDrawer({ open, onOpenChange, params, onChange }: HttpParamsDr
   const addFieldPart = () => { const arr = Array.isArray(local.parts) ? [...local.parts] : []; arr.push({ type: 'field', name: '', value: '' }); setLocal({ ...local, parts: arr }) }
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[520px] sm:w-[640px]">
-        <SheetHeader>
+      <SheetContent side="right" className="w-[800px] sm:w-[800px] sm:max-w-[800px]" onInteractOutside={(e) => e.preventDefault()}>
+        <SheetHeader className="px-6 pt-6">
           <SheetTitle>HTTP 请求参数</SheetTitle>
         </SheetHeader>
-        <div className="flex-1 overflow-y-auto space-y-4 py-4">
-          <div className="grid grid-cols-2 gap-3">
+        <div className="flex-1 overflow-y-auto space-y-4 px-6 py-4">
+          <div className="grid grid-cols-4 gap-3">
             <div>
-              <Label className="text-xs">方法</Label>
+              <Label className="text-sm mb-2">方法</Label>
               <select value={local.method} onChange={(e) => setField('method', e.target.value)} className="w-full p-2 border rounded text-sm">
-                {['GET','POST','PUT','DELETE','PATCH','HEAD','OPTIONS'].map(m => (<option key={m} value={m}>{m}</option>))}
+                {['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'].map(m => (<option key={m} value={m}>{m}</option>))}
               </select>
             </div>
             <div>
-              <Label className="text-xs">超时(秒)</Label>
+              <Label className="text-sm mb-2">超时(秒)</Label>
               <input type="number" value={local.timeout_seconds} onChange={(e) => setField('timeout_seconds', Number(e.target.value))} className="w-full p-2 border rounded text-sm" />
             </div>
+            <div className="space-y-1">
+              <Label htmlFor="allow_redirects" className="text-base mb-2">允许重定向</Label>
+              <Switch id="allow_redirects" className='mt-0.8' checked={!!local.allow_redirects} onCheckedChange={(v) => setField('allow_redirects', v)} />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="verify_tls" className="text-base mb-2">验证TLS</Label>
+              <Switch id="verify_tls" className='mt-0.8' checked={!!local.verify_tls} onCheckedChange={(v) => setField('verify_tls', v)} />
+            </div>
           </div>
           <div>
-            <Label className="text-xs">URL</Label>
+            <Label className="text-sm mb-2">URL</Label>
             <input value={local.url} onChange={(e) => setField('url', e.target.value)} placeholder="https://example.com/api" className="w-full p-2 border rounded text-sm" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex items-center gap-2">
-              <input type="checkbox" checked={local.allow_redirects} onChange={(e) => setField('allow_redirects', e.target.checked)} />
-              <span className="text-sm">允许重定向</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <input type="checkbox" checked={local.verify_tls} onChange={(e) => setField('verify_tls', e.target.checked)} />
-              <span className="text-sm">验证TLS</span>
-            </div>
-          </div>
           <div>
-            <Label className="text-xs">Headers</Label>
+            <Label className="text-sm mb-2">Headers</Label>
             <div className="space-y-2">
               {(Array.isArray(local.headers) ? local.headers : []).map((it: any, idx: number) => (
                 <div className="grid grid-cols-2 gap-2" key={idx}>
-                  <input value={it.name||''} onChange={(e)=>setKV('headers', idx, e.target.value, it.value||'')} placeholder="Header 名" className="p-2 border rounded text-sm" />
-                  <input value={it.value||''} onChange={(e)=>setKV('headers', idx, it.name||'', e.target.value)} placeholder="Header 值" className="p-2 border rounded text-sm" />
+                  <input value={it.name || ''} onChange={(e) => setKV('headers', idx, e.target.value, it.value || '')} placeholder="Header 名" className="p-2 border rounded text-sm" />
+                  <input value={it.value || ''} onChange={(e) => setKV('headers', idx, it.name || '', e.target.value)} placeholder="Header 值" className="p-2 border rounded text-sm" />
                 </div>
               ))}
-              <Button variant="outline" size="sm" onClick={()=>addKV('headers')}>添加Header</Button>
+              <Button variant="outline" size="sm" onClick={() => addKV('headers')}>添加Header</Button>
             </div>
           </div>
-          <div>
-            <Label className="text-xs">Query</Label>
-            <div className="space-y-2">
-              {(Array.isArray(local.query) ? local.query : []).map((it: any, idx: number) => (
-                <div className="grid grid-cols-2 gap-2" key={idx}>
-                  <input value={it.name||''} onChange={(e)=>setKV('query', idx, e.target.value, it.value||'')} placeholder="参数名" className="p-2 border rounded text-sm" />
-                  <input value={it.value||''} onChange={(e)=>setKV('query', idx, it.name||'', e.target.value)} placeholder="参数值" className="p-2 border rounded text-sm" />
-                </div>
-              ))}
-              <Button variant="outline" size="sm" onClick={()=>addKV('query')}>添加Query</Button>
-            </div>
-          </div>
-          <div>
-            <Label className="text-xs">Body 类型</Label>
-            <select value={local.body_type} onChange={(e)=>setField('body_type', e.target.value)} className="w-full p-2 border rounded text-sm">
-              {['none','json','form','multipart','raw'].map(t => (<option key={t} value={t}>{t}</option>))}
-            </select>
-          </div>
-          {local.body_type === 'json' && (
+
+          {/* 只有当方法不是 GET、HEAD、OPTIONS 时才显示 Body 相关选项 */}
+          {!['GET', 'HEAD', 'OPTIONS'].includes(local.method) && (
             <div>
-              <Label className="text-xs">JSON Body</Label>
-              <textarea value={JSON.stringify(local.json_body||{}, null, 2)} onChange={(e)=>{ try{ setField('json_body', JSON.parse(e.target.value||'{}')) }catch{ } }} className="w-full p-2 border rounded text-sm h-40 font-mono" />
+              <Label className="text-sm mb-2">Body 类型</Label>
+              <RadioGroup
+                value={local.body_type}
+                onValueChange={(value) => setField('body_type', value)}
+                className="flex gap-3"
+              >
+                {['none', 'json', 'form', 'multipart', 'raw'].map(t => (
+                  <div key={t} className="flex items-center gap-1">
+                    <RadioGroupItem value={t} id={`body-type-${t}`} />
+                    <Label htmlFor={`body-type-${t}`} className="text-sm">{t}</Label>
+                  </div>
+                ))}
+              </RadioGroup>
             </div>
           )}
-          {local.body_type === 'form' && (
-            <div className="space-y-2">
-              {(Array.isArray(local.form_fields) ? local.form_fields : []).map((it: any, idx: number) => (
-                <div className="grid grid-cols-2 gap-2" key={idx}>
-                  <input value={it.name||''} onChange={(e)=>setKV('form_fields', idx, e.target.value, it.value||'')} placeholder="字段名" className="p-2 border rounded text-sm" />
-                  <input value={it.value||''} onChange={(e)=>setKV('form_fields', idx, it.name||'', e.target.value)} placeholder="字段值" className="p-2 border rounded text-sm" />
+          {/* 只有当方法不是 GET、HEAD、OPTIONS 时才显示所有 Body 相关内容 */}
+          {!['GET', 'HEAD', 'OPTIONS'].includes(local.method) && (
+            <>
+              {local.body_type === 'json' && (
+                <div>
+                  <div className={`w-full rounded border ${jsonInvalid ? 'border-red-500' : 'border-input'}`}>
+                    <Label className="text-sm">JSON Body</Label>
+                    <CodeEditor
+                      language="json"
+                      value={jsonText}
+                      minHeight={400}
+                      onChange={(v: string) => {
+                        setJsonText(v)
+                        try {
+                          const obj = JSON.parse(v || '{}')
+                          setField('json_body', obj)
+                          setJsonInvalid(false)
+                        } catch {
+                          setJsonInvalid(true)
+                        }
+                      }}
+                    />
+                  </div>
                 </div>
-              ))}
-              <Button variant="outline" size="sm" onClick={()=>addKV('form_fields')}>添加字段</Button>
-            </div>
-          )}
-          {local.body_type === 'raw' && (
-            <div className="space-y-2">
-              <Label className="text-xs">Content-Type</Label>
-              <input value={local.content_type} onChange={(e)=>setField('content_type', e.target.value)} className="w-full p-2 border rounded text-sm" />
-              <Label className="text-xs">Raw Body</Label>
-              <textarea value={local.raw_body} onChange={(e)=>setField('raw_body', e.target.value)} className="w-full p-2 border rounded text-sm h-32 font-mono" />
-            </div>
-          )}
-          {local.body_type === 'multipart' && (
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={addFieldPart}>添加字段部件</Button>
-                <Button variant="outline" size="sm" onClick={addFilePart}>添加文件部件</Button>
-              </div>
-              {(Array.isArray(local.parts) ? local.parts : []).map((it: any, idx: number) => (
-                <div className="grid grid-cols-2 gap-2" key={idx}>
-                  <input value={it.name||''} onChange={(e)=>{ const arr = [...(local.parts||[])]; arr[idx] = { ...it, name: e.target.value }; setLocal({ ...local, parts: arr }) }} placeholder="部件名" className="p-2 border rounded text-sm" />
-                  {it.type === 'file' ? (
-                    <input value={it.file_path||''} onChange={(e)=>{ const arr = [...(local.parts||[])]; arr[idx] = { ...it, file_path: e.target.value }; setLocal({ ...local, parts: arr }) }} placeholder="Agent 文件路径" className="p-2 border rounded text-sm" />
-                  ) : (
-                    <input value={it.value||''} onChange={(e)=>{ const arr = [...(local.parts||[])]; arr[idx] = { ...it, value: e.target.value }; setLocal({ ...local, parts: arr }) }} placeholder="字段值" className="p-2 border rounded text-sm" />
-                  )}
+              )}
+              {local.body_type === 'form' && (
+                <div className="space-y-2">
+                  {(Array.isArray(local.form_fields) ? local.form_fields : []).map((it: any, idx: number) => (
+                    <div className="grid grid-cols-2 gap-2" key={idx}>
+                      <input value={it.name || ''} onChange={(e) => setKV('form_fields', idx, e.target.value, it.value || '')} placeholder="字段名" className="p-2 border rounded text-sm" />
+                      <input value={it.value || ''} onChange={(e) => setKV('form_fields', idx, it.name || '', e.target.value)} placeholder="字段值" className="p-2 border rounded text-sm" />
+                    </div>
+                  ))}
+                  <Button variant="outline" size="sm" onClick={() => addKV('form_fields')}>添加字段</Button>
                 </div>
-              ))}
-            </div>
+              )}
+              {local.body_type === 'raw' && (
+                <div className="space-y-2">
+                  <Label className="text-sm mb-2">Content-Type</Label>
+                  <input value={local.content_type} onChange={(e) => setField('content_type', e.target.value)} className="w-full p-2 border rounded text-sm" />
+                  <Label className="text-sm mb-2">Raw Body</Label>
+                  <textarea
+                    value={local.raw_body}
+                    onChange={(e) => setField('raw_body', e.target.value)}
+                    className="w-full p-2 border rounded text-sm font-mono resize-none"
+                    style={{ minHeight: '400px', height: '400px' }}
+                  />
+                </div>
+              )}
+              {local.body_type === 'multipart' && (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={addFieldPart}>添加字段部件</Button>
+                    <Button variant="outline" size="sm" onClick={addFilePart}>添加文件部件</Button>
+                  </div>
+                  {(Array.isArray(local.parts) ? local.parts : []).map((it: any, idx: number) => (
+                    <div className="grid grid-cols-2 gap-2" key={idx}>
+                      <input value={it.name || ''} onChange={(e) => { const arr = [...(local.parts || [])]; arr[idx] = { ...it, name: e.target.value }; setLocal({ ...local, parts: arr }) }} placeholder="部件名" className="p-2 border rounded text-sm" />
+                      {it.type === 'file' ? (
+                        <input value={it.file_path || ''} onChange={(e) => { const arr = [...(local.parts || [])]; arr[idx] = { ...it, file_path: e.target.value }; setLocal({ ...local, parts: arr }) }} placeholder="Agent 文件路径" className="p-2 border rounded text-sm" />
+                      ) : (
+                        <input value={it.value || ''} onChange={(e) => { const arr = [...(local.parts || [])]; arr[idx] = { ...it, value: e.target.value }; setLocal({ ...local, parts: arr }) }} placeholder="字段值" className="p-2 border rounded text-sm" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
         <SheetFooter>
           <SheetClose asChild>
-            <Button onClick={()=>{ onChange(local); onOpenChange(false) }}>保存</Button>
+            <Button onClick={() => { onChange(local); onOpenChange(false) }}>保存</Button>
           </SheetClose>
         </SheetFooter>
       </SheetContent>
@@ -1182,25 +1245,24 @@ function HttpParamsDrawer({ open, onOpenChange, params, onChange }: HttpParamsDr
 }
 
 function buildHttpTaskContent(p: any) {
-  const headers: Record<string,string> = {}
-  const query: Record<string,string> = {}
-  const form_fields: Record<string,string> = {}
-  ;(p.headers||[]).forEach((it:any)=>{ if (it?.name) headers[it.name] = String(it.value||'') })
-  ;(p.query||[]).forEach((it:any)=>{ if (it?.name) query[it.name] = String(it.value||'') })
-  ;(p.form_fields||[]).forEach((it:any)=>{ if (it?.name) form_fields[it.name] = String(it.value||'') })
+  const headers: Record<string, string> = {}
+  const query: Record<string, string> = {}
+  const form_fields: Record<string, string> = {}
+    ; (p.headers || []).forEach((it: any) => { if (it?.name) headers[it.name] = String(it.value || '') })
+    ; (p.query || []).forEach((it: any) => { if (it?.name) query[it.name] = String(it.value || '') })
+    ; (p.form_fields || []).forEach((it: any) => { if (it?.name) form_fields[it.name] = String(it.value || '') })
   return {
     method: p.method,
     url: p.url,
-    timeout_seconds: Number(p.timeout_seconds)||60,
+    timeout_seconds: Number(p.timeout_seconds) || 60,
     allow_redirects: !!p.allow_redirects,
     verify_tls: !!p.verify_tls,
     headers,
-    query,
     body_type: p.body_type,
     json_body: p.json_body,
     form_fields,
     raw_body: p.raw_body,
     content_type: p.content_type,
-    parts: p.parts||[],
+    parts: p.parts || [],
   }
 }

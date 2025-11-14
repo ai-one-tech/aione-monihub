@@ -94,7 +94,9 @@ export function useAuthCheck(): UseAuthCheckResult {
         }
       }
     } catch (err: any) {
-      console.error('身份验证检查失败:', err)
+      if (!(err instanceof TypeError)) {
+        console.error('身份验证检查失败:', err)
+      }
       
       if (err instanceof ApiError) {
         if (err.status === 401) {

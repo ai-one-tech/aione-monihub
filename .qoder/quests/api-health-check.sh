@@ -207,7 +207,7 @@ echo "10. 执行日志管理模块检查..."
 
 if [ ! -z "$TOKEN" ]; then
     # 获取日志列表
-    logs_response=$(curl -s -w "%{http_code}" $BASE_URL/api/v1/logs \
+    logs_response=$(curl -s -w "%{http_code}" $BASE_URL/api/logs \
         -H "Authorization: Bearer $TOKEN")
     logs_http_code=${logs_response: -3}
     if [ "$logs_http_code" == "200" ]; then

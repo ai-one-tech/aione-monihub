@@ -109,7 +109,9 @@ export class AuthUtils {
       }
       return false
     } catch (error: any) {
-      console.error('刷新用户信息失败:', error)
+      if (!(error instanceof TypeError)) {
+        console.error('刷新用户信息失败:', error)
+      }
       // 401：登出并返回失败；500：上抛给调用方走全局弹窗；其他：返回失败
       if (error instanceof ApiError) {
         if (error.status === 401) {

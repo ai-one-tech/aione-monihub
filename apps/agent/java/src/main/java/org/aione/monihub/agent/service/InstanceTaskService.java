@@ -1,7 +1,6 @@
 package org.aione.monihub.agent.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.SneakyThrows;
 import okhttp3.*;
 import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.config.InstanceConfig;
@@ -86,7 +85,6 @@ public class InstanceTaskService {
     /**
      * 拉取任务
      */
-    @SneakyThrows
     private void pollTasks() {
         try {
             ObjectMapper objectMapper = CommonUtils.getObjectMapper();
@@ -138,7 +136,10 @@ public class InstanceTaskService {
             log.info("next polling tasks");
         } catch (Exception e) {
             log.error("Error polling tasks", e);
-            Thread.sleep(1000 * 5);
+            try {
+                Thread.sleep(1000 * 5);
+            } catch (InterruptedException ignore) {
+            }
         }
     }
 
