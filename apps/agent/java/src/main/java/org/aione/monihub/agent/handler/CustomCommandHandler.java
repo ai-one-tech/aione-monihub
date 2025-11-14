@@ -1,9 +1,6 @@
 package org.aione.monihub.agent.handler;
 
-import org.aione.monihub.agent.model.CommandType;
-import org.aione.monihub.agent.model.TaskDispatchItem;
-import org.aione.monihub.agent.model.TaskExecutionResult;
-import org.aione.monihub.agent.model.TaskType;
+import org.aione.monihub.agent.model.*;
 import org.aione.monihub.agent.service.CustomCommandService;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
@@ -36,20 +33,18 @@ public class CustomCommandHandler implements TaskHandler {
         CommandType command = CommandType.valueOf((String) taskContent.get("command"));
 
         log.info("Executing command: {}", command);
-        boolean success = false;
-        String message = "";
 
         // 构建结果数据
         Map<String, Object> resultData = new HashMap<>();
 
         try {
-            success = customCommandService.process(command);
+            customCommandService.process(command);
+            result.setStatus(TaskStatus.success);
         } catch (Exception e) {
-            message = e.getMessage();
+            result.setErrorMessage(e.getMessage());
         }
 
-        resultData.put("success", success);
-        resultData.put("output", message);
+        result.setResultData(resultData);
 
         return result;
     }

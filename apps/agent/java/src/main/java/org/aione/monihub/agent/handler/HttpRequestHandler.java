@@ -119,7 +119,7 @@ public class HttpRequestHandler implements TaskHandler {
         long start = System.currentTimeMillis();
         try (Response resp = client.newCall(rb.build()).execute()) {
             int status = resp.code();
-            String body = resp.body() != null ? resp.body().string() : "";
+            String bodyStr = resp.body() != null ? resp.body().string() : "";
             Map<String, String> hs = new java.util.LinkedHashMap<>();
             for (String n : resp.headers().names()) {
                 hs.put(n, resp.header(n));
@@ -128,7 +128,15 @@ public class HttpRequestHandler implements TaskHandler {
             java.util.Map<String, Object> rd = new java.util.LinkedHashMap<>();
             rd.put("status", status);
             rd.put("headers", hs);
-            rd.put("body", body);
+            Map bodyMap = null;
+            String ctHeader = resp.header("Content-Type");
+            if (ctHeader != null && ctHeader.toLowerCase().contains("application/json")) {
+                String trimmed = bodyStr.trim();
+                if (trimmed.startsWith("{")) {
+                    bodyMap = objectMapper.readValue(trimmed, java.util.Map.class);
+                }
+            }
+            rd.put("body", bodyMap != null ? bodyMap : bodyStr);
             rd.put("elapsed_ms", elapsed);
             return TaskExecutionResult.success(rd);
         } catch (Exception e) {

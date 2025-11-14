@@ -159,9 +159,9 @@ export function ApplicationTasks() {
             language="shell"
             value={shellScript}
             onChange={(v: string) => setShellScript(v)}
-            minHeight={140}
+            minHeight={130}
             autoResize={false}
-            className="h-[130px] overflow-auto"
+            className="h-[132px] overflow-auto"
           />
         )
 
@@ -172,9 +172,9 @@ export function ApplicationTasks() {
               language="java"
               value={codeContent}
               onChange={(v: string) => setCodeContent(v)}
-              minHeight={140}
+              minHeight={130}
               autoResize={false}
-              className="h-[130px] overflow-auto"
+              className="h-[132px] overflow-auto"
             />
           </div>
         )
@@ -337,8 +337,13 @@ export function ApplicationTasks() {
         break
     }
 
-    if (!isValid || selectedInstances.length === 0) {
-      toast.error('请填写必要的参数并选择至少一个实例')
+    if (!isValid) {
+      toast.error('请填写必要的参数')
+      return
+    }
+
+    if (selectedInstances.length === 0) {
+      toast.error('请选择至少一个实例')
       return
     }
 
@@ -361,11 +366,11 @@ export function ApplicationTasks() {
       toast.success('任务创建成功！')
 
       // 清空表单
-      setShellScript('')
-      setCodeContent('')
-      setFilePath('')
-      setRemoteUrl('')
-      setCustomCommand('')
+      // setShellScript('')
+      // setCodeContent('')
+      // setFilePath('')
+      // setRemoteUrl('')
+      // setCustomCommand('')
       // setSelectedInstances([])
 
       // 刷新任务列表
@@ -1169,7 +1174,7 @@ function HttpParamsDrawer({ open, onOpenChange, params, onChange }: HttpParamsDr
             <>
               {local.body_type === 'json' && (
                 <div>
-                  <div className={`w-full rounded border ${jsonInvalid ? 'border-red-500' : 'border-input'}`}>
+                  <div className={`w-full mb-2`}>
                     <Label className="text-sm">JSON Body</Label>
                     <CodeEditor
                       language="json"

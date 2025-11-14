@@ -47,7 +47,6 @@ import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedLogsSystemRouteImport } from './routes/_authenticated/logs/system'
-import { Route as AuthenticatedLogsRequestsRouteImport } from './routes/_authenticated/logs/requests'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 
 const ClerkRouteRoute = ClerkRouteRouteImport.update({
@@ -251,12 +250,6 @@ const AuthenticatedLogsSystemRoute = AuthenticatedLogsSystemRouteImport.update({
   path: '/logs/system',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedLogsRequestsRoute =
-  AuthenticatedLogsRequestsRouteImport.update({
-    id: '/logs/requests',
-    path: '/logs/requests',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedErrorsErrorRoute =
   AuthenticatedErrorsErrorRouteImport.update({
     id: '/errors/$error',
@@ -283,7 +276,6 @@ export interface FileRoutesByFullPath {
   '/projects': typeof AuthenticatedProjectsRoute
   '/': typeof AuthenticatedIndexRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
-  '/logs/requests': typeof AuthenticatedLogsRequestsRoute
   '/logs/system': typeof AuthenticatedLogsSystemRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -321,7 +313,6 @@ export interface FileRoutesByTo {
   '/projects': typeof AuthenticatedProjectsRoute
   '/': typeof AuthenticatedIndexRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
-  '/logs/requests': typeof AuthenticatedLogsRequestsRoute
   '/logs/system': typeof AuthenticatedLogsSystemRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -364,7 +355,6 @@ export interface FileRoutesById {
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
-  '/_authenticated/logs/requests': typeof AuthenticatedLogsRequestsRoute
   '/_authenticated/logs/system': typeof AuthenticatedLogsSystemRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -405,7 +395,6 @@ export interface FileRouteTypes {
     | '/projects'
     | '/'
     | '/errors/$error'
-    | '/logs/requests'
     | '/logs/system'
     | '/settings/account'
     | '/settings/appearance'
@@ -443,7 +432,6 @@ export interface FileRouteTypes {
     | '/projects'
     | '/'
     | '/errors/$error'
-    | '/logs/requests'
     | '/logs/system'
     | '/settings/account'
     | '/settings/appearance'
@@ -485,7 +473,6 @@ export interface FileRouteTypes {
     | '/_authenticated/projects'
     | '/_authenticated/'
     | '/_authenticated/errors/$error'
-    | '/_authenticated/logs/requests'
     | '/_authenticated/logs/system'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
@@ -789,13 +776,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLogsSystemRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/logs/requests': {
-      id: '/_authenticated/logs/requests'
-      path: '/logs/requests'
-      fullPath: '/logs/requests'
-      preLoaderRoute: typeof AuthenticatedLogsRequestsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/errors/$error': {
       id: '/_authenticated/errors/$error'
       path: '/errors/$error'
@@ -837,7 +817,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
-  AuthenticatedLogsRequestsRoute: typeof AuthenticatedLogsRequestsRoute
   AuthenticatedLogsSystemRoute: typeof AuthenticatedLogsSystemRoute
   AuthenticatedSystemNetworkTestRoute: typeof AuthenticatedSystemNetworkTestRoute
   AuthenticatedSystemPermissionsRoute: typeof AuthenticatedSystemPermissionsRoute
@@ -858,7 +837,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
-  AuthenticatedLogsRequestsRoute: AuthenticatedLogsRequestsRoute,
   AuthenticatedLogsSystemRoute: AuthenticatedLogsSystemRoute,
   AuthenticatedSystemNetworkTestRoute: AuthenticatedSystemNetworkTestRoute,
   AuthenticatedSystemPermissionsRoute: AuthenticatedSystemPermissionsRoute,

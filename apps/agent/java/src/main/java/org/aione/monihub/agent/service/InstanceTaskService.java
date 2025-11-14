@@ -14,6 +14,7 @@ import java.net.SocketTimeoutException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -36,6 +37,7 @@ public class InstanceTaskService {
     private AgentTaskExecutor agentTaskExecutor;
 
     private ScheduledExecutorService scheduler;
+    private ExecutorService taskDispatcher;
     private volatile boolean running;
 
     @javax.annotation.PostConstruct
@@ -43,6 +45,11 @@ public class InstanceTaskService {
         this.log = AgentLoggerFactory.getLogger(InstanceTaskService.class);
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread thread = new Thread(r, "task-poller");
+            thread.setDaemon(true);
+            return thread;
+        });
+        this.taskDispatcher = Executors.newFixedThreadPool(3, r -> {
+            Thread thread = new Thread(r, "task-dispatcher");
             thread.setDaemon(true);
             return thread;
         });
@@ -80,6 +87,17 @@ public class InstanceTaskService {
         }
 
         agentTaskExecutor.shutdown();
+        if (taskDispatcher != null) {
+            taskDispatcher.shutdown();
+            try {
+                if (!taskDispatcher.awaitTermination(10, TimeUnit.SECONDS)) {
+                    taskDispatcher.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                taskDispatcher.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     /**
@@ -150,7 +168,7 @@ public class InstanceTaskService {
         log.info("Processing task: {} ({})", task.getTaskId(), task.getTaskType());
 
         // 异步执行任务
-        scheduler.execute(() -> {
+        taskDispatcher.execute(() -> {
             try {
 
                 // 执行任务
