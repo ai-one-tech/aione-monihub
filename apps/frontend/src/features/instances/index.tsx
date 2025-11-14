@@ -10,7 +10,9 @@ import { InstancesProvider } from './components/instances-provider'
 import { InstancesTable } from './components/instances-data-table'
 import { InstancesEditSheet } from './components/instances-edit-sheet'
 import { InstancesDeleteDialog } from './components/instances-delete-dialog'
+import { InstancesEnableDisableDialog } from './components/instances-enable-disable-dialog'
 import { InstanceReportDrawer } from './components/instances-report-drawer'
+import { InstancesConfigDrawer } from './components/instances-config-drawer'
 import { useInstancesQuery } from './hooks/use-instances-query'
 import { useInstancesProvider } from './components/instances-provider'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -105,11 +107,13 @@ function InstancesContent() {
 
       <InstancesEditSheet />
       <InstancesDeleteDialog />
+      <InstancesEnableDisableDialog />
       <InstanceReportDrawer 
         instance={reportInstance}
         open={reportDrawerOpen}
         onOpenChange={setReportDrawerOpen}
       />
+      <InstancesConfigDrawer />
     </>
   )
 }

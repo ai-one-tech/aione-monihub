@@ -15,8 +15,6 @@ import java.net.UnknownHostException;
 public class SystemInfoCollector {
 
     private AgentLogger log;
-    @javax.annotation.Resource
-    private AgentConfig properties;
 
     private final oshi.SystemInfo systemInfo;
     private final OperatingSystem os;

@@ -166,3 +166,25 @@ export function useInstanceMonitoringData(instanceId: string) {
     staleTime: 1000 * 30, // 30秒
   })
 }
+
+/**
+ * 更新实例配置 Hook
+ */
+export function useUpdateInstanceConfig() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ instanceId, config }: { instanceId: string; config: any }) =>
+      instancesApi.updateInstanceConfig(instanceId, config),
+    onSuccess: (_, { instanceId }) => {
+      queryClient.invalidateQueries({ queryKey: ['instances'] })
+      queryClient.invalidateQueries({ queryKey: ['instance', instanceId] })
+      toast.success('配置已更新')
+    },
+    onError: (error: any) => {
+      let message = '更新配置失败'
+      if (error?.message) message = error.message
+      toast.error(message)
+    },
+  })
+}

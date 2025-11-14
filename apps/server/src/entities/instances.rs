@@ -25,7 +25,7 @@ pub struct Model {
     pub last_report_at: Option<DateTimeWithTimeZone>,
     pub report_count: Option<i32>,
     pub custom_fields: Option<Json>,
-    pub agent_config: Option<Json>,
+    pub config: Option<Json>,
     pub agent_type: Option<AgentType>,
     pub agent_version: Option<String>,
     pub cpu_usage_percent: Option<Decimal>,

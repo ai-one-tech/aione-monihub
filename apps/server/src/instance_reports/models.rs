@@ -104,7 +104,7 @@ pub struct InstanceReportResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub log_failure_count: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub agent_config: Option<JsonValue>,
+    pub config: Option<JsonValue>,
 }
 
 // ===================================================================

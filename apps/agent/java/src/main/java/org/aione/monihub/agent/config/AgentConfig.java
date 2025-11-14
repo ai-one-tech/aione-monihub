@@ -12,7 +12,7 @@ import java.util.UUID;
  */
 @Data
 @ConfigurationProperties(prefix = "monihub.agent")
-public class AgentConfig {
+public class AgentConfig extends InstanceConfig {
 
     /**
      * 实例ID
@@ -33,7 +33,7 @@ public class AgentConfig {
                 LocalConfigUtil.updateConfig(new LocalConfig().setInstanceId(instanceId));
             }
         }
-         return instanceId;
+        return instanceId;
     }
 
     /**
@@ -49,73 +49,15 @@ public class AgentConfig {
     /**
      * Agent类型
      */
-    private String agentType = "java";
+    public String getAgentType() {
+        return "java";
+    }
 
     /**
      * Agent版本
      */
-    private String agentVersion = "1.0.0";
-
-    /**
-     * 上报配置
-     */
-    private ReportConfig report = new ReportConfig();
-
-    /**
-     * 任务配置
-     */
-    private TaskConfig task = new TaskConfig();
-
-    /**
-     * Debug模式开关，默认关闭
-     */
-    private boolean debug = false;
-
-
-    @Data
-    public static class ReportConfig {
-        /**
-         * 是否启用上报
-         */
-        private boolean enabled = true;
-
-        /**
-         * 上报间隔（秒）
-         */
-        private long intervalSeconds = 60;
-
-        /**
-         * 最大日志数
-         */
-        private int maxLogRetention = 1000;
-    }
-
-    @Data
-    public static class TaskConfig {
-        /**
-         * 是否启用任务功能
-         */
-        private boolean enabled = true;
-
-        /**
-         * 任务拉取间隔（秒）
-         */
-        private long pollIntervalSeconds = 30;
-
-        /**
-         * 是否启用长轮询
-         */
-        private boolean longPollEnabled = true;
-
-        /**
-         * 长轮询超时（秒）
-         */
-        private int longPollTimeoutSeconds = 30;
-
-        /**
-         * 最大并发任务数
-         */
-        private int maxConcurrentTasks = 5;
+    public String getAgentVersion() {
+        return "1.0.0";
     }
 
 }

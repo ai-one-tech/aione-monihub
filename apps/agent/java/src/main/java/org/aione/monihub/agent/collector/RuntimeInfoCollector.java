@@ -26,9 +26,6 @@ public class RuntimeInfoCollector {
     private AgentLogger log;
 
     @javax.annotation.Resource
-    private AgentConfig agentConfig;
-
-    @javax.annotation.Resource
     private ObjectMapper objectMapper;
 
     @Value("${spring.profiles.active:-}")

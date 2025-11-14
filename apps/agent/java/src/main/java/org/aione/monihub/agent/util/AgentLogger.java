@@ -14,25 +14,25 @@ import org.springframework.boot.logging.LogLevel;
 public class AgentLogger {
 
     private final Logger logger;
-    private final AgentConfig properties;
+    private final AgentConfig agentConfig;
 
-    public AgentLogger(Logger logger, AgentConfig properties) {
+    public AgentLogger(Logger logger, AgentConfig agentConfig) {
         this.logger = logger;
-        this.properties = properties;
+        this.agentConfig = agentConfig;
     }
 
     /**
      * DEBUG级别日志 - 仅在debug=true时输出
      */
     public void debug(String msg) {
-        if (properties.isDebug()) {
+        if (agentConfig.isDebug()) {
             logger.debug(msg);
             AgentLogStore.getInstance().append(LogLevel.DEBUG, msg, null);
         }
     }
 
     public void debug(String format, Object arg) {
-        if (properties.isDebug()) {
+        if (agentConfig.isDebug()) {
             logger.debug(format, arg);
             String m = MessageFormatter.format(format, arg).getMessage();
             AgentLogStore.getInstance().append(LogLevel.DEBUG, m, null);
@@ -40,7 +40,7 @@ public class AgentLogger {
     }
 
     public void debug(String format, Object arg1, Object arg2) {
-        if (properties.isDebug()) {
+        if (agentConfig.isDebug()) {
             logger.debug(format, arg1, arg2);
             String m = MessageFormatter.format(format, arg1, arg2).getMessage();
             AgentLogStore.getInstance().append(LogLevel.DEBUG, m, null);
@@ -48,7 +48,7 @@ public class AgentLogger {
     }
 
     public void debug(String format, Object... arguments) {
-        if (properties.isDebug()) {
+        if (agentConfig.isDebug()) {
             logger.debug(format, arguments);
             String m = MessageFormatter.arrayFormat(format, arguments).getMessage();
             AgentLogStore.getInstance().append(LogLevel.DEBUG, m, null);
@@ -59,14 +59,14 @@ public class AgentLogger {
      * INFO级别日志 - 仅在debug=true时输出
      */
     public void info(String msg) {
-        if (properties.isDebug()) {
+        if (agentConfig.isDebug()) {
             logger.info(msg);
             AgentLogStore.getInstance().append(LogLevel.INFO, msg, null);
         }
     }
 
     public void info(String format, Object arg) {
-        if (properties.isDebug()) {
+        if (agentConfig.isDebug()) {
             logger.info(format, arg);
             String m = MessageFormatter.format(format, arg).getMessage();
             AgentLogStore.getInstance().append(LogLevel.INFO, m, null);
@@ -74,7 +74,7 @@ public class AgentLogger {
     }
 
     public void info(String format, Object arg1, Object arg2) {
-        if (properties.isDebug()) {
+        if (agentConfig.isDebug()) {
             logger.info(format, arg1, arg2);
             String m = MessageFormatter.format(format, arg1, arg2).getMessage();
             AgentLogStore.getInstance().append(LogLevel.INFO, m, null);
@@ -82,7 +82,7 @@ public class AgentLogger {
     }
 
     public void info(String format, Object... arguments) {
-        if (properties.isDebug()) {
+        if (agentConfig.isDebug()) {
             logger.info(format, arguments);
             String m = MessageFormatter.arrayFormat(format, arguments).getMessage();
             AgentLogStore.getInstance().append(LogLevel.INFO, m, null);
@@ -129,7 +129,7 @@ public class AgentLogger {
     }
 
     public void error(String format, Object arg) {
-        if (properties.isDebug()) {
+        if (agentConfig.isDebug()) {
             logger.error(format, arg);
             String m = MessageFormatter.format(format, arg).getMessage();
             AgentLogStore.getInstance().append(LogLevel.ERROR, m, null);
@@ -137,7 +137,7 @@ public class AgentLogger {
     }
 
     public void error(String format, Object arg1, Object arg2) {
-        if (properties.isDebug()) {
+        if (agentConfig.isDebug()) {
             logger.error(format, arg1, arg2);
             String m = MessageFormatter.format(format, arg1, arg2).getMessage();
             AgentLogStore.getInstance().append(LogLevel.ERROR, m, null);
@@ -145,7 +145,7 @@ public class AgentLogger {
     }
 
     public void error(String format, Object... arguments) {
-        if (properties.isDebug()) {
+        if (agentConfig.isDebug()) {
             logger.error(format, arguments);
             String m = MessageFormatter.arrayFormat(format, arguments).getMessage();
             AgentLogStore.getInstance().append(LogLevel.ERROR, m, null);
@@ -153,7 +153,7 @@ public class AgentLogger {
     }
 
     public void error(String msg, Throwable t) {
-        if (properties.isDebug()) {
+        if (agentConfig.isDebug()) {
             logger.error(msg, t);
             AgentLogStore.getInstance().append(LogLevel.ERROR, msg, null);
         }

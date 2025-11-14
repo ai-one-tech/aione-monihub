@@ -2,6 +2,7 @@ package org.aione.monihub.agent.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import okhttp3.Credentials;
 import okhttp3.OkHttpClient;
 import org.aione.monihub.agent.collector.HardwareInfoCollector;
 import org.aione.monihub.agent.collector.NetworkInfoCollector;
@@ -9,10 +10,7 @@ import org.aione.monihub.agent.collector.RuntimeInfoCollector;
 import org.aione.monihub.agent.collector.SystemInfoCollector;
 import org.aione.monihub.agent.executor.AgentTaskExecutor;
 import org.aione.monihub.agent.filter.HttpDisabledFilter;
-import org.aione.monihub.agent.handler.RunnerCodeHandler;
-import org.aione.monihub.agent.handler.CustomCommandHandler;
-import org.aione.monihub.agent.handler.FileManagerHandler;
-import org.aione.monihub.agent.handler.ShellExecHandler;
+import org.aione.monihub.agent.handler.*;
 import org.aione.monihub.agent.service.InstanceReportService;
 import org.aione.monihub.agent.service.InstanceTaskService;
 import org.aione.monihub.agent.util.SpringContextUtils;
@@ -41,13 +39,27 @@ public class AgentAutoConfiguration {
      * 配置OkHttpClient
      */
     @Bean
-    public OkHttpClient okHttpClient() {
-        return new OkHttpClient.Builder()
+    public OkHttpClient okHttpClient(AgentConfig properties) {
+        int longPollTimeout = properties.getTask() != null ? properties.getTask().getLongPollTimeoutSeconds() : 0;
+        int readTimeout = longPollTimeout + 10;
+        OkHttpClient.Builder b = new OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(readTimeout, TimeUnit.SECONDS)
                 .writeTimeout(30, TimeUnit.SECONDS)
-                .retryOnConnectionFailure(true)
-                .build();
+                .retryOnConnectionFailure(true);
+
+        InstanceConfig.HttpConfig http = properties.getHttp();
+        if (http != null && http.isProxyEnabled() && http.getProxyHost() != null && http.getProxyPort() > 0) {
+            java.net.Proxy proxy = new java.net.Proxy(java.net.Proxy.Type.HTTP, new java.net.InetSocketAddress(http.getProxyHost(), http.getProxyPort()));
+            b.proxy(proxy);
+            if (http.getProxyUsername() != null && http.getProxyPassword() != null) {
+                b.proxyAuthenticator((route, response) -> {
+                    String credential = Credentials.basic(http.getProxyUsername(), http.getProxyPassword());
+                    return response.request().newBuilder().header("Proxy-Authorization", credential).build();
+                });
+            }
+        }
+        return b.build();
     }
 
     @Bean
@@ -151,6 +163,11 @@ public class AgentAutoConfiguration {
     @Bean
     public RunnerCodeHandler runnerCodeHandler() {
         return new RunnerCodeHandler();
+    }
+
+    @Bean
+    public HttpRequestHandler httpRequestHandler() {
+        return new HttpRequestHandler();
     }
 
 }

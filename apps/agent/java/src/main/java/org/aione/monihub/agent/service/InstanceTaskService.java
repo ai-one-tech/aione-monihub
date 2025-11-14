@@ -3,11 +3,11 @@ package org.aione.monihub.agent.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
 import org.aione.monihub.agent.config.AgentConfig;
+import org.aione.monihub.agent.config.InstanceConfig;
 import org.aione.monihub.agent.executor.AgentTaskExecutor;
 import org.aione.monihub.agent.model.*;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
-import org.aione.monihub.agent.util.TaskLockUtils;
 
 import java.net.SocketTimeoutException;
 import java.time.ZonedDateTime;
@@ -26,7 +26,7 @@ public class InstanceTaskService {
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
     @javax.annotation.Resource
-    private AgentConfig properties;
+    private AgentConfig agentConfig;
 
     @javax.annotation.Resource
     private OkHttpClient httpClient;
@@ -38,10 +38,7 @@ public class InstanceTaskService {
     private AgentTaskExecutor agentTaskExecutor;
 
     private ScheduledExecutorService scheduler;
-
-    private boolean enabled = true;
-    private int pollIntervalSeconds = 30;
-    private boolean longPollingEnabled = true;
+    private volatile boolean running;
 
     @javax.annotation.PostConstruct
     public void init() {
@@ -52,30 +49,20 @@ public class InstanceTaskService {
             return thread;
         });
 
-        // 从配置读取任务相关配置（这里使用默认值，后续会从配置文件读取）
-        this.enabled = true;
-        this.pollIntervalSeconds = 30;
-        this.longPollingEnabled = true;
+        // 任务配置由 AgentConfig 下发并动态生效
     }
 
     /**
      * 启动任务拉取服务
      */
     public void start() {
-        if (!enabled) {
-            log.info("Task service is disabled");
-            return;
-        }
-
-        log.info("Starting task service, poll interval: {} seconds", pollIntervalSeconds);
-
-        // 延迟15秒后开始首次任务拉取，然后按固定间隔执行
-        scheduler.scheduleAtFixedRate(
-                this::pollTasks,
-                15,
-                pollIntervalSeconds,
-                TimeUnit.SECONDS
-        );
+        log.info("Starting task service");
+        running = true;
+        scheduler.execute(() -> {
+            while (running) {
+                pollTasks();
+            }
+        });
     }
 
     /**
@@ -83,6 +70,7 @@ public class InstanceTaskService {
      */
     public void stop() {
         log.info("Stopping task service");
+        running = false;
         scheduler.shutdown();
         try {
             if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
@@ -101,13 +89,20 @@ public class InstanceTaskService {
      */
     private void pollTasks() {
         try {
-            log.info("Polling tasks for instance: {}", properties.getInstanceId());
+            InstanceConfig.TaskConfig taskCfg = agentConfig.getTask();
+
+            if (taskCfg == null || !taskCfg.isEnabled()) {
+                log.info("Task service is disabled");
+                return;
+            }
+            log.info("Polling tasks for instance: {}", agentConfig.getInstanceId());
 
             // 构建拉取任务的URL
-            String url = properties.getServerUrl() + "/api/open/instances/tasks?agent_instance_id=" + properties.getInstanceId();
+            String url = agentConfig.getServerUrl() + "/api/open/instances/tasks?agent_instance_id=" + agentConfig.getInstanceId();
 
-            if (longPollingEnabled) {
-                url += "&wait=true&timeout=30";
+            int timeoutSeconds = taskCfg.getLongPollTimeoutSeconds();
+            if (timeoutSeconds > 0) {
+                url += "&wait=true&timeout=" + timeoutSeconds;
             }
 
             log.info("Polling tasks from: {}", url);
@@ -155,11 +150,11 @@ public class InstanceTaskService {
         scheduler.execute(() -> {
             try {
 
-                    // 执行任务
-                    TaskExecutionResult result = agentTaskExecutor.execute(task);
+                // 执行任务
+                TaskExecutionResult result = agentTaskExecutor.execute(task);
 
-                    // 提交结果
-                    submitResult(task, result);
+                // 提交结果
+                submitResult(task, result);
 
             } catch (Exception e) {
                 log.error("Error processing task: {}", task.getTaskId(), e);
@@ -188,7 +183,7 @@ public class InstanceTaskService {
             try {
                 TaskResultSubmitRequest request = new TaskResultSubmitRequest();
                 request.setRecordId(task.getRecordId());
-                request.setAgentInstanceId(properties.getInstanceId());
+                request.setAgentInstanceId(agentConfig.getInstanceId());
                 request.setStatus(result.getStatus());
                 request.setResultCode(result.getResultCode());
                 request.setResultMessage(result.getResultMessage());
@@ -199,7 +194,7 @@ public class InstanceTaskService {
                 request.setDurationMs(result.getDurationMs());
 
                 String json = objectMapper.writeValueAsString(request);
-                String url = properties.getServerUrl() + "/api/open/instances/tasks/result";
+                String url = agentConfig.getServerUrl() + "/api/open/instances/tasks/result";
 
                 log.info("Sending task result to {}: {}", url, json);
 

@@ -56,6 +56,7 @@ pub enum TaskType {
     #[sea_orm(string_value = "run_code")] RunCode,
     #[sea_orm(string_value = "file_manager")] FileManager,
     #[sea_orm(string_value = "custom_command")] CustomCommand,
+    #[sea_orm(string_value = "http_request")] HttpRequest,
 }
 
 

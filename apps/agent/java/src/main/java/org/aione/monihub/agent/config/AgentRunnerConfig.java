@@ -19,8 +19,7 @@ public class AgentRunnerConfig {
      */
     @Bean
     public ApplicationRunner agentRunner(InstanceReportService reportService,
-                                         InstanceTaskService taskService,
-                                         AgentConfig properties) {
+                                         InstanceTaskService taskService) {
         return args -> {
             AgentLogger log = AgentLoggerFactory.getLogger(AgentRunnerConfig.class);
             log.info("Starting AiOne MoniHub Agent...");

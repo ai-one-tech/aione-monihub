@@ -1,10 +1,10 @@
 import { type Row } from '@tanstack/react-table'
-import { Eye, Trash2, Power, PowerOff, FileText } from 'lucide-react'
+import { Eye, Trash2, Power, PowerOff, FileText, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { type InstanceResponse } from '../data/api-schema'
 import { useInstancesProvider } from './instances-provider'
-import { useEnableInstance, useDisableInstance } from '../hooks/use-instances-query'
+
 
 interface InstancesDataTableRowActionsProps {
   row: Row<InstanceResponse>
@@ -19,12 +19,13 @@ export function InstancesDataTableRowActions({
     setSelectedInstanceId,
     setIsDeleteDialogOpen,
     setDeletingInstanceId,
+    setIsEnableDisableDialogOpen,
+    setEnableDisableInstanceId,
+    setEnableDisableAction,
     setReportDrawerOpen,
     setReportInstance,
+    setConfigDrawerOpen,
   } = useInstancesProvider()
-  
-  const enableInstance = useEnableInstance()
-  const disableInstance = useDisableInstance()
   
   const instance = row.original
 
@@ -50,19 +51,28 @@ export function InstancesDataTableRowActions({
 
   const handleEnable = () => {
     if (instance.status !== 'active') {
-      enableInstance.mutate(instance.id)
+      setEnableDisableInstanceId(instance.id)
+      setEnableDisableAction('enable')
+      setIsEnableDisableDialogOpen(true)
     }
   }
 
   const handleDisable = () => {
     if (instance.status === 'active') {
-      disableInstance.mutate(instance.id)
+      setEnableDisableInstanceId(instance.id)
+      setEnableDisableAction('disable')
+      setIsEnableDisableDialogOpen(true)
     }
   }
 
   const handleViewReports = () => {
     setReportInstance(instance)
     setReportDrawerOpen(true)
+  }
+
+  const handleConfig = () => {
+    setSelectedInstanceId(instance.id)
+    setConfigDrawerOpen(true)
   }
 
   const isActive = instance.status === 'active'
@@ -95,6 +105,19 @@ export function InstancesDataTableRowActions({
         </Tooltip>
       </TooltipProvider>
 
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant='ghost' size='sm' onClick={handleConfig}>
+              <Settings className='h-4 w-4' />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>配置</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
       {/* 移除编辑按钮 */}
       {/* 
       <TooltipProvider>
@@ -119,7 +142,6 @@ export function InstancesDataTableRowActions({
                 variant='ghost'
                 size='sm'
                 onClick={handleDisable}
-                disabled={disableInstance.isPending}
               >
                 <PowerOff className='h-4 w-4' />
               </Button>
@@ -137,7 +159,6 @@ export function InstancesDataTableRowActions({
                 variant='ghost'
                 size='sm'
                 onClick={handleEnable}
-                disabled={enableInstance.isPending}
               >
                 <Power className='h-4 w-4' />
               </Button>

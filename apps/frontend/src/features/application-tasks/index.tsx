@@ -6,6 +6,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter, SheetClose } from '@/components/ui/sheet'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -38,6 +39,8 @@ export function ApplicationTasks() {
     }
   })
   const [taskType, setTaskType] = useState('shell_exec')
+  const [httpDrawerOpen, setHttpDrawerOpen] = useState(false)
+  const [httpParams, setHttpParams] = useState<any>({ method: 'GET', url: '', headers: [], query: [], body_type: 'none', timeout_seconds: 60, allow_redirects: false, verify_tls: true, parts: [], form_fields: [], raw_body: '', content_type: 'text/plain', json_body: {} })
 
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false)
   const [refreshIntervalMs, setRefreshIntervalMs] = useState(1000)
@@ -222,6 +225,9 @@ export function ApplicationTasks() {
           </div>
         )
 
+      case 'http_request':
+        return (<div />)
+
       default:
         return null
     }
@@ -320,6 +326,10 @@ export function ApplicationTasks() {
       case 'custom_command':
         isValid = customCommand.trim() !== ''
         taskContent.command = customCommand
+        break
+      case 'http_request':
+        isValid = !!httpParams.url && !!httpParams.method
+        taskContent = buildHttpTaskContent(httpParams)
         break
     }
 
@@ -427,7 +437,7 @@ export function ApplicationTasks() {
             </h2>
           </div>
 
-          <div className="flex gap-4 h-[250px] min-h-0 overflow-auto">
+          <div className="flex gap-4 h-[300px] min-h-0 overflow-auto">
             {/* 在线实例 */}
             <Card className="flex-1 p-4 flex flex-col min-h-0">
               <div className="flex items-center justify-between mb-4">
@@ -533,10 +543,28 @@ export function ApplicationTasks() {
                       <RadioGroupItem value="custom_command" id="custom_command" />
                       <Label htmlFor="custom_command" className="text-sm">自定义命令</Label>
                     </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="http_request" id="http_request" />
+                      <Label htmlFor="http_request" className="text-sm">HTTP 请求</Label>
+                    </div>
                   </RadioGroup>
                 </div>
 
                 {renderTaskTypeForm()}
+
+                {taskType === 'http_request' && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-muted-foreground">HTTP 请求参数较多，请点击右侧按钮设置详细参数</div>
+                      <Button variant="outline" size="sm" onClick={() => setHttpDrawerOpen(true)}>设置详细参数</Button>
+                    </div>
+                    <div className="rounded border p-3 text-sm">
+                      <div className="font-medium">概览</div>
+                      <div className="mt-1 text-muted-foreground">{httpParams.method} {httpParams.url || '未设置URL'}</div>
+                      <div className="mt-1">头部 {(Array.isArray(httpParams.headers)?httpParams.headers:[]).length} · 查询 {(Array.isArray(httpParams.query)?httpParams.query:[]).length} · 体 {httpParams.body_type}</div>
+                    </div>
+                  </div>
+                )}
 
                 <Button
                   className="w-full"
@@ -1018,6 +1046,161 @@ export function ApplicationTasks() {
           </div>
         </div>
       </div>
+      <HttpParamsDrawer open={httpDrawerOpen} onOpenChange={setHttpDrawerOpen} params={httpParams} onChange={setHttpParams} />
     </Main>
   )
+}
+
+interface HttpParamsDrawerProps { open: boolean; onOpenChange: (v: boolean) => void; params: any; onChange: (p: any) => void }
+function HttpParamsDrawer({ open, onOpenChange, params, onChange }: HttpParamsDrawerProps) {
+  const [local, setLocal] = React.useState<any>(params)
+  React.useEffect(() => { if (open) setLocal(params) }, [open])
+  const setField = (k: string, v: any) => setLocal({ ...local, [k]: v })
+  const setKV = (k: 'headers' | 'query' | 'form_fields' | 'parts', idx: number, key: string, value: string) => {
+    const arr = Array.isArray(local[k]) ? [...local[k]] : []
+    arr[idx] = { ...(arr[idx] || {}), name: key, value }
+    setLocal({ ...local, [k]: arr })
+  }
+  const addKV = (k: 'headers' | 'query' | 'form_fields') => { const arr = Array.isArray(local[k]) ? [...local[k]] : []; arr.push({ name: '', value: '' }); setLocal({ ...local, [k]: arr }) }
+  const addFilePart = () => { const arr = Array.isArray(local.parts) ? [...local.parts] : []; arr.push({ type: 'file', name: '', file_path: '', filename: '', content_type: '' }); setLocal({ ...local, parts: arr }) }
+  const addFieldPart = () => { const arr = Array.isArray(local.parts) ? [...local.parts] : []; arr.push({ type: 'field', name: '', value: '' }); setLocal({ ...local, parts: arr }) }
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-[520px] sm:w-[640px]">
+        <SheetHeader>
+          <SheetTitle>HTTP 请求参数</SheetTitle>
+        </SheetHeader>
+        <div className="flex-1 overflow-y-auto space-y-4 py-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">方法</Label>
+              <select value={local.method} onChange={(e) => setField('method', e.target.value)} className="w-full p-2 border rounded text-sm">
+                {['GET','POST','PUT','DELETE','PATCH','HEAD','OPTIONS'].map(m => (<option key={m} value={m}>{m}</option>))}
+              </select>
+            </div>
+            <div>
+              <Label className="text-xs">超时(秒)</Label>
+              <input type="number" value={local.timeout_seconds} onChange={(e) => setField('timeout_seconds', Number(e.target.value))} className="w-full p-2 border rounded text-sm" />
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">URL</Label>
+            <input value={local.url} onChange={(e) => setField('url', e.target.value)} placeholder="https://example.com/api" className="w-full p-2 border rounded text-sm" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-2">
+              <input type="checkbox" checked={local.allow_redirects} onChange={(e) => setField('allow_redirects', e.target.checked)} />
+              <span className="text-sm">允许重定向</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" checked={local.verify_tls} onChange={(e) => setField('verify_tls', e.target.checked)} />
+              <span className="text-sm">验证TLS</span>
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Headers</Label>
+            <div className="space-y-2">
+              {(Array.isArray(local.headers) ? local.headers : []).map((it: any, idx: number) => (
+                <div className="grid grid-cols-2 gap-2" key={idx}>
+                  <input value={it.name||''} onChange={(e)=>setKV('headers', idx, e.target.value, it.value||'')} placeholder="Header 名" className="p-2 border rounded text-sm" />
+                  <input value={it.value||''} onChange={(e)=>setKV('headers', idx, it.name||'', e.target.value)} placeholder="Header 值" className="p-2 border rounded text-sm" />
+                </div>
+              ))}
+              <Button variant="outline" size="sm" onClick={()=>addKV('headers')}>添加Header</Button>
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Query</Label>
+            <div className="space-y-2">
+              {(Array.isArray(local.query) ? local.query : []).map((it: any, idx: number) => (
+                <div className="grid grid-cols-2 gap-2" key={idx}>
+                  <input value={it.name||''} onChange={(e)=>setKV('query', idx, e.target.value, it.value||'')} placeholder="参数名" className="p-2 border rounded text-sm" />
+                  <input value={it.value||''} onChange={(e)=>setKV('query', idx, it.name||'', e.target.value)} placeholder="参数值" className="p-2 border rounded text-sm" />
+                </div>
+              ))}
+              <Button variant="outline" size="sm" onClick={()=>addKV('query')}>添加Query</Button>
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Body 类型</Label>
+            <select value={local.body_type} onChange={(e)=>setField('body_type', e.target.value)} className="w-full p-2 border rounded text-sm">
+              {['none','json','form','multipart','raw'].map(t => (<option key={t} value={t}>{t}</option>))}
+            </select>
+          </div>
+          {local.body_type === 'json' && (
+            <div>
+              <Label className="text-xs">JSON Body</Label>
+              <textarea value={JSON.stringify(local.json_body||{}, null, 2)} onChange={(e)=>{ try{ setField('json_body', JSON.parse(e.target.value||'{}')) }catch{ } }} className="w-full p-2 border rounded text-sm h-40 font-mono" />
+            </div>
+          )}
+          {local.body_type === 'form' && (
+            <div className="space-y-2">
+              {(Array.isArray(local.form_fields) ? local.form_fields : []).map((it: any, idx: number) => (
+                <div className="grid grid-cols-2 gap-2" key={idx}>
+                  <input value={it.name||''} onChange={(e)=>setKV('form_fields', idx, e.target.value, it.value||'')} placeholder="字段名" className="p-2 border rounded text-sm" />
+                  <input value={it.value||''} onChange={(e)=>setKV('form_fields', idx, it.name||'', e.target.value)} placeholder="字段值" className="p-2 border rounded text-sm" />
+                </div>
+              ))}
+              <Button variant="outline" size="sm" onClick={()=>addKV('form_fields')}>添加字段</Button>
+            </div>
+          )}
+          {local.body_type === 'raw' && (
+            <div className="space-y-2">
+              <Label className="text-xs">Content-Type</Label>
+              <input value={local.content_type} onChange={(e)=>setField('content_type', e.target.value)} className="w-full p-2 border rounded text-sm" />
+              <Label className="text-xs">Raw Body</Label>
+              <textarea value={local.raw_body} onChange={(e)=>setField('raw_body', e.target.value)} className="w-full p-2 border rounded text-sm h-32 font-mono" />
+            </div>
+          )}
+          {local.body_type === 'multipart' && (
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={addFieldPart}>添加字段部件</Button>
+                <Button variant="outline" size="sm" onClick={addFilePart}>添加文件部件</Button>
+              </div>
+              {(Array.isArray(local.parts) ? local.parts : []).map((it: any, idx: number) => (
+                <div className="grid grid-cols-2 gap-2" key={idx}>
+                  <input value={it.name||''} onChange={(e)=>{ const arr = [...(local.parts||[])]; arr[idx] = { ...it, name: e.target.value }; setLocal({ ...local, parts: arr }) }} placeholder="部件名" className="p-2 border rounded text-sm" />
+                  {it.type === 'file' ? (
+                    <input value={it.file_path||''} onChange={(e)=>{ const arr = [...(local.parts||[])]; arr[idx] = { ...it, file_path: e.target.value }; setLocal({ ...local, parts: arr }) }} placeholder="Agent 文件路径" className="p-2 border rounded text-sm" />
+                  ) : (
+                    <input value={it.value||''} onChange={(e)=>{ const arr = [...(local.parts||[])]; arr[idx] = { ...it, value: e.target.value }; setLocal({ ...local, parts: arr }) }} placeholder="字段值" className="p-2 border rounded text-sm" />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <SheetFooter>
+          <SheetClose asChild>
+            <Button onClick={()=>{ onChange(local); onOpenChange(false) }}>保存</Button>
+          </SheetClose>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+function buildHttpTaskContent(p: any) {
+  const headers: Record<string,string> = {}
+  const query: Record<string,string> = {}
+  const form_fields: Record<string,string> = {}
+  ;(p.headers||[]).forEach((it:any)=>{ if (it?.name) headers[it.name] = String(it.value||'') })
+  ;(p.query||[]).forEach((it:any)=>{ if (it?.name) query[it.name] = String(it.value||'') })
+  ;(p.form_fields||[]).forEach((it:any)=>{ if (it?.name) form_fields[it.name] = String(it.value||'') })
+  return {
+    method: p.method,
+    url: p.url,
+    timeout_seconds: Number(p.timeout_seconds)||60,
+    allow_redirects: !!p.allow_redirects,
+    verify_tls: !!p.verify_tls,
+    headers,
+    query,
+    body_type: p.body_type,
+    json_body: p.json_body,
+    form_fields,
+    raw_body: p.raw_body,
+    content_type: p.content_type,
+    parts: p.parts||[],
+  }
 }

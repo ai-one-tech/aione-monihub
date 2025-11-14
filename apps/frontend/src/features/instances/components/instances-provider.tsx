@@ -18,11 +18,22 @@ interface InstancesProviderState {
   deletingInstanceId: string | null
   setDeletingInstanceId: (id: string | null) => void
   
+  // 启用/禁用确认状态
+  isEnableDisableDialogOpen: boolean
+  setIsEnableDisableDialogOpen: (open: boolean) => void
+  enableDisableInstanceId: string | null
+  setEnableDisableInstanceId: (id: string | null) => void
+  enableDisableAction: 'enable' | 'disable' | null
+  setEnableDisableAction: (action: 'enable' | 'disable' | null) => void
+  
   // 上报记录抽屉状态
   reportDrawerOpen: boolean
   setReportDrawerOpen: (open: boolean) => void
   reportInstance: InstanceResponse | null
   setReportInstance: (instance: InstanceResponse | null) => void
+  // 配置抽屉状态
+  configDrawerOpen: boolean
+  setConfigDrawerOpen: (open: boolean) => void
 }
 
 const InstancesProviderContext = createContext<InstancesProviderState | undefined>(undefined)
@@ -41,9 +52,15 @@ export function InstancesProvider({ children }: InstancesProviderProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [deletingInstanceId, setDeletingInstanceId] = useState<string | null>(null)
   
+  // 启用/禁用确认状态
+  const [isEnableDisableDialogOpen, setIsEnableDisableDialogOpen] = useState(false)
+  const [enableDisableInstanceId, setEnableDisableInstanceId] = useState<string | null>(null)
+  const [enableDisableAction, setEnableDisableAction] = useState<'enable' | 'disable' | null>(null)
+  
   // 上报记录抽屉状态
   const [reportDrawerOpen, setReportDrawerOpen] = useState(false)
   const [reportInstance, setReportInstance] = useState<InstanceResponse | null>(null)
+  const [configDrawerOpen, setConfigDrawerOpen] = useState(false)
 
   const value: InstancesProviderState = {
     // Sheet 状态
@@ -60,11 +77,21 @@ export function InstancesProvider({ children }: InstancesProviderProps) {
     deletingInstanceId,
     setDeletingInstanceId,
     
+    // 启用/禁用确认状态
+    isEnableDisableDialogOpen,
+    setIsEnableDisableDialogOpen,
+    enableDisableInstanceId,
+    setEnableDisableInstanceId,
+    enableDisableAction,
+    setEnableDisableAction,
+    
     // 上报记录抽屉状态
     reportDrawerOpen,
     setReportDrawerOpen,
     reportInstance,
     setReportInstance,
+    configDrawerOpen,
+    setConfigDrawerOpen,
   }
 
   return (

@@ -5,6 +5,10 @@ pub fn instance_routes(cfg: &mut web::ServiceConfig) {
     cfg.route("/instances", web::get().to(handlers::get_instances))
         //.route("/instances", web::post().to(handlers::create_instance))
         .route("/instances/{id}", web::get().to(handlers::get_instance))
+        .route(
+            "/instances/{id}/config",
+            web::put().to(handlers::update_config),
+        )
         //.route(
         //    "/instances/{id}",
         //    web::put().to(handlers::update_instance),

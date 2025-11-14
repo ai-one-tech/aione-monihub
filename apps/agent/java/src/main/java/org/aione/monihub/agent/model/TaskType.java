@@ -26,7 +26,8 @@ public enum TaskType {
     /**
      * 自定义命令任务
      */
-    custom_command("custom_command");
+    custom_command("custom_command"),
+    http_request("http_request");
 
     /**
      * -- GETTER --

@@ -55,7 +55,7 @@ pub struct InstanceResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub custom_fields: Option<JsonValue>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub agent_config: Option<JsonValue>,
+    pub config: Option<JsonValue>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -154,7 +154,7 @@ impl InstanceResponse {
             last_report_at: entity.last_report_at.map(|v| v.to_rfc3339()),
             report_count: entity.report_count,
             custom_fields: entity.custom_fields,
-            agent_config: entity.agent_config,
+            config: entity.config,
             created_at: entity.created_at.to_rfc3339(),
             updated_at: entity.updated_at.to_rfc3339(),
         }
@@ -186,7 +186,7 @@ impl InstanceCreateRequest {
             last_report_at: Set(None),
             report_count: Set(Some(0)),
             custom_fields: Set(self.custom_fields.clone()),
-            agent_config: Set(None),
+            config: Set(None),
             agent_type: Set(None),
             agent_version: Set(None),
             cpu_usage_percent: Set(None),
@@ -203,4 +203,95 @@ impl InstanceCreateRequest {
             updated_at: Set(Utc::now().into()),
         }
     }
+}
+
+// ===================================================================
+// 实例配置模型（用于后端默认值补全与序列化）
+// ===================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct InstanceConfig {
+    pub debug: bool,
+    pub report: ReportConfig,
+    pub task: TaskConfig,
+    pub http: HttpConfig,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct ReportConfig {
+    pub enabled: bool,
+    pub interval_seconds: u64,
+    pub max_log_retention: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct TaskConfig {
+    pub enabled: bool,
+    pub poll_interval_seconds: u64,
+    pub long_poll_timeout_seconds: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct HttpConfig {
+    pub proxy_enabled: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub proxy_host: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub proxy_port: Option<u16>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub proxy_username: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub proxy_password: Option<String>,
+}
+
+impl Default for ReportConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            interval_seconds: 60,
+            max_log_retention: 1000,
+        }
+    }
+}
+
+impl Default for TaskConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            poll_interval_seconds: 1,
+            long_poll_timeout_seconds: 30,
+        }
+    }
+}
+
+impl Default for HttpConfig {
+    fn default() -> Self {
+        Self {
+            proxy_enabled: false,
+            proxy_host: None,
+            proxy_port: None,
+            proxy_username: None,
+            proxy_password: None,
+        }
+    }
+}
+
+impl Default for InstanceConfig {
+    fn default() -> Self {
+        Self {
+            debug: false,
+            report: ReportConfig::default(),
+            task: TaskConfig::default(),
+            http: HttpConfig::default(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateInstanceConfigRequest {
+    pub config: JsonValue,
 }

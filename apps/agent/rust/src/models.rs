@@ -33,11 +33,11 @@ pub struct AgentLogItem { pub id: Uuid, pub level: String, pub message: String, 
 pub struct TaskDispatchResponse { pub tasks: Vec<TaskDispatchItem>, pub timestamp: DateTime<Utc> }
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct TaskDispatchItem { pub record_id: String, pub task_type: TaskType, pub timeout_seconds: Option<u64>, pub content: serde_json::Value, pub priority: Option<i32> }
+pub struct TaskDispatchItem { pub record_id: String, pub task_type: TaskType, pub timeout_seconds: Option<u64>, #[serde(rename = "task_content")] pub content: serde_json::Value, pub priority: Option<i32> }
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum TaskType { ShellExec, RunCode, FileManager, CustomCommand }
+pub enum TaskType { ShellExec, RunCode, FileManager, CustomCommand, HttpRequest }
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct TaskResultSubmitRequest {

@@ -96,6 +96,14 @@ class InstancesApi {
   }
 
   /**
+   * 更新实例配置
+   */
+  async updateInstanceConfig(instanceId: string, payload: any): Promise<InstanceDetailResponse> {
+    const response = await apiClient.put<InstanceDetailResponse>(`/api/instances/${instanceId}/config`, { config: payload })
+    return response.data
+  }
+
+  /**
    * 启用实例
    */
   async enableInstance(instanceId: string): Promise<InstanceDetailResponse> {

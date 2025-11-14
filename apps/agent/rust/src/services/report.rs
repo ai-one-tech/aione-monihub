@@ -2,7 +2,7 @@ use crate::{services::AppState, models::{InstanceReportRequest, SystemInfo, Netw
 use chrono::Utc;
 use reqwest::StatusCode;
 use tokio::time::{sleep, Duration};
-use sysinfo::{SystemExt, CpuExt, DiskExt};
+use sysinfo::{System, Disks};
 use os_info::Type;
 use gethostname::gethostname;
 
@@ -34,8 +34,9 @@ fn build_report(state: &AppState) -> InstanceReportRequest {
     let network = NetworkInfo { local_ips: local_ips(), mac_addresses: macs(), public_ip: None };
     let total = sys.total_memory() / 1024;
     let used = sys.used_memory() / 1024;
-    let hardware = HardwareInfo { cpu: sys.cpus().iter().map(|c| c.brand().to_string()).collect::<Vec<_>>().join(","), total_memory_mb: total, used_memory_mb: used, disks_mb: sys.disks().iter().map(|d| (d.name().to_string_lossy().to_string(), d.total_space()/1024/1024)).collect() };
-    let runtime = RuntimeInfo { pid: std::process::id(), uptime_seconds: sys.uptime(), threads: 0, exe_path: std::env::current_exe().ok().map(|p| p.to_string_lossy().to_string()).unwrap_or_default(), env: std::env::vars().collect(), profiles: vec![] };
+    let disks = Disks::new_with_refreshed_list();
+    let hardware = HardwareInfo { cpu: sys.cpus().iter().map(|c| c.brand().to_string()).collect::<Vec<_>>().join(","), total_memory_mb: total, used_memory_mb: used, disks_mb: disks.list().iter().map(|d| (d.name().to_string_lossy().to_string(), d.total_space()/1024/1024)).collect() };
+    let runtime = RuntimeInfo { pid: std::process::id(), uptime_seconds: System::uptime(), threads: 0, exe_path: std::env::current_exe().ok().map(|p| p.to_string_lossy().to_string()).unwrap_or_default(), env: std::env::vars().collect(), profiles: vec![] };
     InstanceReportRequest { instance_id: state.cfg.instance_id.clone(), system, network, hardware, runtime, custom: serde_json::json!({}), logs: state.logs.snapshot_and_clear(), timestamp: Utc::now() }
 }
 

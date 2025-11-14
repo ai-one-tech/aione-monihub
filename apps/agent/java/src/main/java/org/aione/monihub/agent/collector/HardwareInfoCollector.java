@@ -20,9 +20,6 @@ import java.util.List;
 public class HardwareInfoCollector {
 
     private AgentLogger log;
-    @javax.annotation.Resource
-    private AgentConfig properties;
-
     private final SystemInfo systemInfo;
     private final HardwareAbstractionLayer hardware;
     private final GlobalMemory memory;

@@ -27,7 +27,7 @@ async fn handle_task(state: AppState, item: TaskDispatchItem) {
     let mut data = serde_json::json!({});
     let mut err = None;
     let timeout = item.timeout_seconds.unwrap_or(3600);
-    let r = match item.task_type { TaskType::ShellExec => crate::handlers::shell_exec::execute(&item, timeout).await, TaskType::RunCode => crate::handlers::run_code::execute(&item, timeout).await, TaskType::FileManager => crate::handlers::file_manager::execute(&state, &item, timeout).await, TaskType::CustomCommand => crate::handlers::custom_command::execute(&state, &item).await };
+    let r = match item.task_type { TaskType::ShellExec => crate::handlers::shell_exec::execute(&item, timeout).await, TaskType::RunCode => crate::handlers::run_code::execute(&item, timeout).await, TaskType::FileManager => crate::handlers::file_manager::execute(&state, &item, timeout).await, TaskType::CustomCommand => crate::handlers::custom_command::execute(&state, &item).await, TaskType::HttpRequest => crate::handlers::http_request::execute(&state, &item, timeout).await };
     match r { Ok(v) => { status = TaskStatus::Success; data = v; message = String::from("success"); } Err(e) => { status = if message.contains("timeout") { TaskStatus::Timeout } else { TaskStatus::Failed }; code = -1; err = Some(e.to_string()); message = String::from("failed"); } }
     let end = Utc::now();
     let req = TaskResultSubmitRequest { record_id: item.record_id.clone(), instance_id: state.cfg.instance_id.clone(), status, code, message, data, error: err, start_time: start, end_time: end, duration_ms: (end - start).num_milliseconds() as u128 };

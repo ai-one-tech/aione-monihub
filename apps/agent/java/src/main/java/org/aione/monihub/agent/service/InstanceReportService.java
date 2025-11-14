@@ -7,7 +7,9 @@ import org.aione.monihub.agent.collector.NetworkInfoCollector;
 import org.aione.monihub.agent.collector.RuntimeInfoCollector;
 import org.aione.monihub.agent.collector.SystemInfoCollector;
 import org.aione.monihub.agent.config.AgentConfig;
+import org.aione.monihub.agent.config.InstanceConfig;
 import org.aione.monihub.agent.model.*;
+import org.aione.monihub.agent.util.AgentLogStore;
 import org.aione.monihub.agent.util.AgentLogger;
 import org.aione.monihub.agent.util.AgentLoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -30,7 +32,7 @@ public class InstanceReportService {
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
     @javax.annotation.Resource
-    private AgentConfig properties;
+    private AgentConfig agentConfig;
 
     @javax.annotation.Resource
     private OkHttpClient httpClient;
@@ -72,18 +74,13 @@ public class InstanceReportService {
      * 启动定时上报
      */
     public void start() {
-        if (!properties.getReport().isEnabled()) {
-            log.info("Instance report is disabled");
-            return;
-        }
-
-        long intervalSeconds = properties.getReport().getIntervalSeconds();
+        long intervalSeconds = agentConfig.getReport().getIntervalSeconds();
         log.info("Starting instance report service, interval: {} seconds", intervalSeconds);
 
         // 延迟10秒后开始首次上报，然后按固定间隔执行
         scheduler.scheduleAtFixedRate(
                 this::reportInstance,
-                10,
+                1,
                 intervalSeconds,
                 TimeUnit.SECONDS
         );
@@ -110,8 +107,11 @@ public class InstanceReportService {
      */
     private void reportInstance() {
         try {
-            log.debug("Collecting instance information...");
-
+            if (!agentConfig.getReport().isEnabled()) {
+                log.info("Instance report is disabled");
+                return;
+            }
+            
             // 构建上报请求
             InstanceReportRequest request = buildReportRequest();
 
@@ -148,10 +148,10 @@ public class InstanceReportService {
         RuntimeInfo runtimeInfo = runtimeInfoCollector.collect();
 
         InstanceReportRequest request = new InstanceReportRequest();
-        request.setInstanceId(properties.getInstanceId());
-        request.setApplicationCode(properties.getApplicationCode());
-        request.setAgentType(properties.getAgentType());
-        request.setAgentVersion(properties.getAgentVersion());
+        request.setInstanceId(agentConfig.getInstanceId());
+        request.setApplicationCode(agentConfig.getApplicationCode());
+        request.setAgentType(agentConfig.getAgentType());
+        request.setAgentVersion(agentConfig.getAgentVersion());
 
         // 程序路径
         request.setProgramPath(runtimeInfo.getProgramPath());
@@ -214,49 +214,58 @@ public class InstanceReportService {
     private boolean sendReport(InstanceReportRequest request) {
         try {
             String json = objectMapper.writeValueAsString(request);
-            String url = properties.getServerUrl() + "/api/open/instances/report";
-
+            String url = agentConfig.getServerUrl() + "/api/open/instances/report";
             log.info("Sending report request to {}: {}", url, json);
 
-            RequestBody body = RequestBody.create(JSON, json);
-            Request httpRequest = new Request.Builder()
-                    .url(url)
-                    .post(body)
-                    .build();
+            int maxRetries = 3;
+            for (int attempt = 1; attempt <= maxRetries; attempt++) {
+                RequestBody body = RequestBody.create(JSON, json);
+                Request.Builder builder = new Request.Builder().url(url).post(body);
+                if (attempt > 1) {
+                    builder.header("Connection", "close");
+                }
+                Request httpRequest = builder.build();
 
-            try (Response response = httpClient.newCall(httpRequest).execute()) {
-                if (response.isSuccessful()) {
-                    String respBody = response.body() != null ? response.body().string() : null;
-                    if (respBody != null && !respBody.isEmpty()) {
-                        org.aione.monihub.agent.model.InstanceReportResponse resp = objectMapper.readValue(respBody, org.aione.monihub.agent.model.InstanceReportResponse.class);
-                        if (resp.getAgentConfig() != null) {
-                            org.aione.monihub.agent.config.LocalConfig local = org.aione.monihub.agent.util.LocalConfigUtil.getConfig();
-                            if (local == null) {
-                                local = new org.aione.monihub.agent.config.LocalConfig();
+                try (Response response = httpClient.newCall(httpRequest).execute()) {
+                    if (response.isSuccessful()) {
+                        String respBody = response.body() != null ? response.body().string() : null;
+                        if (respBody != null && !respBody.isEmpty()) {
+                            InstanceReportResponse resp = objectMapper.readValue(respBody, InstanceReportResponse.class);
+                            if (resp.getConfig() != null) {
+                                InstanceConfig config = resp.getConfig();
+                                agentConfig.setDebug(config.isDebug());
+                                agentConfig.setTask(config.getTask());
+                                agentConfig.setReport(config.getReport());
                             }
-                            local.setInstanceId(properties.getInstanceId());
-                            local.setAgentConfig(resp.getAgentConfig());
-                            org.aione.monihub.agent.util.LocalConfigUtil.updateConfig(local);
-                            org.aione.monihub.agent.util.AgentConfigOverrideApplier.apply(properties, resp.getAgentConfig());
                         }
-                    }
-                    customCommandService.process(CommandType.EnableHttp);
-                    int sent = request.getAgentLogs() == null ? 0 : request.getAgentLogs().size();
-                    org.aione.monihub.agent.util.AgentLogStore.getInstance().removeSent(sent);
-                    return true;
-                } else {
-                    if (response.code() == HttpStatus.FORBIDDEN.value()) {
-                        // 封禁处理
-                        customCommandService.process(CommandType.DisableHttp);
+
+                        int sent = request.getAgentLogs() == null ? 0 : request.getAgentLogs().size();
+                        AgentLogStore.getInstance().removeSent(sent);
+                        return true;
+                    } else {
+                        if (response.code() == HttpStatus.FORBIDDEN.value()) {
+                            customCommandService.process(CommandType.DisableHttp);
+                            return false;
+                        }
+                        log.warn("Report failed with status: {}", response.code());
                         return false;
                     }
-                    log.warn("Report failed with status: {}", response.code());
+                } catch (Exception e) {
+                    String msg = e.getMessage() == null ? "" : e.getMessage();
+                    boolean retryable =
+                            (e instanceof java.net.SocketException && (msg.contains("Broken pipe") || msg.contains("Connection reset")))
+                                    || (e instanceof java.net.SocketTimeoutException);
+                    if (retryable && attempt < maxRetries) {
+                        log.warn("Retrying report due to error: {}, attempt: {}", msg, attempt);
+                        continue;
+                    }
+                    log.error("Error sending report", e);
                     return false;
                 }
             }
-
-        } catch (Exception e) {
-            log.error("Error sending report", e);
+            return false;
+        } catch (Exception outer) {
+            log.error("Error sending report", outer);
             return false;
         }
     }

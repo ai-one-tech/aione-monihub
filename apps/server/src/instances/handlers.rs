@@ -1,6 +1,6 @@
 use crate::instances::models::{
     InstanceListQuery, InstanceListResponse, InstanceMonitoringDataResponse,
-    InstanceResponse, Pagination,
+    InstanceResponse, Pagination, UpdateInstanceConfigRequest, InstanceConfig,
 };
 use crate::shared::error::ApiError;
 use crate::shared::generate_snowflake_id;
@@ -14,6 +14,7 @@ use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, 
     PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, Set
 };
+use serde_json::json;
 
 pub async fn get_instances(
     db: web::Data<DatabaseConnection>,
@@ -122,7 +123,11 @@ pub async fn get_instance(
 
     match instance {
         Some(instance) => {
-            let response = InstanceResponse::from_entity(instance);
+            let mut response = InstanceResponse::from_entity(instance);
+            if response.config.is_none() {
+                let default_cfg = InstanceConfig::default();
+                response.config = Some(serde_json::to_value(default_cfg).unwrap_or(json!({})));
+            }
             Ok(HttpResponse::Ok().json(response))
         }
         None => Err(ApiError::NotFound("实例不存在".to_string())),
@@ -296,6 +301,46 @@ pub async fn disable_instance(
     let saved = active.update(&**db).await?;
     let response = InstanceResponse::from_entity(saved);
     Ok(HttpResponse::Ok().json(response))
+}
+
+/// PUT /api/instances/{id}/config
+/// 更新实例配置（将请求体与默认值合并后保存）
+pub async fn update_config(
+    db: web::Data<DatabaseConnection>,
+    path: web::Path<String>,
+    req: web::Json<UpdateInstanceConfigRequest>,
+    req_header: HttpRequest,
+) -> Result<HttpResponse, ApiError> {
+    let instance_id = path.into_inner();
+    let user_id = get_user_id_from_request(&req_header)?;
+
+    let existing = Instances::find_by_id(&instance_id)
+        .filter(crate::entities::instances::Column::DeletedAt.is_null())
+        .one(&**db)
+        .await?;
+
+    let instance = match existing {
+        Some(i) => i,
+        None => return Err(ApiError::NotFound("实例不存在".to_string())),
+    };
+
+    // 将传入的 config 合并默认值（缺失字段使用默认值）
+    let merged: InstanceConfig = serde_json::from_value(req.config.clone())
+        .unwrap_or_else(|_| InstanceConfig::default());
+    let merged_value = serde_json::to_value(merged).unwrap_or(json!({}));
+
+    let mut active: ActiveModel = instance.into();
+    active.config = Set(Some(merged_value.clone()));
+    active.updated_by = Set(user_id.to_string());
+    active.updated_at = Set(Utc::now().into());
+    let saved = active.update(&**db).await?;
+
+    // 返回保存后的详情（保证 config 不为空）
+    let mut resp = InstanceResponse::from_entity(saved);
+    if resp.config.is_none() {
+        resp.config = Some(merged_value);
+    }
+    Ok(HttpResponse::Ok().json(resp))
 }
 
 pub async fn get_instance_monitoring_data(

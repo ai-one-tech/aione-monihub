@@ -37,6 +37,7 @@ export const instanceResponseSchema = z.object({
   last_report_at: z.string().optional(),
   report_count: z.number().optional(),
   custom_fields: z.any().optional(),
+  config: z.any().optional(),
   created_at: z.string(),
   updated_at: z.string(),
 })
@@ -56,6 +57,39 @@ export type InstanceListResponse = z.infer<typeof instanceListResponseSchema>
 // 实例详情响应
 export const instanceDetailResponseSchema = instanceResponseSchema
 export type InstanceDetailResponse = z.infer<typeof instanceDetailResponseSchema>
+
+// ===================================================================
+// 实例配置模型（用于前端表单）
+// ===================================================================
+
+export const httpConfigSchema = z.object({
+  proxy_enabled: z.boolean().default(false),
+  proxy_host: z.string().optional(),
+  proxy_port: z.number().optional(),
+  proxy_username: z.string().optional(),
+  proxy_password: z.string().optional(),
+})
+
+export const reportConfigSchema = z.object({
+  enabled: z.boolean().default(true),
+  interval_seconds: z.number().default(60),
+  max_log_retention: z.number().default(1000),
+})
+
+export const taskConfigSchema = z.object({
+  enabled: z.boolean().default(true),
+  poll_interval_seconds: z.number().default(1),
+  long_poll_timeout_seconds: z.number().default(30),
+})
+
+export const instanceConfigSchema = z.object({
+  debug: z.boolean().default(false),
+  report: reportConfigSchema,
+  task: taskConfigSchema,
+  http: httpConfigSchema,
+})
+
+export type InstanceConfig = z.infer<typeof instanceConfigSchema>
 
 // 创建实例请求
 export const createInstanceRequestSchema = z.object({
