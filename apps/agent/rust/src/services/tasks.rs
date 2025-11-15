@@ -101,7 +101,6 @@ async fn handle_task(state: AppState, item: TaskDispatchItem) {
         Ok(v) => {
             status = TaskStatus::Success;
             data = v;
-            message = String::from("success");
             agent_logger::info(&format!("任务成功 record_id={}", item.record_id));
         }
         Err(e) => {

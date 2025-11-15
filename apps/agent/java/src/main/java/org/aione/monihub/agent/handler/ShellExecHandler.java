@@ -56,6 +56,11 @@ public class ShellExecHandler implements TaskHandler {
         Files.createFile(scriptFile);
 
         try {
+            // 添加 off echo
+            if(!scriptContent.toLowerCase().contains("@echo off")){
+                scriptContent = "@echo off\r\n" + scriptContent;
+            }
+
             try (OutputStreamWriter writer = new OutputStreamWriter(Files.newOutputStream(scriptFile.toFile().toPath()), CommonUtils.isWindows() ? Charset.forName("GBK") : StandardCharsets.UTF_8)) {
                 writer.write(scriptContent);
             }
@@ -141,6 +146,7 @@ public class ShellExecHandler implements TaskHandler {
         if (finished) {
             int exitCode = process.exitValue();
             result.setResultCode(exitCode);
+            result.put("status", exitCode);
             if (exitCode == 0) {
                 result.setStatus(TaskStatus.success);
             } else {
@@ -166,6 +172,8 @@ public class ShellExecHandler implements TaskHandler {
             text = new String(data, StandardCharsets.UTF_8);
         }
         result.put("output", text.trim());
+
+        result.setStatus(TaskStatus.success);
 
         return result;
     }

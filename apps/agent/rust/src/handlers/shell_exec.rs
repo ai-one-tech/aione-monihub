@@ -10,11 +10,12 @@ use tokio::time::{timeout, Duration};
 use uuid::Uuid;
 
 pub async fn execute(item: &TaskDispatchItem, timeout_sec: u64) -> Result<serde_json::Value> {
-    let script = item
+    let mut script = item
         .content
         .get("script")
         .and_then(|v| v.as_str())
-        .unwrap_or("");
+        .unwrap_or("")
+        .to_string();
 
     let exec_dir = std::env::current_exe()?
         .parent()
@@ -40,11 +41,15 @@ pub async fn execute(item: &TaskDispatchItem, timeout_sec: u64) -> Result<serde_
     };
     let filename = format!("{}.{}", &item.record_id, ext);
     let script_path = base_dir.join(&filename);
+    if cfg!(target_os = "windows") && !script.to_lowercase().contains("@echo off") {
+        script = format!("@echo off\r\n{}", script);
+    }
+
     if cfg!(target_os = "windows") {
-        let (bytes, _, _) = GBK.encode(script);
+        let (bytes, _, _) = GBK.encode(script.as_str());
         fs::write(&script_path, bytes.as_ref())?;
     } else {
-        fs::write(&script_path, script)?;
+        fs::write(&script_path, script.as_bytes())?;
         #[cfg(unix)]
         {
             let mut perms = fs::metadata(&script_path)?.permissions();
