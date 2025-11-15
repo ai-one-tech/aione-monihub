@@ -1,5 +1,7 @@
 package org.aione.monihub.agent.util;
 
+import org.aione.monihub.agent.config.AgentConfig;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -10,7 +12,7 @@ public final class TaskTempUtils {
 
     public static Path baseTempDir() {
 //        return Paths.get(System.getProperty("java.io.tmpdir"), "monihub", "task");
-        return Paths.get("tmp", "monihub");
+        return Paths.get("tmp");
     }
 
     public static Path ensureBaseTempDir() {

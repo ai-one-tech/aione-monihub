@@ -10,12 +10,12 @@ use std::time::Duration;
 
 pub async fn execute(state: &AppState, item: &TaskDispatchItem, timeout_sec: u64) -> Result<Value> {
     let method = item
-        .content
+        .task_content
         .get("method")
         .and_then(|v| v.as_str())
         .unwrap_or("GET");
     let url = item
-        .content
+        .task_content
         .get("url")
         .and_then(|v| v.as_str())
         .unwrap_or("");
@@ -23,19 +23,19 @@ pub async fn execute(state: &AppState, item: &TaskDispatchItem, timeout_sec: u64
         return Err(anyhow::anyhow!("invalid url"));
     }
     let allow_redirects = item
-        .content
+        .task_content
         .get("allow_redirects")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
     let verify_tls = item
-        .content
+        .task_content
         .get("verify_tls")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
-    let headers = item.content.get("headers").and_then(|v| v.as_object());
-    let query = item.content.get("query").and_then(|v| v.as_object());
+    let headers = item.task_content.get("headers").and_then(|v| v.as_object());
+    let query = item.task_content.get("query").and_then(|v| v.as_object());
     let body_type = item
-        .content
+        .task_content
         .get("body_type")
         .and_then(|v| v.as_str())
         .unwrap_or("none")
@@ -93,12 +93,12 @@ pub async fn execute(state: &AppState, item: &TaskDispatchItem, timeout_sec: u64
     }
     match body_type.as_str() {
         "json" => {
-            if let Some(b) = item.content.get("json_body") {
+            if let Some(b) = item.task_content.get("json_body") {
                 req = req.json(b);
             }
         }
         "form" => {
-            if let Some(f) = item.content.get("form_fields").and_then(|v| v.as_object()) {
+            if let Some(f) = item.task_content.get("form_fields").and_then(|v| v.as_object()) {
                 let mut form = vec![];
                 for (k, v) in f {
                     form.push((k.clone(), v.as_str().unwrap_or(&v.to_string()).to_string()));
@@ -108,19 +108,19 @@ pub async fn execute(state: &AppState, item: &TaskDispatchItem, timeout_sec: u64
         }
         "raw" => {
             let ct = item
-                .content
+                .task_content
                 .get("content_type")
                 .and_then(|v| v.as_str())
                 .unwrap_or("text/plain");
             let body = item
-                .content
+                .task_content
                 .get("raw_body")
                 .and_then(|v| v.as_str())
                 .unwrap_or("");
             req = req.body(body.to_string()).header("Content-Type", ct);
         }
         "multipart" => {
-            if let Some(parts) = item.content.get("parts").and_then(|v| v.as_array()) {
+            if let Some(parts) = item.task_content.get("parts").and_then(|v| v.as_array()) {
                 let mut mp = reqwest::multipart::Form::new();
                 for p in parts {
                     let t = p.get("type").and_then(|v| v.as_str()).unwrap_or("field");

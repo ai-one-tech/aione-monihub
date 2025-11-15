@@ -10,10 +10,6 @@ import org.slf4j.LoggerFactory;
  */
 public class AgentLoggerFactory {
 
-    private static AgentConfig getAgentConfig() {
-        return SpringContextUtils.getBean(AgentConfig.class);
-    }
-
     /**
      * 获取日志对象
      *
@@ -22,7 +18,7 @@ public class AgentLoggerFactory {
      */
     public static AgentLogger getLogger(Class<?> clazz) {
         Logger logger = LoggerFactory.getLogger(clazz);
-        return new AgentLogger(logger, getAgentConfig());
+        return new AgentLogger(logger, AgentConfig.instance());
     }
 
     /**
@@ -33,6 +29,6 @@ public class AgentLoggerFactory {
      */
     public static AgentLogger getLogger(String name) {
         Logger logger = LoggerFactory.getLogger(name);
-        return new AgentLogger(logger, getAgentConfig());
+        return new AgentLogger(logger, AgentConfig.instance());
     }
 }

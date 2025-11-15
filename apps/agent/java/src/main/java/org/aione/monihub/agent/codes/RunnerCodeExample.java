@@ -16,7 +16,7 @@ public class RunnerCodeExample {
 
         Map<String, Object> result = new HashMap<>();
 
-        AgentConfig agentConfig = SpringContextUtils.getBean(AgentConfig.class);
+        AgentConfig agentConfig = AgentConfig.instance();
 
         result.put("agentConfig", agentConfig);
 

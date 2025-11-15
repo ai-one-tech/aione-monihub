@@ -60,7 +60,7 @@ public class AgentLogStore {
     }
 
     private int getMaxRetention() {
-        AgentConfig config = SpringContextUtils.getBean(AgentConfig.class);
+        AgentConfig config = AgentConfig.instance();
         if (config.getReport() != null) {
             return config.getReport().getMaxLogRetention();
         }

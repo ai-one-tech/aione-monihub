@@ -9,7 +9,7 @@ use anyhow::Result;
 
 pub async fn execute(state: &AppState, item: &TaskDispatchItem) -> Result<serde_json::Value> {
     let t = item
-        .content
+        .task_content
         .get("command")
         .and_then(|v| v.as_str())
         .unwrap_or("");

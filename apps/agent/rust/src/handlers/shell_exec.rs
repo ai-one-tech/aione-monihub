@@ -7,11 +7,10 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 use tokio::process::Command;
 use tokio::time::{timeout, Duration};
-use uuid::Uuid;
 
 pub async fn execute(item: &TaskDispatchItem, timeout_sec: u64) -> Result<serde_json::Value> {
     let mut script = item
-        .content
+        .task_content
         .get("script")
         .and_then(|v| v.as_str())
         .unwrap_or("")
@@ -21,9 +20,9 @@ pub async fn execute(item: &TaskDispatchItem, timeout_sec: u64) -> Result<serde_
         .parent()
         .map(|p| p.to_path_buf())
         .unwrap_or(std::env::current_dir()?);
-    let task_dir = exec_dir.join("tmp").join("task").join(&item.record_id);
+    let task_dir = exec_dir.join("tmp").join("task");
     let workdir_opt = item
-        .content
+        .task_content
         .get("workdir")
         .and_then(|v| v.as_str())
         .map(|s| s.trim())
@@ -39,7 +38,7 @@ pub async fn execute(item: &TaskDispatchItem, timeout_sec: u64) -> Result<serde_
     } else {
         "sh"
     };
-    let filename = format!("{}.{}", &item.record_id, ext);
+    let filename = format!("{}.{}", &item.task_id, ext);
     let script_path = base_dir.join(&filename);
     if cfg!(target_os = "windows") && !script.to_lowercase().contains("@echo off") {
         script = format!("@echo off\r\n{}", script);

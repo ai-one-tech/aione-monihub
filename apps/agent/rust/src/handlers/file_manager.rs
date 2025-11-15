@@ -22,13 +22,13 @@ pub async fn execute(
     _timeout_sec: u64,
 ) -> Result<serde_json::Value> {
     let op = item
-        .content
+        .task_content
         .get("operation")
         .and_then(|v| v.as_str())
         .unwrap_or("");
     if op == "upload_file" {
         let url = item
-            .content
+            .task_content
             .get("remote_url")
             .and_then(|v| v.as_str())
             .unwrap_or("");
@@ -36,7 +36,7 @@ pub async fn execute(
     }
     if op == "download_file" {
         let path = item
-            .content
+            .task_content
             .get("path")
             .and_then(|v| v.as_str())
             .unwrap_or("");

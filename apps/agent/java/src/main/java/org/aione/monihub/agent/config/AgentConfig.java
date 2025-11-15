@@ -2,6 +2,7 @@ package org.aione.monihub.agent.config;
 
 import lombok.Data;
 import org.aione.monihub.agent.util.LocalConfigUtil;
+import org.aione.monihub.agent.util.SpringContextUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -13,6 +14,10 @@ import java.util.UUID;
 @Data
 @ConfigurationProperties(prefix = "monihub.agent")
 public class AgentConfig extends InstanceConfig {
+
+    public static AgentConfig instance(){
+        return SpringContextUtils.getBean(AgentConfig.class);
+    }
 
     /**
      * 本地的实例ID

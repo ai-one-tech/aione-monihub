@@ -1,8 +1,5 @@
-use std::future::Future;
 use reqwest::{Error, Response};
 use serde::Serialize;
-use crate::models::InstanceReportRequest;
-use crate::utils;
 
 pub fn get_client() -> reqwest::Client{
     let client = reqwest::Client::new();

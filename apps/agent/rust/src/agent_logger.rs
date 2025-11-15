@@ -49,6 +49,7 @@ pub fn error(message: &str) {
     }
 }
 
+#[allow(dead_code)]
 pub fn debug(message: &str) {
     if let Some(state) = STATE.get() {
         if state.cfg.debug {

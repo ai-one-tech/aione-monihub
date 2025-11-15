@@ -19,7 +19,7 @@ pub async fn start(state: AppState) {
     let sem = std::sync::Arc::new(Semaphore::new(state.cfg.task.max_concurrent_tasks));
     let st = state.clone();
     tokio::spawn(async move {
-        let client = Client::builder()
+        let _client = Client::builder()
             .timeout(Duration::from_secs(
                 st.cfg.task.long_poll_timeout_seconds + 5,
             ))
@@ -80,12 +80,12 @@ async fn handle_task(state: AppState, item: TaskDispatchItem) {
         TaskType::HttpRequest => "http_request",
     };
     agent_logger::info(&format!("开始执行任务 record_id={} type={}", item.record_id, task_type_str));
-    let mut status = TaskStatus::Running;
+    let status: TaskStatus;
     let mut code = 0;
     let mut message = String::new();
     let mut data = serde_json::json!({});
     let mut err = None;
-    let timeout = item.timeout_seconds.unwrap_or(3600);
+    let timeout = item.timeout_seconds.clone();
     let r = match item.task_type {
         TaskType::ShellExec => crate::handlers::shell_exec::execute(&item, timeout).await,
         TaskType::RunCode => crate::handlers::run_code::execute(&item, timeout).await,

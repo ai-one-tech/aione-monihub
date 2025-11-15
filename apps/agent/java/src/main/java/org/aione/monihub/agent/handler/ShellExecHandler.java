@@ -48,7 +48,7 @@ public class ShellExecHandler implements TaskHandler {
         log.info("Executing shell script with content length: {}", scriptContent.length());
 
         String scriptExtension = CommonUtils.isWindows() ? ".bat" : ".sh";
-        Path scriptsDir = TaskTempUtils.ensureSubDir("scripts");
+        Path scriptsDir = TaskTempUtils.ensureSubDir("task");
         Path scriptFile = scriptsDir.resolve(task.getTaskId() + scriptExtension);
         if (Files.exists(scriptFile)) {
             Files.deleteIfExists(scriptFile);

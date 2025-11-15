@@ -6,6 +6,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+
 #[derive(Clone, Serialize, Deserialize)]
 /// 实例信息上报请求体
 pub struct InstanceReportRequest {
@@ -112,12 +113,13 @@ pub struct TaskDispatchResponse {
 #[derive(Clone, Serialize, Deserialize)]
 /// 单个任务项（包含类型与内容）
 pub struct TaskDispatchItem {
+    pub task_id: String,
     pub record_id: String,
+    pub instance_id: String,
     pub task_type: TaskType,
-    pub timeout_seconds: Option<u64>,
-    #[serde(rename = "task_content")]
-    pub content: serde_json::Value,
-    pub priority: Option<i32>,
+    pub timeout_seconds: u64,
+    pub task_content: serde_json::Value,
+    pub priority: i32,
 }
 
 #[derive(Clone, Serialize, Deserialize)]

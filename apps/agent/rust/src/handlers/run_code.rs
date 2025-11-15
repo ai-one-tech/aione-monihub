@@ -15,7 +15,7 @@ use tokio::time::{timeout, Duration};
 
 pub async fn execute(item: &TaskDispatchItem, timeout_sec: u64) -> Result<serde_json::Value> {
     let code = item
-        .content
+        .task_content
         .get("code")
         .and_then(|v| v.as_str())
         .unwrap_or("");
