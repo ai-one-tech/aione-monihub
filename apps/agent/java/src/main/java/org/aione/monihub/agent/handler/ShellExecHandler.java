@@ -57,7 +57,7 @@ public class ShellExecHandler implements TaskHandler {
 
         try {
             // 添加 off echo
-            if(!scriptContent.toLowerCase().contains("@echo off")){
+            if(CommonUtils.isWindows() && !scriptContent.toLowerCase().contains("@echo off")){
                 scriptContent = "@echo off\r\n" + scriptContent;
             }
 
