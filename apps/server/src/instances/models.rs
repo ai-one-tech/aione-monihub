@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use crate::shared::snowflake::generate_snowflake_id;
-use crate::shared::enums::{Status, OsType, OnlineStatus};
+use crate::shared::enums::{Status, OsType, OnlineStatus, AgentType};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Instance {
@@ -46,6 +46,10 @@ pub struct InstanceResponse {
     pub os_type: Option<OsType>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub os_version: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub agent_type: Option<AgentType>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub agent_version: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub first_report_at: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -150,6 +154,8 @@ impl InstanceResponse {
             network_type: entity.network_type,
             os_type: entity.os_type,
             os_version: entity.os_version,
+            agent_type: entity.agent_type,
+            agent_version: entity.agent_version,
             first_report_at: entity.first_report_at.map(|v| v.to_rfc3339()),
             last_report_at: entity.last_report_at.map(|v| v.to_rfc3339()),
             report_count: entity.report_count,

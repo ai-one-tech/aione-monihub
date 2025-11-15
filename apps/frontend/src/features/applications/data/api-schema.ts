@@ -199,6 +199,8 @@ export const instanceInfoSchema = z.object({
   os_version: z.string().optional(),
   online_status: z.string(),
   last_heartbeat: z.string().optional(),
+  agent_type: z.string().optional(),
+  agent_version: z.string().optional(),
   created_at: z.string(),
   updated_at: z.string(),
 })

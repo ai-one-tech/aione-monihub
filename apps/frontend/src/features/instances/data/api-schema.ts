@@ -33,6 +33,8 @@ export const instanceResponseSchema = z.object({
   program_path: z.string().optional(),
   os_type: z.string().optional(),
   os_version: z.string().optional(),
+  agent_type: z.string().optional(),
+  agent_version: z.string().optional(),
   first_report_at: z.string().optional(),
   last_report_at: z.string().optional(),
   report_count: z.number().optional(),

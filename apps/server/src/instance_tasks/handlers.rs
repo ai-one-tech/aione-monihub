@@ -643,6 +643,8 @@ pub async fn get_task_instances_with_results(
                 os_version: instance.os_version,
                 online_status: instance.online_status,
                 last_heartbeat: instance.last_report_at.map(|t| t.to_rfc3339()),
+                agent_type: instance.agent_type,
+                agent_version: instance.agent_version,
                 created_at: instance.created_at.to_rfc3339(),
                 updated_at: instance.updated_at.to_rfc3339(),
             };

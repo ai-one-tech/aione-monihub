@@ -19,11 +19,14 @@ use tokio::time::{sleep, Duration};
 
 pub async fn start(state: AppState) {
     let interval = state.cfg.report.interval_seconds;
+    if let Some(ip) = fetch_public_ip().await {
+        let _ = state.public_ip.set(ip);
+    }
     tokio::spawn(async move {
         loop {
             if state.cfg.report.enabled {
                 agent_logger::info("准备进行实例信息上报");
-                let req = build_report(&state);
+                let req = build_report(&state).await;
                 let url = format!("{}/api/open/instances/report", state.cfg.server_url);
                 let res = http_util::post(url, &req).await;
                 match res {
@@ -55,7 +58,7 @@ pub async fn start(state: AppState) {
 }
 
 /// 构造上报请求体（字段命名与 Java Agent 对齐）
-fn build_report(state: &AppState) -> InstanceReportRequest {
+async fn build_report(state: &AppState) -> InstanceReportRequest {
     let mut sys = sysinfo::System::new_all();
     sys.refresh_all();
     let os = os_info::get();
@@ -69,10 +72,11 @@ fn build_report(state: &AppState) -> InstanceReportRequest {
     let ip_primary = pick_primary_ip(&ips);
     let macs_list = macs();
     let mac_primary = macs_list.get(0).cloned();
+    let public_ip = state.public_ip.get().cloned();
     let network = NetworkInfo {
         ip_address: ip_primary,
         mac_address: mac_primary,
-        public_ip: None,
+        public_ip,
         network_type: None,
         port: None,
     };
@@ -172,6 +176,55 @@ fn build_report(state: &AppState) -> InstanceReportRequest {
     }
 }
 
+async fn fetch_public_ip() -> Option<String> {
+    let services = [
+        "https://ifconfig.me/ip",
+        "https://icanhazip.com",
+    ];
+    for s in services.iter() {
+        match http_util::get(s.to_string()).await {
+            Ok(resp) => {
+                if resp.status().is_success() {
+                    match resp.text().await {
+                        Ok(body) => {
+                            let ip = body.trim();
+                            if is_valid_public_ipv4(ip) {
+                                return Some(ip.to_string());
+                            }
+                        }
+                        Err(e) => {
+                            agent_logger::warn(&format!("读取公网IP响应失败: {} - {}", s, e));
+                        }
+                    }
+                } else {
+                    agent_logger::warn(&format!("获取公网IP失败 http={} - {}", resp.status().as_u16(), s));
+                }
+            }
+            Err(e) => {
+                agent_logger::warn(&format!("请求公网IP服务失败: {} - {}", s, e));
+            }
+        }
+    }
+    None
+}
+
+fn is_valid_public_ipv4(s: &str) -> bool {
+    let parts: Vec<&str> = s.split('.').collect();
+    if parts.len() != 4 { return false; }
+    let mut octets = [0u8; 4];
+    for (i, p) in parts.iter().enumerate() {
+        if let Ok(v) = p.parse::<u8>() { octets[i] = v; } else { return false; }
+    }
+    let a = octets[0];
+    let b = octets[1];
+    if a == 10 { return false; }
+    if a == 127 { return false; }
+    if a == 192 && b == 168 { return false; }
+    if a == 172 && (16..=31).contains(&b) { return false; }
+    if a == 169 && b == 254 { return false; }
+    true
+}
+
 /// 格式化操作系统类型为易读字符串
 fn format_os(t: Type) -> String {
     match t {
@@ -187,7 +240,9 @@ fn local_ips() -> Vec<String> {
     let mut v = Vec::new();
     if let Ok(ips) = local_ip_address::list_afinet_netifas() {
         for (_name, ip) in ips {
-            v.push(ip.to_string());
+            if let std::net::IpAddr::V4(v4) = ip {
+                v.push(v4.to_string());
+            }
         }
     }
     v

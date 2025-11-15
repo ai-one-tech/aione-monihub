@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use utoipa::ToSchema;
-use crate::shared::enums::{TaskType, TaskStatus};
+use crate::shared::enums::{TaskType, TaskStatus, AgentType};
 
 // ===================================================================
 // 任务类型枚举
@@ -129,6 +129,10 @@ pub struct InstanceInfo {
     pub online_status: crate::shared::enums::OnlineStatus,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last_heartbeat: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub agent_type: Option<AgentType>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub agent_version: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }

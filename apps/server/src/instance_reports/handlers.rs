@@ -163,11 +163,24 @@ pub async fn report_instance_info(
     let mut instance_update: instances::ActiveModel = instance.into();
     instance_update.agent_type = Set(Some(request.agent_type.clone()));
     instance_update.agent_version = Set(request.agent_version.clone());
+    instance_update.os_type = Set(Some(request.system_info.os_type.clone()));
+    instance_update.os_version = Set(request.system_info.os_version.clone());
+    instance_update.hostname = Set(request.system_info.hostname.clone().unwrap_or_default());
     instance_update.cpu_usage_percent = Set(Some(cpu_usage_decimal));
     instance_update.memory_usage_percent = Set(Some(memory_usage_decimal));
     instance_update.disk_usage_percent = Set(Some(disk_usage_decimal));
     instance_update.process_uptime_seconds = Set(Some(request.runtime_info.process_uptime_seconds));
+    instance_update.ip_address = Set(request.network_info.ip_address.clone().unwrap().to_string());
+    instance_update.public_ip = Set(request.network_info.public_ip.clone());
     instance_update.network_type = Set(request.network_info.network_type.clone());
+    instance_update.mac_address = Set(request.network_info.mac_address.clone());
+    instance_update.port = Set(request.network_info.port.clone());
+    instance_update.program_path = Set(request.program_path.clone());
+    instance_update.environment = Set(request.environment.clone());
+    instance_update.application_id = Set(application_id.clone());
+    instance_update.agent_instance_id = Set(Some(request.agent_instance_id.clone()));
+    instance_update.profiles = Set(request.profiles.clone());
+    instance_update.custom_fields = Set(request.custom_fields.clone());
     instance_update.last_report_at = Set(Some(Utc::now().into()));
     // 恢复为 Active 并清空 offline_at
     instance_update.status = Set(Status::Active);
@@ -187,6 +200,7 @@ pub async fn report_instance_info(
         instance_update.first_report_at = Set(Some(Utc::now().into()));
     }
     
+    instance_update.updated_by = Set("system-auto".to_string());
     instance_update.updated_at = Set(Utc::now().into());
     instance_update.update(&**db).await?;
 

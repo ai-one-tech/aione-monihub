@@ -11,7 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { LongText } from '@/components/long-text'
 import { Label } from '@/components/ui/label'
-import { ChevronRight, CheckCircle, RefreshCw, Network } from 'lucide-react'
+import { ChevronRight, CheckCircle, RefreshCw, Network, Coffee, Cog } from 'lucide-react'
 import { ExecutionResultPanel } from './execution-result'
 import { OS_TYPE_OPTIONS } from '@/features/instances/data/api-schema'
 import React, { useState } from 'react'
@@ -150,6 +150,23 @@ export function ApplicationTasks() {
   const getOSLabel = (os?: string) => {
     const found = OS_TYPE_OPTIONS.find(o => o.value === os)
     return found?.label || os || 'Unknown'
+  }
+
+  const AgentTypeIcon = ({ type, className = '' }: { type?: string; className?: string }) => {
+    const size = 'w-4 h-4'
+    if (type === 'java') {
+      return <Coffee className={`${size} text-amber-600 ${className}`} />
+    }
+    if (type === 'rust_agent') {
+      return <Cog className={`${size} text-orange-500 ${className}`} />
+    }
+    return null
+  }
+
+  const getAgentLabel = (type?: string) => {
+    if (type === 'java') return 'Java'
+    if (type === 'rust_agent') return 'Rust Agent'
+    return 'Unknown'
   }
 
   const formatIp = (ip?: string) => {
@@ -502,14 +519,28 @@ export function ApplicationTasks() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <div className="text-sm font-medium truncate">
-                              {instance.id}
+                            <div className="flex items-center justify-between">
+                              <div className="text-sm font-medium truncate">
+                                {instance.id}
+                              </div>
+                            <div className="ml-2 flex items-center">
+                              <Badge variant="outline" className="text-xs">
+                                {getOSLabel(instance.os_type)}
+                              </Badge>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div>
+                                    <AgentTypeIcon type={instance.agent_type} className="ml-1" />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent sideOffset={8}>
+                                  <div className="text-xs">
+                                    {getAgentLabel(instance.agent_type)} {instance.agent_version ? `v${instance.agent_version}` : '未上报版本'}
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
                             </div>
-                            <Badge variant="outline" className="ml-2 text-xs">
-                              {getOSLabel(instance.os_type)}
-                            </Badge>
-                          </div>
+                            </div>
                           <div className="flex justify-between items-center w-full">
                             <p className="text-xs text-gray-600 truncate">
                               {instance.hostname || '未知主机名'}
@@ -705,10 +736,22 @@ export function ApplicationTasks() {
                         }`}
                       onClick={() => handleInstanceResultSelect(taskInstance)}
                     >
-                      <div className="absolute top-2 right-2">
+                      <div className="absolute top-2 right-2 flex items-center">
                         <Badge variant="outline" className="text-xs">
                           {getOSLabel(taskInstance.instance.os_type)}
                         </Badge>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <AgentTypeIcon type={taskInstance.instance.agent_type} className="ml-1" />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent sideOffset={8}>
+                            <div className="text-xs">
+                              {getAgentLabel(taskInstance.instance.agent_type)} {taskInstance.instance.agent_version ? `v${taskInstance.instance.agent_version}` : '未上报版本'}
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
 
                       <div className="text-sm font-medium truncate mb-1 pr-16">
