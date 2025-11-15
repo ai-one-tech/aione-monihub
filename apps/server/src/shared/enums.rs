@@ -114,6 +114,7 @@ pub enum Environment {
 #[serde(rename_all = "snake_case")]
 pub enum AgentType {
     #[sea_orm(string_value = "java")] Java,
+    #[sea_orm(string_value = "rust_agent")] RustAgent,
 }
 
 // 操作系统类型

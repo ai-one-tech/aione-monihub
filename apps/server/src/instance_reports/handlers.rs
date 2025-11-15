@@ -46,7 +46,7 @@ pub async fn report_instance_info(
     // 5. 验证实例是否存在，如果不存在则自动创建
     // 首先通过 agent_instance_id 查找实例
     let instance = instances::Entity::find()
-        .filter(instances::Column::AgentInstanceId.eq(&request.instance_id))
+        .filter(instances::Column::AgentInstanceId.eq(&request.agent_instance_id))
         .filter(instances::Column::DeletedAt.is_null())
         .one(&**db)
         .await?;
@@ -57,7 +57,7 @@ pub async fn report_instance_info(
         
         let new_instance = instances::ActiveModel {
             id: Set(new_instance_id),
-            agent_instance_id: Set(Some(request.instance_id.clone())),
+            agent_instance_id: Set(Some(request.agent_instance_id.clone())),
             hostname: Set(request.system_info.hostname.clone().unwrap_or_default()),
             ip_address: Set(request.network_info.ip_address.clone().unwrap_or_default()),
             status: Set(Status::Active),
@@ -205,12 +205,12 @@ pub async fn report_instance_info(
 
             let ctx = match &item.context {
                 Some(c) => json!({
-                    "agent_instance_id": request.instance_id,
+                    "agent_instance_id": request.agent_instance_id,
                     "instance_id": instance_id_db,
                     "extra": c,
                 }),
                 None => json!({
-                    "agent_instance_id": request.instance_id,
+                    "agent_instance_id": request.agent_instance_id,
                     "instance_id": instance_id_db,
                 }),
             };

@@ -149,7 +149,7 @@ public class InstanceReportService {
         RuntimeInfo runtimeInfo = runtimeInfoCollector.collect();
 
         InstanceReportRequest request = new InstanceReportRequest();
-        request.setInstanceId(agentConfig.getAgentInstanceId());
+        request.setAgentInstanceId(agentConfig.getAgentInstanceId());
         request.setApplicationCode(agentConfig.getApplicationCode());
         request.setAgentType(agentConfig.getAgentType());
         request.setAgentVersion(agentConfig.getAgentVersion());
@@ -231,6 +231,7 @@ public class InstanceReportService {
                     InstanceReportResponse resp = objectMapper.readValue(respBody, InstanceReportResponse.class);
                     if (resp.getConfig() != null) {
                         InstanceConfig config = resp.getConfig();
+                        agentConfig.setInstanceId(resp.getInstanceId());
                         agentConfig.setDebug(config.isDebug());
                         agentConfig.setTask(config.getTask());
                         agentConfig.setReport(config.getReport());

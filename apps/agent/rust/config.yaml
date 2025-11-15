@@ -1,0 +1,6 @@
+# 实例ID（必填，需要先在服务端创建实例）
+application_code: 3ASDFASDF
+# 服务端URL
+server_url: http://localhost:9080
+# Debug模式，开启后会打印详细日志，默认关闭
+debug: false

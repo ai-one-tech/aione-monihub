@@ -13,6 +13,7 @@ import org.aione.monihub.agent.util.CommonUtils;
 import java.net.SocketTimeoutException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -37,7 +38,7 @@ public class InstanceTaskService {
     private AgentTaskExecutor agentTaskExecutor;
 
     private ScheduledExecutorService scheduler;
-    private ExecutorService taskDispatcher;
+    private ScheduledExecutorService resultScheduler;
     private volatile boolean running;
 
     @javax.annotation.PostConstruct
@@ -48,8 +49,8 @@ public class InstanceTaskService {
             thread.setDaemon(true);
             return thread;
         });
-        this.taskDispatcher = Executors.newFixedThreadPool(6, r -> {
-            Thread thread = new Thread(r, "task-dispatcher");
+        this.resultScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread thread = new Thread(r, "task-result-scheduler");
             thread.setDaemon(true);
             return thread;
         });
@@ -65,14 +66,20 @@ public class InstanceTaskService {
         running = true;
         scheduler.execute(() -> {
             while (running) {
-                boolean needSleep = pollTasks();
-                if (needSleep) {
-                    try {
-                        Thread.sleep(2000);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
+                // 获取任务并执行
+                PollOutcome outcome = pollOnce();
+                switch (outcome) {
+                    case TIMEOUT:
+                    case TASKS_PROCESSED:
+                    case NO_TASKS:
+                        // 立即继续下一次轮询
                         break;
-                    }
+                    case DISABLED:
+                        safeSleep(10000);
+                        break;
+                    case ERROR_NON_TIMEOUT:
+                        safeSleep(3000);
+                        break;
                 }
             }
         });
@@ -95,14 +102,14 @@ public class InstanceTaskService {
         }
 
         agentTaskExecutor.shutdown();
-        if (taskDispatcher != null) {
-            taskDispatcher.shutdown();
+        if (resultScheduler != null) {
+            resultScheduler.shutdown();
             try {
-                if (!taskDispatcher.awaitTermination(10, TimeUnit.SECONDS)) {
-                    taskDispatcher.shutdownNow();
+                if (!resultScheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                    resultScheduler.shutdownNow();
                 }
             } catch (InterruptedException e) {
-                taskDispatcher.shutdownNow();
+                resultScheduler.shutdownNow();
                 Thread.currentThread().interrupt();
             }
         }
@@ -111,30 +118,32 @@ public class InstanceTaskService {
     /**
      * 拉取任务
      */
-    private boolean pollTasks() {
+    private PollOutcome pollOnce() {
         try {
             ObjectMapper objectMapper = CommonUtils.getObjectMapper();
             InstanceConfig.TaskConfig taskCfg = agentConfig.getTask();
 
             if (taskCfg == null || !taskCfg.isEnabled()) {
                 log.info("Task service is disabled");
-                Thread.sleep(30 * 1000);
-                return true;
+                return PollOutcome.DISABLED;
             }
             log.info("Polling tasks for instance: {}", agentConfig.getAgentInstanceId());
 
             // 构建拉取任务的URL
-            String url = agentConfig.getServerUrl() + "/api/open/instances/tasks?agent_instance_id=" + agentConfig.getAgentInstanceId();
+            okhttp3.HttpUrl.Builder ub = Objects.requireNonNull(HttpUrl.parse(agentConfig.getServerUrl() + "/api/open/instances/tasks")).newBuilder();
+            ub.addQueryParameter("agent_instance_id", agentConfig.getAgentInstanceId());
 
             int timeoutSeconds = taskCfg.getLongPollTimeoutSeconds();
             if (timeoutSeconds > 0) {
-                url += "&wait=true&timeout=" + timeoutSeconds;
+                ub.addQueryParameter("wait", "true");
+                ub.addQueryParameter("timeout", String.valueOf(timeoutSeconds));
             }
 
-            log.info("Polling tasks from: {}", url);
+            okhttp3.HttpUrl pollUrl = ub.build();
+            log.info("Polling tasks from: {}", pollUrl);
 
             Request request = new Request.Builder()
-                    .url(url)
+                    .url(pollUrl)
                     .get()
                     .build();
 
@@ -147,28 +156,26 @@ public class InstanceTaskService {
                     if (taskResponse.getTasks() != null && !taskResponse.getTasks().isEmpty()) {
                         log.info("Received {} tasks", taskResponse.getTasks().size());
 
-                        // 处理每个任务
+                        // 处理每个任务, 每个任务异步处理
                         for (TaskDispatchItem task : taskResponse.getTasks()) {
                             processTask(task);
                         }
-                    } else {
-                        log.debug("No pending tasks");
+                        return PollOutcome.TASKS_PROCESSED;
                     }
+                    log.debug("No pending tasks");
+                    return PollOutcome.NO_TASKS;
                 } else {
                     log.warn("Failed to poll tasks, status: {}", response.code());
+                    return PollOutcome.ERROR_NON_TIMEOUT;
                 }
             }
         } catch (SocketTimeoutException e) {
             log.info("next polling tasks");
+            return PollOutcome.TIMEOUT;
         } catch (Exception e) {
             log.error("Error polling tasks", e);
-            try {
-                Thread.sleep(1000 * 5);
-            } catch (InterruptedException ignore) {
-            }
-            return true;
+            return PollOutcome.ERROR_NON_TIMEOUT;
         }
-        return false;
     }
 
     /**
@@ -177,28 +184,11 @@ public class InstanceTaskService {
     private void processTask(TaskDispatchItem task) {
         log.info("Processing task: {} ({})", task.getTaskId(), task.getTaskType());
 
-        // 异步执行任务
-        taskDispatcher.execute(() -> {
+        agentTaskExecutor.executeAsync(task, result -> {
             try {
-
-                // 执行任务
-                TaskExecutionResult result = agentTaskExecutor.execute(task);
-
-                // 提交结果
-                submitResult(task, result);
-
-            } catch (Exception e) {
-                log.error("Error processing task: {}", task.getTaskId(), e);
-
-                // 提交失败结果
-                try {
-                    TaskExecutionResult failedResult = new TaskExecutionResult();
-                    failedResult.setStatus(TaskStatus.failed);
-                    failedResult.setErrorMessage(e.getMessage());
-                    submitResult(task, failedResult);
-                } catch (Exception ex) {
-                    log.error("Failed to submit error result", ex);
-                }
+                submitResultAsync(task, result);
+            } catch (Exception ex) {
+                log.error("Failed to submit task result asynchronously: {}", task.getTaskId(), ex);
             }
         });
     }
@@ -206,64 +196,57 @@ public class InstanceTaskService {
     /**
      * 提交任务结果
      */
-    private void submitResult(TaskDispatchItem task, TaskExecutionResult result) {
-        int maxRetries = 10;
-        int retryCount = 0;
+    private void submitResultAsync(TaskDispatchItem task, TaskExecutionResult result) {
+        final int maxRetries = 10;
+        final ObjectMapper objectMapper = CommonUtils.getObjectMapper();
 
-        ObjectMapper objectMapper = CommonUtils.getObjectMapper();
+        Runnable submitJob = new Runnable() {
+            int retry = 0;
 
-        while (retryCount < maxRetries) {
-            try {
-                TaskResultSubmitRequest request = new TaskResultSubmitRequest();
-                request.setRecordId(task.getRecordId());
-                request.setAgentInstanceId(agentConfig.getAgentInstanceId());
-                request.setStatus(result.getStatus());
-                request.setResultCode(result.getResultCode());
-                request.setResultMessage(result.getResultMessage());
-                request.setResultData(result.getResultData());
-                request.setErrorMessage(result.getErrorMessage());
-                request.setStartTime(formatTime(result.getStartTime()));
-                request.setEndTime(formatTime(result.getEndTime()));
-                request.setDurationMs(result.getDurationMs());
-
-                String json = objectMapper.writeValueAsString(request);
-                String url = agentConfig.getServerUrl() + "/api/open/instances/tasks/result";
-
-                log.info("Sending task result to {}: {}", url, json);
-
-                RequestBody body = RequestBody.create(JSON, json);
-                Request httpRequest = new Request.Builder()
-                        .url(url)
-                        .post(body)
-                        .build();
-
-                try (Response response = httpClient.newCall(httpRequest).execute()) {
-                    if (response.isSuccessful()) {
-                        log.info("Task result submitted successfully: {}", task.getTaskId());
-                        return; // 成功提交，退出重试循环
-                    } else {
-                        log.warn("Failed to submit task result, status: {}, attempt: {}",
-                                response.code(), retryCount + 1);
-                    }
-                }
-
-            } catch (Exception e) {
-                log.error("Error submitting task result, attempt: {}", retryCount + 1, e);
-            }
-
-            retryCount++;
-            if (retryCount < maxRetries) {
+            @Override
+            public void run() {
                 try {
-                    // 指数退避：1秒、2秒、4秒
-                    Thread.sleep((long) Math.pow(2, retryCount - 1) * 1000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
+                    TaskResultSubmitRequest req = new TaskResultSubmitRequest();
+                    req.setRecordId(task.getRecordId());
+                    req.setAgentInstanceId(agentConfig.getAgentInstanceId());
+                    req.setStatus(result.getStatus());
+                    req.setResultCode(result.getResultCode());
+                    req.setResultMessage(result.getResultMessage());
+                    req.setResultData(result.getResultData());
+                    req.setErrorMessage(result.getErrorMessage());
+                    req.setStartTime(formatTime(result.getStartTime()));
+                    req.setEndTime(formatTime(result.getEndTime()));
+                    req.setDurationMs(result.getDurationMs());
+
+                    String json = objectMapper.writeValueAsString(req);
+                    okhttp3.HttpUrl url = okhttp3.HttpUrl.parse(agentConfig.getServerUrl() + "/api/open/instances/tasks/result");
+                    log.info("Sending task result to {}: {}", url, json);
+
+                    RequestBody body = RequestBody.create(JSON, json);
+                    Request httpRequest = new Request.Builder().url(url).post(body).build();
+
+                    try (Response response = httpClient.newCall(httpRequest).execute()) {
+                        if (response.isSuccessful()) {
+                            log.info("Task result submitted successfully: {}", task.getTaskId());
+                            return;
+                        }
+                        log.warn("Failed to submit task result, status: {}, attempt: {}", response.code(), retry + 1);
+                    }
+                } catch (Exception e) {
+                    log.error("Error submitting task result, attempt: {}", retry + 1, e);
+                }
+
+                retry++;
+                if (retry < maxRetries) {
+                    long delay = (long) Math.pow(2, Math.min(retry - 1, 4)) * 1000L; // 1,2,4,8,16s
+                    resultScheduler.schedule(this, delay, TimeUnit.MILLISECONDS);
+                } else {
+                    log.error("Failed to submit task result after {} attempts: {}", maxRetries, task.getTaskId());
                 }
             }
-        }
+        };
 
-        log.error("Failed to submit task result after {} attempts: {}", maxRetries, task.getTaskId());
+        resultScheduler.execute(submitJob);
     }
 
     /**
@@ -274,5 +257,21 @@ public class InstanceTaskService {
                 java.time.Instant.ofEpochMilli(timestamp),
                 java.time.ZoneId.systemDefault()
         ).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+    }
+
+    private void safeSleep(long ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private enum PollOutcome {
+        TIMEOUT,
+        TASKS_PROCESSED,
+        NO_TASKS,
+        DISABLED,
+        ERROR_NON_TIMEOUT
     }
 }

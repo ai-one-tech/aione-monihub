@@ -23,14 +23,14 @@ public class AgentConfig extends InstanceConfig {
         if (Strings.isEmpty(agentInstanceId)) {
             // 读取本地文件的实例ID
             LocalConfig config = LocalConfigUtil.getConfig();
-            if (config != null && Strings.isNotEmpty(config.getInstanceId())) {
-                agentInstanceId = config.getInstanceId();
+            if (config != null && Strings.isNotEmpty(config.getAgentInstanceId())) {
+                agentInstanceId = config.getAgentInstanceId();
             }
 
             if (Strings.isEmpty(agentInstanceId)) {
                 UUID uuid = UUID.randomUUID();
                 agentInstanceId = uuid.toString();
-                LocalConfigUtil.updateConfig(new LocalConfig().setInstanceId(agentInstanceId));
+                LocalConfigUtil.updateConfig(new LocalConfig().setAgentInstanceId(agentInstanceId));
             }
         }
         return agentInstanceId;

@@ -9,7 +9,7 @@ import java.io.IOException;
 
 public class LocalConfigUtil {
 
-    private static final String LOCAL_CONFIG_PATH = "/tmp/monihub/config";
+    private static final String LOCAL_CONFIG_PATH = "/tmp/monihub/config.json";
 
     public static void updateConfig(LocalConfig localConfig) {
         try {

@@ -231,6 +231,17 @@ async fn main() -> io::Result<()> {
         App::new()
             .app_data(web::Data::new(db_connection.clone()))
             .app_data(web::Data::new(ws_server.clone()))
+            .app_data(
+                web::JsonConfig::default().error_handler(|err, req| {
+                    let msg = format!(
+                        "JSON 反序列化失败: {}; method={}; path={}",
+                        err,
+                        req.method(),
+                        req.path()
+                    );
+                    aione_monihub_server::shared::error::ApiError::ValidationError(msg).into()
+                }),
+            )
             // 配置CORS中间件
             .wrap(
                 Cors::default()

@@ -12,8 +12,8 @@ import java.util.Map;
 @Data
 public class InstanceReportRequest {
 
-    @JsonProperty("instance_id")
-    private String instanceId;
+    @JsonProperty("agent_instance_id")
+    private String agentInstanceId;
 
     @JsonProperty("application_code")
     private String applicationCode;

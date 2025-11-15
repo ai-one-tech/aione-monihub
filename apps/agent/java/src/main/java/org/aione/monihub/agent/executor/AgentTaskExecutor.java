@@ -87,19 +87,10 @@ public class AgentTaskExecutor {
                     result.setErrorMessage("Unsupported task type: " + task.getTaskType());
                     result.setStatus(TaskStatus.failed);
                 } else {
-                    Future<TaskExecutionResult> future = executorService.submit(() ->
-                            handler.execute(task)
-                    );
-
                     try {
-                        result = future.get(1, TimeUnit.HOURS);
-                    } catch (TimeoutException e) {
-                        future.cancel(true);
-                        result.setErrorMessage("Task execution timeout");
-                        result.setStatus(TaskStatus.timeout);
-                    } catch (ExecutionException e) {
-                        Throwable cause = e.getCause();
-                        result.setErrorMessage(cause != null ? cause.getMessage() : e.getMessage());
+                        result = handler.execute(task);
+                    } catch (Exception e) {
+                        result.setErrorMessage(e.getMessage());
                         result.setStatus(TaskStatus.failed);
                     }
                 }
@@ -115,6 +106,22 @@ public class AgentTaskExecutor {
             result.setDurationMs(durationMs);
 
             return result;
+        });
+    }
+
+    /**
+     * 异步执行任务并在完成后回调
+     */
+    public void executeAsync(TaskDispatchItem task, java.util.function.Consumer<TaskExecutionResult> callback) {
+        executorService.execute(() -> {
+            TaskExecutionResult res = execute(task);
+            try {
+                if (callback != null) {
+                    callback.accept(res);
+                }
+            } catch (Exception e) {
+                log.error("Callback error for task: {}", task.getTaskId(), e);
+            }
         });
     }
 

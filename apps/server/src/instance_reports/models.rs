@@ -9,7 +9,7 @@ use crate::shared::enums;
 /// 实例信息上报请求
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InstanceReportRequest {
-    pub instance_id: String,
+    pub agent_instance_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub program_path: Option<String>,
     pub profiles: Option<String>,

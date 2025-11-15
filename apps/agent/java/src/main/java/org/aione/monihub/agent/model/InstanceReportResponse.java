@@ -19,6 +19,10 @@ public class InstanceReportResponse {
      */
     @JsonProperty("record_id")
     private String recordId;
+
+    @JsonProperty("instance_id")
+    private String instanceId;
+
     /**
      * 上报时间戳
      */
