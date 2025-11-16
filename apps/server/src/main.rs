@@ -187,6 +187,7 @@ use aione_monihub_server::instance_tasks::routes::{
 };
 use aione_monihub_server::instances::routes::instance_routes;
 use aione_monihub_server::logs::routes::log_routes;
+use aione_monihub_server::audit::routes::audit_routes;
 use aione_monihub_server::permissions::routes::permission_routes;
 use aione_monihub_server::projects::routes::project_routes;
 use aione_monihub_server::roles::routes::role_routes;
@@ -274,6 +275,7 @@ async fn main() -> io::Result<()> {
                     .configure(config_routes)
                     .configure(websocket_routes)
                     .configure(log_routes)
+                    .configure(audit_routes)
                     .configure(file_routes)
                     // Open API routes (no authentication required)
                     .service(

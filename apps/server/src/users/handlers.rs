@@ -236,6 +236,29 @@ pub async fn create_user(
         updated_at: saved_user.updated_at.to_rfc3339(),
     };
 
+    // 审计记录：新增用户
+    let ci = req.connection_info();
+    let ip_str = ci.realip_remote_addr().unwrap_or("").to_string();
+    let trace_id = req.headers().get("x-trace-id").and_then(|v| v.to_str().ok());
+    let after = serde_json::json!({
+        "id": response.id,
+        "username": response.username,
+        "email": response.email,
+        "status": response.status,
+        "created_at": response.created_at,
+        "updated_at": response.updated_at,
+    });
+    let _ = crate::audit::handlers::record_audit_log(
+        &**db,
+        "users",
+        "create",
+        &current_user_id.to_string(),
+        &ip_str,
+        trace_id,
+        None,
+        Some(after),
+    ).await;
+
     Ok(HttpResponse::Ok().json(response))
 }
 
@@ -448,6 +471,37 @@ pub async fn update_user(
         updated_at: saved_user.updated_at.to_rfc3339(),
     };
 
+    // 审计记录：更新用户
+    let ci = req.connection_info();
+    let ip_str = ci.realip_remote_addr().unwrap_or("").to_string();
+    let trace_id = req.headers().get("x-trace-id").and_then(|v| v.to_str().ok());
+    let before = serde_json::json!({
+        "id": existing_user.id,
+        "username": existing_user.username,
+        "email": existing_user.email,
+        "status": existing_user.status,
+        "created_at": existing_user.created_at.to_rfc3339(),
+        "updated_at": existing_user.updated_at.to_rfc3339(),
+    });
+    let after = serde_json::json!({
+        "id": response.id,
+        "username": response.username,
+        "email": response.email,
+        "status": response.status,
+        "created_at": response.created_at,
+        "updated_at": response.updated_at,
+    });
+    let _ = crate::audit::handlers::record_audit_log(
+        &**db,
+        "users",
+        "update",
+        &current_user_id.to_string(),
+        &ip_str,
+        trace_id,
+        Some(before),
+        Some(after),
+    ).await;
+
     Ok(HttpResponse::Ok().json(response))
 }
 
@@ -506,6 +560,29 @@ pub async fn delete_user(
     };
 
     deleted_user.update(&**db).await?;
+
+    // 审计记录：删除用户
+    let ci = req.connection_info();
+    let ip_str = ci.realip_remote_addr().unwrap_or("").to_string();
+    let trace_id = req.headers().get("x-trace-id").and_then(|v| v.to_str().ok());
+    let before = serde_json::json!({
+        "id": existing_user.id,
+        "username": existing_user.username,
+        "email": existing_user.email,
+        "status": existing_user.status,
+        "created_at": existing_user.created_at.to_rfc3339(),
+        "updated_at": existing_user.updated_at.to_rfc3339(),
+    });
+    let _ = crate::audit::handlers::record_audit_log(
+        &**db,
+        "users",
+        "delete",
+        &current_user_id.to_string(),
+        &ip_str,
+        trace_id,
+        Some(before),
+        None,
+    ).await;
 
     Ok(HttpResponse::Ok().json("用户删除成功"))
 }

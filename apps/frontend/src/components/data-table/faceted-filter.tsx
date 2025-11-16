@@ -29,6 +29,7 @@ type DataTableFacetedFilterProps<TData, TValue> = {
     icon?: React.ComponentType<{ className?: string }>
   }[]
   multiSelect?: boolean // 控制是否启用多选，默认为 false（单选）
+  contentClassName?: string
 }
 
 export function DataTableFacetedFilter<TData, TValue>({
@@ -36,6 +37,7 @@ export function DataTableFacetedFilter<TData, TValue>({
   title,
   options,
   multiSelect = false, // 默认为单选模式
+  contentClassName,
 }: DataTableFacetedFilterProps<TData, TValue>) {
   // 根据是否多选来确定 selectedValues 的类型和初始值
   const filterValue = column?.getFilterValue()
@@ -75,7 +77,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                         key={option.value}
                         className='rounded-sm px-1 font-normal'
                       >
-                        {option.label}
+                        <span dangerouslySetInnerHTML={{ __html: option.label }} />
                       </Badge>
                     ))
                 )}
@@ -84,7 +86,7 @@ export function DataTableFacetedFilter<TData, TValue>({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className='w-[200px] p-0' align='start'>
+      <PopoverContent className={cn('p-0', contentClassName ?? 'w-[200px]')} align='start'>
         <Command>
           <CommandInput placeholder={title} />
           <CommandList>
@@ -132,7 +134,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                     {option.icon && (
                       <option.icon className='text-muted-foreground size-4' />
                     )}
-                    <span>{option.label}</span>
+                     <span dangerouslySetInnerHTML={{ __html: option.label }} />
                   </CommandItem>
                 )
               })}

@@ -23,6 +23,12 @@ pub struct LogListQuery {
     pub agent_instance_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub instance_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub method: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -56,6 +62,15 @@ pub struct LogResponse {
     pub timestamp: String,
     pub created_at: String,
     pub updated_at: String,
+    // 追加字段，便于前端请求日志展示
+    pub method: Option<String>,
+    pub path: Option<String>,
+    pub status: Option<i32>,
+    pub request_headers: Option<serde_json::Value>,
+    pub request_body: Option<serde_json::Value>,
+    pub response_body: Option<serde_json::Value>,
+    pub duration_ms: Option<i64>,
+    pub trace_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

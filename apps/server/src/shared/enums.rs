@@ -149,6 +149,8 @@ pub enum LogSource {
     Server,
     #[sea_orm(string_value = "agent")]
     Agent,
+    #[sea_orm(string_value = "audit")]
+    Audit,
 }
 
 #[derive(EnumDisplay, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveActiveEnum, EnumIter, ToSchema)]

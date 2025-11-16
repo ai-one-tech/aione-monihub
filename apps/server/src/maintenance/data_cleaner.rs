@@ -4,6 +4,7 @@ use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use std::time::Instant;
 
 use crate::entities::instance_records;
+use crate::entities::logs;
 
 /// 启动每日数据清理任务，在每天凌晨0点执行
 pub fn start_data_cleaner(db: DatabaseConnection) {
@@ -25,6 +26,13 @@ pub fn start_data_cleaner(db: DatabaseConnection) {
                     info!("[data_cleaner] 清理历史数据完成，删除记录数: {}", deleted);
                 }
                 Err(e) => error!("[data_cleaner] 数据清理失败: {}", e),
+            }
+
+            match run_logs_cleanup(&db).await {
+                Ok(deleted) => {
+                    info!("[data_cleaner] 清理日志完成，删除记录数: {}", deleted);
+                }
+                Err(e) => error!("[data_cleaner] 日志清理失败: {}", e),
             }
         }
     });
@@ -53,6 +61,30 @@ async fn run_data_cleanup(db: &DatabaseConnection) -> Result<u64, sea_orm::DbErr
         cutoff.to_rfc3339(),
     );
     
+    Ok(res.rows_affected)
+}
+
+/// 执行日志清理任务
+/// 保留30天内的数据，删除更早的数据
+async fn run_logs_cleanup(db: &DatabaseConnection) -> Result<u64, sea_orm::DbErr> {
+    let start = Instant::now();
+
+    let cutoff = Utc::now() - Duration::days(30);
+
+    let res = logs::Entity::delete_many()
+        .filter(logs::Column::CreatedAt.lt(cutoff))
+        .exec(db)
+        .await?;
+
+    let elapsed_ms = start.elapsed().as_millis();
+    info!(
+        target: "data_cleaner",
+        "日志清理完成 | 删除行数={} | 耗时={}ms | 保留数据截止时间={}",
+        res.rows_affected,
+        elapsed_ms,
+        cutoff.to_rfc3339(),
+    );
+
     Ok(res.rows_affected)
 }
 

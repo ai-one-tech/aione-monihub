@@ -3,6 +3,8 @@ use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
 use actix_web::{web, HttpResponse};
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, PaginatorTrait, Order};
+use sea_orm::sea_query::Expr;
+use sea_orm::Condition;
 use crate::logs::models::{LogListQuery, LogListResponse as ModelLogListResponse, LogResponse as ModelLogResponse, Pagination as ModelPagination};
 
 pub async fn get_logs(
@@ -33,6 +35,32 @@ pub async fn get_logs(
         query_builder = query_builder.filter(Column::Message.like(like_pattern));
     }
 
+    // 方法过滤（基于 context JSON）
+    if let Some(method) = &query.method {
+        let allowed = ["GET", "POST", "PUT", "DELETE", "PATCH"];
+        if allowed.contains(&method.as_str()) {
+            let expr = Expr::cust(format!("(context ->> 'method') = '{}'", method));
+            query_builder = query_builder.filter(Condition::all().add(expr));
+        }
+    }
+
+    // 状态码过滤（基于 context JSON）
+    if let Some(status) = query.status {
+        let expr = Expr::cust(format!("((context ->> 'status')::int) = {}", status));
+        query_builder = query_builder.filter(Condition::all().add(expr));
+    }
+
+    // URL过滤：优先使用 context.path，其次使用 message LIKE
+    if let Some(url) = &query.url {
+        // JSON 路径匹配（支持 Postgres 等）
+        let escaped = url.replace("%", "\\%").replace("_", "\\_");
+        let expr = Expr::cust(format!("(context ->> 'path') ILIKE '%{}%'", escaped));
+        query_builder = query_builder.filter(Condition::all().add(expr));
+        // 兜底：message LIKE，确保非 JSON 数据库也生效
+        let like_pattern = format!("%{}%", url);
+        query_builder = query_builder.filter(Column::Message.like(like_pattern));
+    }
+
     // 时间范围（timestamp）
     if let Some(start_date) = &query.start_date {
         if let Ok(start_time) = chrono::DateTime::parse_from_rfc3339(start_date) {
@@ -44,10 +72,9 @@ pub async fn get_logs(
     if let Some(source) = &query.source {
         query_builder = query_builder.filter(Column::LogSource.eq(source.clone()));
     }
-    // 代理实例过滤（使用 log_source 中的 agent 标识）
-    if let Some(agent_instance_id) = &query.agent_instance_id {
-        let expected = format!("agent:java:{}", agent_instance_id);
-        query_builder = query_builder.filter(Column::LogSource.eq(expected));
+    // 应用/实例过滤
+    if let Some(instance_id) = &query.instance_id {
+        query_builder = query_builder.filter(Column::InstanceId.eq(instance_id.clone()));
     }
     if let Some(end_date) = &query.end_date {
         if let Ok(end_time) = chrono::DateTime::parse_from_rfc3339(end_date) {
@@ -91,6 +118,14 @@ pub async fn get_logs(
             timestamp: log.timestamp.to_string(),
             created_at: log.created_at.to_string(),
             updated_at: log.created_at.to_string(), // 使用created_at因为没有updated_at字段
+            method: log.context.as_ref().and_then(|ctx| ctx.get("method")).and_then(|v| v.as_str()).map(|s| s.to_string()),
+            path: log.context.as_ref().and_then(|ctx| ctx.get("path")).and_then(|v| v.as_str()).map(|s| s.to_string()),
+            status: log.context.as_ref().and_then(|ctx| ctx.get("status")).and_then(|v| v.as_i64()).map(|n| n as i32),
+            request_headers: log.context.as_ref().and_then(|ctx| ctx.get("request_headers")).cloned(),
+            request_body: log.context.as_ref().and_then(|ctx| ctx.get("request_body")).cloned(),
+            response_body: log.context.as_ref().and_then(|ctx| ctx.get("response_body")).cloned(),
+            duration_ms: log.context.as_ref().and_then(|ctx| ctx.get("duration_ms")).and_then(|v| v.as_i64()),
+            trace_id: log.context.as_ref().and_then(|ctx| ctx.get("trace_id")).and_then(|v| v.as_str()).map(|s| s.to_string()),
         })
         .collect();
 
@@ -145,6 +180,28 @@ pub async fn export_logs(
     if let Some(keyword) = &query.keyword {
         let like_pattern = format!("%{}%", keyword);
         query_builder = query_builder.filter(Column::Message.like(like_pattern));
+    }
+
+    // 方法过滤（基于 context JSON）
+    if let Some(method) = &query.method {
+        let allowed = ["GET", "POST", "PUT", "DELETE", "PATCH"];
+        if allowed.contains(&method.as_str()) {
+            let expr = Expr::cust(format!("(context ->> 'method') = '{}'", method));
+            query_builder = query_builder.filter(Condition::all().add(expr));
+        }
+    }
+
+    // 状态码过滤（基于 context JSON）
+    if let Some(status) = query.status {
+        let expr = Expr::cust(format!("((context ->> 'status')::int) = {}", status));
+        query_builder = query_builder.filter(Condition::all().add(expr));
+    }
+
+    // URL过滤（基于 context JSON，模糊）
+    if let Some(url) = &query.url {
+        let escaped = url.replace("%", "\\%").replace("_", "\\_");
+        let expr = Expr::cust(format!("(context ->> 'path') ILIKE '%{}%'", escaped));
+        query_builder = query_builder.filter(Condition::all().add(expr));
     }
 
     // 获取所有匹配的日志数据

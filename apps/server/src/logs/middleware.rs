@@ -80,6 +80,28 @@ where
         };
 
         Box::pin(async move {
+            // 收集请求头并脱敏敏感字段
+            let mut headers_json = serde_json::Map::new();
+            for (k, v) in req.headers().iter() {
+                let key = k.as_str().to_ascii_lowercase();
+                let val = v.to_str().unwrap_or("");
+                let redacted = match key.as_str() {
+                    "authorization" | "cookie" | "set-cookie" => "<redacted>",
+                    _ => val,
+                };
+                headers_json.insert(key, serde_json::Value::String(redacted.to_string()));
+            }
+            let req_content_type = req
+                .headers()
+                .get("Content-Type")
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            headers_json.insert(
+                "content_type".to_string(),
+                serde_json::Value::String(req_content_type.clone()),
+            );
+
             let result = service.call(req).await;
 
             let duration_ms = start.elapsed().as_millis() as i64;
@@ -101,9 +123,23 @@ where
                     }
                 }
 
-                let headers = json!({
-                    "content_type": "",
-                });
+                // 捕获响应头与可读响应体（仅JSON/text，限制长度）
+                let mut response_body_value: serde_json::Value = serde_json::Value::Null;
+                let mut response_content_type = String::new();
+                if let Ok(resp) = &result {
+                    response_content_type = resp
+                        .headers()
+                        .get("Content-Type")
+                        .and_then(|v| v.to_str().ok())
+                        .unwrap_or("")
+                        .to_string();
+                    // 暂未捕获响应体字节，进行标记
+                    if response_content_type.starts_with("application/json") || response_content_type.starts_with("text/") {
+                        response_body_value = json!({ "skipped": true, "reason": "capturing_disabled" });
+                    } else {
+                        response_body_value = json!({ "skipped": true, "reason": "binary" });
+                    }
+                }
 
                 let query_part = if query.is_empty() {
                     String::new()
@@ -124,7 +160,10 @@ where
                     "status": status_code,
                     "duration_ms": duration_ms,
                     "trace_id": trace_id,
-                    "headers": headers,
+                    "request_headers": headers_json,
+                    "request_body": { "skipped": true },
+                    "response_body": response_body_value,
+                    "response_content_type": response_content_type,
                     "user_id": user_id,
                 });
 
