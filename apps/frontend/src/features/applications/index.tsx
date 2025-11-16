@@ -13,6 +13,7 @@ import { useApplicationsQuery } from './hooks/use-applications-query'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 
 const route = getRouteApi('/_authenticated/applications')
 
@@ -22,8 +23,8 @@ export function Applications() {
 
   // 构建API查询参数
   const apiParams = {
-    page: search.page || 1,
-    limit: search.pageSize || 10,
+    page: search.page ?? DEFAULT_PAGE,
+    limit: search.pageSize ?? DEFAULT_PAGE_SIZE,
     search: search.search || undefined,
     status: (search.status) ? search.status as 'active' | 'inactive' | 'archived' : undefined,
     project_id: search.project_id || undefined,
@@ -65,10 +66,11 @@ export function Applications() {
             </Alert>
           ) : (
             <ApplicationsTable 
-              data={data?.data || []} 
-              search={search} 
-              navigate={navigate} 
-            />
+                  data={data?.data || []}
+                  totalPages={Math.ceil((data?.pagination?.total || 0) / (data?.pagination?.limit || (search.pageSize ?? DEFAULT_PAGE_SIZE)))}
+                  search={search}
+                  navigate={navigate}
+                  onRefresh={refetch}            />
           )}
         </div>
       </Main>

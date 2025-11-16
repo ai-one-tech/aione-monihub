@@ -160,6 +160,7 @@ pub async fn record_audit_log(
         message: Set(format!("AUDIT {} {}", table, operation)),
         context: Set(Some(context)),
         log_source: Set(crate::shared::enums::LogSource::Audit),
+        log_type: Set(crate::shared::enums::LogType::Operation),
         timestamp: Set(Utc::now().into()),
         created_at: Set(Utc::now().into()),
     };

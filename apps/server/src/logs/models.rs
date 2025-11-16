@@ -20,6 +20,8 @@ pub struct LogListQuery {
     pub end_date: Option<String>,
     pub source: Option<enums::LogSource>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub log_type: Option<enums::LogType>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub agent_instance_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub instance_id: Option<String>,

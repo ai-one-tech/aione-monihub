@@ -11,6 +11,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import {
   Table,
   TableBody,
@@ -57,7 +58,7 @@ export function TasksTable({ data = [], totalPages, search, navigate }: DataTabl
   } = useTableUrlState({
     search,
     navigate,
-    pagination: { defaultPage: 1, defaultPageSize: 10 },
+    pagination: { defaultPage: DEFAULT_PAGE, defaultPageSize: DEFAULT_PAGE_SIZE },
     globalFilter: { enabled: true, key: 'filter' },
     columnFilters: [
       { columnId: 'status', searchKey: 'status', type: 'array' },

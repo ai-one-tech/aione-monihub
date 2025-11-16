@@ -72,6 +72,10 @@ pub async fn get_logs(
     if let Some(source) = &query.source {
         query_builder = query_builder.filter(Column::LogSource.eq(source.clone()));
     }
+    // 类型过滤（log_type）
+    if let Some(log_type) = &query.log_type {
+        query_builder = query_builder.filter(Column::LogType.eq(log_type.clone()));
+    }
     // 应用/实例过滤
     if let Some(instance_id) = &query.instance_id {
         query_builder = query_builder.filter(Column::InstanceId.eq(instance_id.clone()));
@@ -202,6 +206,10 @@ pub async fn export_logs(
         let escaped = url.replace("%", "\\%").replace("_", "\\_");
         let expr = Expr::cust(format!("(context ->> 'path') ILIKE '%{}%'", escaped));
         query_builder = query_builder.filter(Condition::all().add(expr));
+    }
+    // 类型过滤（log_type）
+    if let Some(log_type) = &query.log_type {
+        query_builder = query_builder.filter(Column::LogType.eq(log_type.clone()));
     }
 
     // 获取所有匹配的日志数据

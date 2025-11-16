@@ -171,3 +171,15 @@ pub enum LogLevel {
     Fatal
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveActiveEnum, EnumIter, ToSchema)]
+#[sea_orm(rs_type = "String", db_type = "Text")]
+#[serde(rename_all = "snake_case")]
+pub enum LogType {
+    #[sea_orm(string_value = "system")]
+    System,
+    #[sea_orm(string_value = "request")]
+    Request,
+    #[sea_orm(string_value = "operation")]
+    Operation,
+}
+

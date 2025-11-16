@@ -22,6 +22,7 @@ import { useApplicationInstances } from '@/features/applications/hooks/use-appli
 import { Switch } from '@/components/ui/switch'
 import { CodeEditor } from '@/components/code-editor'
 import { apiClient } from '@/lib/api-client'
+import { DEFAULT_PAGE_SIZE } from '@/config/pagination'
 
 const route = getRouteApi('/_authenticated/application-tasks')
 
@@ -73,7 +74,7 @@ export function ApplicationTasks() {
     queryKey: ['tasks', search.applicationId],
     queryFn: () => applicationsApi.getTasks({
       application_id: search.applicationId,
-      limit: 20
+      limit: DEFAULT_PAGE_SIZE,
     }),
     enabled: !!search.applicationId,
     refetchOnWindowFocus: false,

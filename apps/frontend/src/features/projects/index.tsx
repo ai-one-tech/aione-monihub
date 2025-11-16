@@ -13,6 +13,7 @@ import { useProjectsQuery } from './hooks/use-projects-query'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 
 const route = getRouteApi('/_authenticated/projects')
 
@@ -22,8 +23,8 @@ export function Projects() {
 
   // 构建API查询参数
   const apiParams = {
-    page: search.page || 1,
-    limit: search.pageSize || 10,
+    page: search.page ?? DEFAULT_PAGE,
+    limit: search.pageSize ?? DEFAULT_PAGE_SIZE,
     search: search.search || undefined,
     status: (search.status) ? search.status as 'active' | 'disabled' : undefined,
   }
@@ -68,6 +69,7 @@ export function Projects() {
               totalPages={data?.pagination?.total_pages || 0}
               search={search} 
               navigate={navigate as any} 
+              onRefresh={refetch}
             />
           )}
         </div>

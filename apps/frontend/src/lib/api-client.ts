@@ -1,4 +1,5 @@
 import { authToken } from './auth-token'
+import { env } from '@/config/env'
 
 /**
  * API客户端配置
@@ -318,7 +319,7 @@ class ApiClient {
 }
 
 // 导出默认API客户端实例
-export const apiClient = new ApiClient()
+export const apiClient = new ApiClient({ baseURL: env.API_URL })
 
 // 导出类和类型
 export { ApiClient, type ApiClientConfig, type RequestOptions, type ApiResponse }

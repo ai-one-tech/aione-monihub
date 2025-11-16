@@ -13,6 +13,7 @@ import { usePermissionsQuery } from './hooks/use-permissions-query'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 
 const route = getRouteApi('/_authenticated/system/permissions')
 
@@ -43,8 +44,8 @@ export function SystemPermissions() {
     }
     
     return {
-      page: search.page || 1,
-      limit: search.pageSize || 10,
+      page: search.page ?? DEFAULT_PAGE,
+      limit: search.pageSize ?? DEFAULT_PAGE_SIZE,
       search: search.name || undefined,
       permission_type: permission_type_value,
       action: action_value,
@@ -91,6 +92,7 @@ export function SystemPermissions() {
               totalPages={data?.total_pages || 0}
               search={search} 
               navigate={navigate as any} 
+              onRefresh={refetch}
             />
           )}
         </div>

@@ -12,6 +12,7 @@ import {
 } from '@tanstack/react-table'
 import { cn } from '@/lib/utils'
 import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import {
   Table,
   TableBody,
@@ -36,9 +37,10 @@ type DataTableProps = {
   totalPages: number
   search: Record<string, unknown>
   navigate: NavigateFn
+  onRefresh?: () => void
 }
 
-export function InstancesTable({ data = [], totalPages, search, navigate }: DataTableProps) {
+export function InstancesTable({ data = [], totalPages, search, navigate, onRefresh }: DataTableProps) {
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -54,7 +56,7 @@ export function InstancesTable({ data = [], totalPages, search, navigate }: Data
   } = useTableUrlState({
     search,
     navigate,
-    pagination: { defaultPage: 1, defaultPageSize: 10 },
+    pagination: { defaultPage: DEFAULT_PAGE, defaultPageSize: DEFAULT_PAGE_SIZE },
     globalFilter: { enabled: false },
     columnFilters: [
       { columnId: 'hostname', searchKey: 'search', type: 'string' },
@@ -85,6 +87,7 @@ export function InstancesTable({ data = [], totalPages, search, navigate }: Data
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    meta: { onRefresh },
   })
 
   useEffect(() => {

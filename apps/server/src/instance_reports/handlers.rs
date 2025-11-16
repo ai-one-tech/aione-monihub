@@ -237,6 +237,7 @@ pub async fn report_instance_info(
                 message: Set(item.message.clone()),
                 context: Set(Some(ctx)),
                 log_source: Set(LogSource::Agent),
+                log_type: Set(crate::shared::enums::LogType::System),
                 timestamp: Set(ts.into()),
                 created_at: Set(Utc::now().into()),
             };

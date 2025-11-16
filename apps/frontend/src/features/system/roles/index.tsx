@@ -67,6 +67,7 @@ export function SystemRoles() {
               totalPages={data?.total_pages || 0}
               search={search} 
               navigate={navigate} 
+              onRefresh={refetch}
             />
           )}
         </div>

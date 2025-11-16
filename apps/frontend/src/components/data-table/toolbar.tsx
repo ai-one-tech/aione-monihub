@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Cross2Icon } from '@radix-ui/react-icons'
+import { RefreshCcw } from 'lucide-react'
 import { type Table } from '@tanstack/react-table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -111,7 +112,19 @@ export function DataTableToolbar<TData>({
           </Button>
         )}
       </div>
-      <DataTableViewOptions table={table} />
+      <div className='flex items-center gap-2'>
+        <Button
+          variant='outline'
+          size='sm'
+          className='ms-auto hidden h-8 lg:flex'
+          onClick={() => table.options.meta?.onRefresh?.()}
+          disabled={!table.options.meta?.onRefresh}
+        >
+          <RefreshCcw className='size-4' />
+          刷新
+        </Button>
+        <DataTableViewOptions table={table} />
+      </div>
     </div>
   )
 }

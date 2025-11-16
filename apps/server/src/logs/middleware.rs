@@ -175,6 +175,7 @@ where
                     message: Set(message),
                     context: Set(Some(context)),
                     log_source: Set(enums::LogSource::Server),
+                    log_type: Set(enums::LogType::Request),
                     timestamp: Set(now.into()),
                     created_at: Set(now.into()),
                 };

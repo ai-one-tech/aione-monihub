@@ -12,6 +12,7 @@ import { useUsersQuery } from './hooks/use-users-query'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 
 const route = getRouteApi('/_authenticated/system/users')
 
@@ -21,8 +22,8 @@ export function SystemUsers() {
 
   // 构建API查询参数
   const apiParams = {
-    page: search.page || 1,
-    limit: search.pageSize || 10,
+    page: search.page ?? DEFAULT_PAGE,
+    limit: search.pageSize ?? DEFAULT_PAGE_SIZE,
     search: search.username || undefined,
     status: (search.status) ? search.status as string : undefined,
     roles: (search.roles) ? (Array.isArray(search.roles) ? search.roles.join(',') : search.roles) as string : undefined, // 支持逗号分隔的角色筛选
@@ -68,6 +69,7 @@ export function SystemUsers() {
               totalPages={data?.pagination?.total_pages || 0}
               search={search} 
               navigate={navigate as any} 
+              onRefresh={refetch}
             />
           )}
         </div>

@@ -13,6 +13,7 @@ import {
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import {
   Table,
   TableBody,
@@ -30,9 +31,10 @@ interface SystemRolesTableProps {
   totalPages: number
   search: Record<string, unknown>
   navigate: NavigateFn
+  onRefresh?: () => void
 }
 
-export function SystemRolesTable({ data, totalPages, search, navigate }: SystemRolesTableProps) {
+export function SystemRolesTable({ data, totalPages, search, navigate, onRefresh }: SystemRolesTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState({})
@@ -45,7 +47,7 @@ export function SystemRolesTable({ data, totalPages, search, navigate }: SystemR
   } = useTableUrlState({
     search,
     navigate,
-    pagination: { defaultPage: 1, defaultPageSize: 10 },
+    pagination: { defaultPage: DEFAULT_PAGE, defaultPageSize: DEFAULT_PAGE_SIZE },
     globalFilter: { enabled: false },
     columnFilters: [
       { columnId: 'name', searchKey: 'name', type: 'string' },
@@ -76,6 +78,7 @@ export function SystemRolesTable({ data, totalPages, search, navigate }: SystemR
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    meta: { onRefresh },
   })
 
   return (

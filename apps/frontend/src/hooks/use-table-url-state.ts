@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import type {
   ColumnFiltersState,
   OnChangeFn,
@@ -80,8 +81,8 @@ export function useTableUrlState(
 
   const pageKey = paginationCfg?.pageKey ?? ('page' as string)
   const pageSizeKey = paginationCfg?.pageSizeKey ?? ('pageSize' as string)
-  const defaultPage = paginationCfg?.defaultPage ?? 1
-  const defaultPageSize = paginationCfg?.defaultPageSize ?? 10
+  const defaultPage = paginationCfg?.defaultPage ?? DEFAULT_PAGE
+  const defaultPageSize = paginationCfg?.defaultPageSize ?? DEFAULT_PAGE_SIZE
 
   const globalFilterKey = globalFilterCfg?.key ?? ('filter' as string)
   const globalFilterEnabled = globalFilterCfg?.enabled ?? true

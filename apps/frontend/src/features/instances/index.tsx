@@ -16,6 +16,7 @@ import { InstancesConfigDrawer } from './components/instances-config-drawer'
 import { useInstancesQuery } from './hooks/use-instances-query'
 import { useInstancesProvider } from './components/instances-provider'
 import { Skeleton } from '@/components/ui/skeleton'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 
@@ -35,8 +36,8 @@ function InstancesContent() {
 
   // 构建API查询参数
   const apiParams = {
-    page: search.page || 1,
-    limit: search.pageSize || 10,
+    page: search.page ?? DEFAULT_PAGE,
+    limit: search.pageSize ?? DEFAULT_PAGE_SIZE,
     search: search.search || undefined,
     status: (search.status) ? search.status as 'active' | 'disabled' | 'offline' : undefined,
     online_status: (search.online_status) ? search.online_status as 'online' | 'offline' : undefined,
@@ -97,9 +98,10 @@ function InstancesContent() {
           ) : (
             <InstancesTable 
               data={data?.data || []}
-              totalPages={Math.ceil((data?.pagination.total || 0) / (data?.pagination.limit || 10))}
+              totalPages={Math.ceil((data?.pagination.total || 0) / (data?.pagination.limit || (search.pageSize ?? DEFAULT_PAGE_SIZE)))}
               search={search} 
               navigate={navigate} 
+              onRefresh={refetch}
             />
           )}
         </div>
