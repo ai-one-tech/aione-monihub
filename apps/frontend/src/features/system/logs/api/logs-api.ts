@@ -41,6 +41,19 @@ class LogsApi {
     const queryString = searchParams.toString()
     return `/api/logs/export${queryString ? `?${queryString}` : ''}`
   }
+  
+  
+  async exportLogs(params: GetLogsParams = {}): Promise<Blob> {
+    const sp = new URLSearchParams()
+    if (params.log_level) sp.append('log_level', params.log_level)
+    if (params.keyword) sp.append('keyword', params.keyword)
+    if (params.start_date) sp.append('start_date', params.start_date)
+    if (params.end_date) sp.append('end_date', params.end_date)
+    const qs = sp.toString()
+    const endpoint = `/api/logs/export${qs ? `?${qs}` : ''}`
+    const response = await apiClient.get<Blob>(endpoint, { responseType: 'blob' as any })
+    return response.data
+  }
 }
 
 export const logsApi = new LogsApi()

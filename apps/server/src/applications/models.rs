@@ -19,6 +19,12 @@ pub struct Application {
     pub updated_at: DateTime<Utc>,
 }
 
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+pub struct TechStackKV {
+    pub name: String,
+    pub version: String,
+}
+
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ApplicationResponse {
     pub id: String,
@@ -27,6 +33,7 @@ pub struct ApplicationResponse {
     pub code: String,
     pub status: Status,
     pub description: String,
+    pub tech_stacks: Vec<TechStackKV>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -38,6 +45,7 @@ pub struct ApplicationCreateRequest {
     pub code: String,
     pub status: String,
     pub description: String,
+    pub tech_stacks: Option<Vec<TechStackKV>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -47,6 +55,7 @@ pub struct ApplicationUpdateRequest {
     pub code: String,
     pub status: String,
     pub description: String,
+    pub tech_stacks: Option<Vec<TechStackKV>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -72,6 +81,7 @@ pub struct ApplicationListQuery {
     pub search: Option<String>,
     pub project_id: Option<String>,
     pub status: Option<String>,
+    pub tech_stack: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]

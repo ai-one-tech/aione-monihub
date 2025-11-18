@@ -122,15 +122,17 @@ export function ApplicationTasks() {
     }
   }
 
+  const typeMap: Record<string, string> = {
+    'shell_exec': '执行Shell',
+    'http_request': 'HTTP请求',
+    'file_manager': '文件管理',
+    'custom_command': '自定义命令',
+    'run_code': '运行Code',
+  };
+
   // 任务类型中文映射
   const getTaskTypeLabel = (taskType: string) => {
-    const typeMap: Record<string, string> = {
-      'shell_exec': '执行Shell',
-      'run_code': '运行Code',
-      'file_manager': '文件管理',
-      'custom_command': '自定义命令',
-      'http_request': 'HTTP请求',
-    }
+
     return typeMap[taskType] || taskType
   }
 
@@ -520,10 +522,10 @@ export function ApplicationTasks() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm font-medium truncate">
-                                {instance.id}
-                              </div>
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm font-medium truncate">
+                              {instance.id}
+                            </div>
                             <div className="ml-2 flex items-center">
                               <Badge variant="outline" className="text-xs">
                                 {getOSLabel(instance.os_type)}
@@ -541,7 +543,7 @@ export function ApplicationTasks() {
                                 </TooltipContent>
                               </Tooltip>
                             </div>
-                            </div>
+                          </div>
                           <div className="flex justify-between items-center w-full">
                             <p className="text-xs text-gray-600 truncate">
                               {instance.hostname || '未知主机名'}
@@ -577,26 +579,12 @@ export function ApplicationTasks() {
               <div className="space-y-4">
                 <div>
                   <RadioGroup value={taskType} onValueChange={setTaskType} className="flex flex-row gap-4">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="shell_exec" id="shell_exec" />
-                      <Label htmlFor="shell_exec" className="text-sm">执行Shell</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="run_code" id="run_code" />
-                      <Label htmlFor="run_code" className="text-sm">运行Code</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="file_manager" id="file_manager" />
-                      <Label htmlFor="file_manager" className="text-sm">文件管理</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="custom_command" id="custom_command" />
-                      <Label htmlFor="custom_command" className="text-sm">自定义命令</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="http_request" id="http_request" />
-                      <Label htmlFor="http_request" className="text-sm">HTTP 请求</Label>
-                    </div>
+                    {Object.keys(typeMap).map((key) => (
+                      <div className="flex items-center space-x-2" key={key}>
+                        <RadioGroupItem value={key} id={key} />
+                        <Label htmlFor={key} className="text-sm">{typeMap[key]}</Label>
+                      </div>
+                    ))}
                   </RadioGroup>
                 </div>
 

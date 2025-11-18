@@ -24,6 +24,22 @@ import {
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
 import { type ApplicationResponse, APPLICATION_STATUS_OPTIONS } from '../data/api-schema'
 import { applicationsColumns as columns } from './applications-columns'
+const TECH_STACK_OPTIONS = [
+  { label: 'java', value: 'java' },
+  { label: 'springboot', value: 'springboot' },
+  { label: 'golang', value: 'golang' },
+  { label: 'gin', value: 'gin' },
+  { label: 'rust', value: 'rust' },
+  { label: 'actix', value: 'actix' },
+  { label: 'javascript', value: 'javascript' },
+  { label: 'vue', value: 'vue' },
+  { label: 'react', value: 'react' },
+  { label: 'flutter', value: 'flutter' },
+  { label: 'uniapp', value: 'uniapp' },
+  { label: 'nativereact', value: 'nativereact' },
+  { label: 'python', value: 'python' },
+  { label: 'fastapi', value: 'fastapi' },
+]
 
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -61,6 +77,7 @@ export function ApplicationsTable({ data = [], totalPages, search, navigate, onR
     columnFilters: [
       { columnId: 'name', searchKey: 'search', type: 'string' },
       { columnId: 'status', searchKey: 'status', type: 'string' }, // 改为字符串类型
+      { columnId: 'tech_stacks', searchKey: 'tech_stack', type: 'string' },
     ],
   })
 
@@ -109,6 +126,12 @@ export function ApplicationsTable({ data = [], totalPages, search, navigate, onR
                 value: option.value,
               })),
             multiSelect: false, // 设置为单选模式
+          },
+          {
+            columnId: 'tech_stacks',
+            title: '技术栈',
+            options: TECH_STACK_OPTIONS,
+            multiSelect: false,
           },
         ]}
       />

@@ -13,6 +13,7 @@ pub struct Model {
     pub status: Status,
     pub description: Option<String>,
     pub auth_config: serde_json::Value,  // 修改字段名，使用JSON类型
+    pub tech_stacks: serde_json::Value,
     pub created_by: String,  // 改为String支持雪花ID
     pub updated_by: String,  // 改为String支持雪花ID
     pub deleted_at: Option<DateTimeWithTimeZone>,  // 支持毫秒精度
@@ -48,6 +49,7 @@ pub struct ApplicationDetail {
     pub status: Status,
     pub description: Option<String>,
     pub auth_config: serde_json::Value,
+    pub tech_stacks: serde_json::Value,
     pub created_by: String,
     pub updated_by: String,
     pub deleted_at: Option<DateTimeWithTimeZone>,

@@ -15,6 +15,8 @@ use sea_orm::{
     ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait,
     QueryFilter, QueryOrder, QuerySelect,
 };
+use sea_orm::prelude::Expr;
+use crate::shared::error::db_error_here_with_context;
 
 #[utoipa::path(
     get,
@@ -58,6 +60,16 @@ pub async fn get_applications(
         );
     }
 
+    // 技术栈过滤：将 JSONB 转为 TEXT，再进行不区分大小写的模糊匹配
+    if let Some(stack) = &query.tech_stack {
+        select = select.filter(
+            Expr::cust(format!(
+                "EXISTS (SELECT 1 FROM jsonb_array_elements(tech_stacks) AS elem WHERE elem->>'name' = '{}')",
+                stack
+            ))
+        );
+    }
+
     // 状态过滤
     if let Some(status) = &query.status {
         select = select.filter(crate::entities::applications::Column::Status.eq(status));
@@ -66,31 +78,39 @@ pub async fn get_applications(
     // 排序
     select = select.order_by_desc(crate::entities::applications::Column::CreatedAt);
 
-    // 获取总数和分页数据
+    let filter_loc = if query.tech_stack.is_some() { Some(format!("{}:{}", file!(), line!())) } else { None };
+    let ctx = filter_loc.map(|l| format!("applications.get_applications tech_stack filter at {}", l)).unwrap_or_else(|| "applications.get_applications".to_string());
     let total = select
         .clone()
         .count(&**db)
         .await
-        .map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
+        .map_err(|e: sea_orm::DbErr| db_error_here_with_context(e, &ctx))?;
     let applications: Vec<crate::entities::applications::Model> = select
         .offset(offset as u64)
         .limit(limit as u64)
         .all(&**db)
         .await
-        .map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
+        .map_err(|e: sea_orm::DbErr| db_error_here_with_context(e, &ctx))?;
 
     // 转换为响应格式
     let application_responses: Vec<ApplicationResponse> = applications
         .into_iter()
-        .map(|app| ApplicationResponse {
-            id: app.id,
-            project_id: app.project_id,
-            name: app.name,
-            code: app.code,
-            status: app.status,
-            description: app.description.unwrap_or_default(),
-            created_at: app.created_at.to_rfc3339(),
-            updated_at: app.updated_at.to_rfc3339(),
+        .map(|app| {
+            let tech_stacks: Vec<crate::applications::models::TechStackKV> = match serde_json::from_value(app.tech_stacks.clone()) {
+                Ok(v) => v,
+                Err(_) => Vec::new(),
+            };
+            ApplicationResponse {
+                id: app.id,
+                project_id: app.project_id,
+                name: app.name,
+                code: app.code,
+                status: app.status,
+                description: app.description.unwrap_or_default(),
+                tech_stacks,
+                created_at: app.created_at.to_rfc3339(),
+                updated_at: app.updated_at.to_rfc3339(),
+            }
         })
         .collect();
 
@@ -171,6 +191,7 @@ pub async fn create_application(
         status: ActiveValue::Set(match app.status.as_str() { "active" => Status::Active, "disabled" => Status::Disabled, _ => Status::Disabled }),
         description: ActiveValue::Set(Some(app.description.clone())),
         auth_config: ActiveValue::Set(serde_json::Value::Null),
+        tech_stacks: ActiveValue::Set(serde_json::to_value(app.tech_stacks.clone().unwrap_or_default()).unwrap_or(serde_json::Value::Null)),
         revision: ActiveValue::Set(1),
         deleted_at: ActiveValue::Set(None),
         created_by: ActiveValue::Set(user_id.to_string()),
@@ -189,6 +210,7 @@ pub async fn create_application(
         code: created_app.code,
         status: created_app.status,
         description: created_app.description.unwrap_or_default(),
+        tech_stacks: serde_json::from_value(created_app.tech_stacks.clone()).unwrap_or_default(),
         created_at: created_app.created_at.to_rfc3339(),
         updated_at: created_app.updated_at.to_rfc3339(),
     };
@@ -242,6 +264,7 @@ pub async fn get_application(
             code: application.code,
             status: application.status,
             description: application.description.unwrap_or_default(),
+            tech_stacks: serde_json::from_value(application.tech_stacks.clone()).unwrap_or_default(),
             created_at: application.created_at.to_rfc3339(),
             updated_at: application.updated_at.to_rfc3339(),
         };
@@ -319,6 +342,7 @@ pub async fn update_application(
         active_app.code = ActiveValue::Set(app.code.clone());
         active_app.status = ActiveValue::Set(match app.status.as_str() { "active" => Status::Active, "disabled" => Status::Disabled, _ => Status::Disabled });
         active_app.description = ActiveValue::Set(Some(app.description.clone()));
+        active_app.tech_stacks = ActiveValue::Set(serde_json::to_value(app.tech_stacks.clone().unwrap_or_default()).unwrap_or(serde_json::Value::Null));
         active_app.updated_by = ActiveValue::Set(user_id.to_string());
         active_app.updated_at = ActiveValue::Set(Utc::now().into());
 
@@ -333,6 +357,7 @@ pub async fn update_application(
             code: updated_app.code,
             status: updated_app.status,
             description: updated_app.description.unwrap_or_default(),
+            tech_stacks: serde_json::from_value(updated_app.tech_stacks.clone()).unwrap_or_default(),
             created_at: updated_app.created_at.to_rfc3339(),
             updated_at: updated_app.updated_at.to_rfc3339(),
         };
@@ -426,6 +451,7 @@ pub async fn enable_application(
             code: saved.code,
             status: saved.status,
             description: saved.description.unwrap_or_default(),
+            tech_stacks: serde_json::from_value(saved.tech_stacks.clone()).unwrap_or_default(),
             created_at: saved.created_at.to_rfc3339(),
             updated_at: saved.updated_at.to_rfc3339(),
         };
@@ -471,6 +497,7 @@ pub async fn disable_application(
             code: saved.code,
             status: saved.status,
             description: saved.description.unwrap_or_default(),
+            tech_stacks: serde_json::from_value(saved.tech_stacks.clone()).unwrap_or_default(),
             created_at: saved.created_at.to_rfc3339(),
             updated_at: saved.updated_at.to_rfc3339(),
         };

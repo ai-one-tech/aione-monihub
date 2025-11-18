@@ -43,6 +43,7 @@ import { toast } from 'sonner'
 import { useDebounce } from '@/hooks/use-debounce'
 import { useProjectsQuery, useProjectQuery } from '@/features/projects/hooks/use-projects-query'
 import { cn } from '@/lib/utils'
+import { X } from 'lucide-react'
 
 export function ApplicationsEditSheet() {
   const {
@@ -68,6 +69,7 @@ export function ApplicationsEditSheet() {
       code: '',
       description: '',
       status: 'active',
+      tech_stacks: [],
     },
     mode: 'onChange',
     reValidateMode: 'onBlur',
@@ -79,6 +81,12 @@ export function ApplicationsEditSheet() {
   const selectedProjectId = form.watch('project_id')
   const { data: selectedProject } = useProjectQuery(selectedProjectId || '')
   const { data: projectsList, isLoading: isLoadingProjects, isFetching: isFetchingProjects } = useProjectsQuery({ page: 1, limit: 100, search: debouncedProjectSearch })
+
+  const TECH_STACK_OPTIONS = [
+    'java','springboot','golang','gin','rust','axtive','javascript','vue','react','flutter','uniapp','nativereact','python','fastapi',
+  ]
+
+  const [techStacks, setTechStacks] = useState<{ name: string; version: string }[]>([])
 
   // 将后端返回的状态值归一化为表单允许的字面量类型
   const normalizeStatus = (s: unknown): CreateApplicationRequest['status'] => {
@@ -97,6 +105,7 @@ export function ApplicationsEditSheet() {
           code: applicationDetail.code,
           description: applicationDetail.description,
           status: normalizeStatus(applicationDetail.status),
+          tech_stacks: applicationDetail.tech_stacks ?? [],
         }
         const needReset = (
           current.project_id !== target.project_id ||
@@ -108,6 +117,7 @@ export function ApplicationsEditSheet() {
         if (needReset) {
           form.reset(target)
         }
+        setTechStacks(applicationDetail.tech_stacks ?? [])
       })
 
     } else if (isCreateMode) {
@@ -120,6 +130,7 @@ export function ApplicationsEditSheet() {
           code: '',
           description: '',
           status: 'active',
+          tech_stacks: [],
         }
         const needReset = (
           current.project_id !== defaults.project_id ||
@@ -131,17 +142,19 @@ export function ApplicationsEditSheet() {
         if (needReset) {
           form.reset(defaults)
         }
+        setTechStacks([])
       })
     }
   }, [applicationDetail, form, isEditMode, isCreateMode, isViewMode])
 
   const onSubmit = async (data: CreateApplicationRequest) => {
     try {
+      const payload = { ...data, tech_stacks: techStacks }
       if (isCreateMode) {
-        await createApplicationMutation.mutateAsync(data)
+        await createApplicationMutation.mutateAsync(payload)
         toast.success('应用创建成功')
       } else if (isEditMode && selectedApplicationId) {
-        await updateApplicationMutation.mutateAsync({ applicationId: selectedApplicationId, data })
+        await updateApplicationMutation.mutateAsync({ applicationId: selectedApplicationId, data: payload })
         toast.success('应用更新成功')
       }
 
@@ -188,8 +201,8 @@ export function ApplicationsEditSheet() {
             </div>
           ) : (
             <div className='flex-1 overflow-y-auto px-6 py-4'>
-              <Form {...form}>
-                <form id='application-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
+          <Form {...form}>
+            <form id='application-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
                   <FormField
                     control={form.control}
                     name='project_id'
@@ -340,6 +353,55 @@ export function ApplicationsEditSheet() {
                       </FormItem>
                     )}
                   />
+
+                  <div className='space-y-3'>
+                    <div className='font-medium'>技术栈及版本</div>
+                    <div className='space-y-2'>
+                      {techStacks.map((item, idx) => (
+                        <div key={idx} className='flex items-center gap-2'>
+                          <Select
+                            value={item.name}
+                            onValueChange={(val) => {
+                              const next = [...techStacks];
+                              next[idx] = { ...next[idx], name: val }
+                              setTechStacks(next)
+                            }}
+                          >
+                            <SelectTrigger className='w-[200px]' disabled={isViewMode}>
+                              <SelectValue placeholder='选择技术栈' />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {TECH_STACK_OPTIONS.map(opt => (
+                                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            placeholder='版本号，例如 1.0.0'
+                            value={item.version}
+                            onChange={(e) => {
+                              const next = [...techStacks];
+                              next[idx] = { ...next[idx], version: e.target.value }
+                              setTechStacks(next)
+                            }}
+                            disabled={isViewMode}
+                            className='w-[180px]'
+                          />
+                          {!isViewMode && (
+                            <Button type='button' variant='ghost' size='icon' onClick={() => {
+                              const next = techStacks.filter((_, i) => i !== idx)
+                              setTechStacks(next)
+                            }}>
+                              <X className='size-4' />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      {!isViewMode && (
+                        <Button type='button' variant='outline' onClick={() => setTechStacks([...techStacks, { name: '', version: '' }])}>新增技术栈</Button>
+                      )}
+                    </div>
+                  </div>
                 </form>
               </Form>
             </div>

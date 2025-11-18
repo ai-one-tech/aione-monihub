@@ -127,6 +127,23 @@ export const applicationsColumns: ColumnDef<ApplicationResponse>[] = [
     },
   },
   {
+    accessorKey: 'tech_stacks',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='技术栈' />
+    ),
+    cell: ({ row }) => {
+      const stacks = (row.getValue('tech_stacks') as { name: string; version: string }[]) || []
+      if (!stacks.length) return <div className='text-muted-foreground'>—</div>
+      return (
+        <div className='flex flex-wrap gap-1'>
+          {stacks.map((s, i) => (
+            <Badge key={i} variant='secondary' className='text-xs'>{`${s.name}${s.version ? `@${s.version}` : ''}`}</Badge>
+          ))}
+        </div>
+      )
+    },
+  },
+  {
     accessorKey: 'status',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='状态' />

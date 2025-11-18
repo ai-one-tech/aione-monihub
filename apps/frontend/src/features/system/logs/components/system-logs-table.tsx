@@ -23,7 +23,8 @@ const OfflineIcon: React.FC<{ className?: string }> = ({ className }) => (
   <CircleOff className={className} />
 )
 import { type LogResponse } from '../data/api-schema'
-import { LongText } from '@/components/long-text'
+import { OverflowPreview } from '@/components/overflow-preview'
+import { parse } from 'date-fns'
 
 declare module '@tanstack/react-table' {
   interface ColumnMeta<TData, TValue> { className: string }
@@ -43,16 +44,33 @@ export function SystemLogsTable({ data = [], totalPages, search, navigate, expor
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [sorting, setSorting] = useState<SortingState>([])
 
+  const formatLocalTimestamp = (ts: string) => {
+    try {
+      const d = parse(ts, 'yyyy-MM-dd HH:mm:ss.SSS xxx', new Date())
+      if (!isNaN(d.getTime())) return d.toLocaleString()
+    } catch {}
+    const d2 = new Date(ts)
+    return isNaN(d2.getTime()) ? ts : d2.toLocaleString()
+  }
+
+  const { data: appsData } = useApplicationsQuery({ page: 1, limit: 50 })
+  const applicationNameMap = useMemo(() => {
+    const list = appsData?.data ?? []
+    return new Map(list.map((a: any) => [a.id, a.name ?? a.id]))
+  }, [appsData])
+
   const columns: ColumnDef<LogResponse, any>[] = useMemo(() => [
-    { accessorKey: 'timestamp', header: '时间', meta: { className: 'w-[180px]' }, cell: ({ row }) => row.original.timestamp },
+    { accessorKey: 'timestamp', header: '时间', meta: { className: 'w-[180px]' }, cell: ({ row }) => formatLocalTimestamp(row.original.timestamp) },
     { accessorKey: 'log_level', header: '级别', meta: { className: 'w-[100px]' } },
-    { accessorKey: 'action', header: '内容', meta: { className: 'min-w-[240px]' } },
+    { accessorKey: 'action', header: '内容', meta: { className: 'w-[150px]' }, cell: ({ row }) => <OverflowPreview value={row.original.action} title='内容' /> },
+    { accessorKey: 'application_name', header: '应用', meta: { className: 'w-[160px]' }, cell: ({ row }) => applicationNameMap.get(row.original.user_id) ?? '-' },
     { accessorKey: 'user_id', header: '应用ID', meta: { className: 'w-[140px]' } },
-    { accessorKey: 'ip_address', header: 'IP', meta: { className: 'w-[140px]' } },
-    { accessorKey: 'user_agent', header: 'UA', meta: { className: 'min-w-[200px]' }, cell: ({row}) => <LongText>{row.original.user_agent || '-'}</LongText> },
+    { accessorKey: 'instance_hostname', header: '实例主机名', meta: { className: 'w-[180px]' }, cell: () => '-' },
+    { accessorKey: 'ip_address', header: 'IP', meta: { className: 'w-[150px]' }, cell: ({ row }) => <OverflowPreview value={row.original.ip_address} title='IP' /> },
+    { accessorKey: 'user_agent', header: 'UA', meta: { className: 'w-[150px]' }, cell: ({row}) => <OverflowPreview value={row.original.user_agent || '-'} title='UA' /> },
+    { accessorKey: 'log_type', header: '类型', meta: { className: 'w-[100px]' }, cell: () => 'system' },
     { accessorKey: 'log_source', header: '来源', meta: { className: 'w-[160px]' } },
-    { accessorKey: 'id', header: 'ID', meta: { className: 'min-w-[200px]' } },
-  ], [])
+  ], [applicationNameMap])
 
   const { columnFilters, onColumnFiltersChange, pagination, onPaginationChange, ensurePageInRange } = useTableUrlState({
     search,
@@ -85,7 +103,6 @@ export function SystemLogsTable({ data = [], totalPages, search, navigate, expor
 
   const sourceFilter = table.getColumn('log_source')?.getFilterValue() as string | undefined
   const appFilter = table.getColumn('user_id')?.getFilterValue() as string | undefined
-  const { data: appsData } = useApplicationsQuery({ page: 1, limit: 50 })
   const { data: instancesData } = useInstancesQuery({ page: 1, limit: 100, application_id: appFilter || undefined })
   const applicationOptions = useMemo(() => {
     const list = appsData?.data ?? []
@@ -135,8 +152,8 @@ export function SystemLogsTable({ data = [], totalPages, search, navigate, expor
           ] : []),
         ]}
       />
-      <div className='flex-1 min-h-0 overflow-auto rounded-md border mt-4'>
-        <Table>
+      <div className='flex-1 min-h-0 overflow-hidden rounded-md border mt-4'>
+        <Table className='w-full min-w-max h-full'>
           <TableHeader className='sticky top-0 z-10'>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className='group/row'>
@@ -148,7 +165,7 @@ export function SystemLogsTable({ data = [], totalPages, search, navigate, expor
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody>
+          <TableBody className='overflow-y-auto overflow-x-auto'>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'} className='group/row'>

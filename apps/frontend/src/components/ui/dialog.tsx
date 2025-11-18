@@ -2,8 +2,9 @@
 
 import * as React from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
-import { XIcon } from 'lucide-react'
+import { Copy, XIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from './button'
 
 function Dialog({
   ...props
@@ -49,10 +50,22 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  showCopyButton = true,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
+  showCopyButton?: boolean
 }) {
+  const contentRef = React.useRef<HTMLDivElement>(null)
+
+  const handleCopy = React.useCallback(async () => {
+    try {
+      const text = contentRef.current?.innerText?.trim() ?? ''
+      if (text) {
+        await navigator.clipboard.writeText(text)
+      }
+    } catch {}
+  }, [])
   return (
     <DialogPortal data-slot='dialog-portal'>
       <DialogOverlay />
@@ -64,16 +77,29 @@ function DialogContent({
         )}
         {...props}
       >
-        <div className={cn('bg-background sm:max-w-lg max-w-[calc(100%-2rem)] max-h-[calc(100%-2rem)] overflow-y-auto rounded-lg border p-6 shadow-lg duration-200 relative p-4')}>        
-          {children}
+        <div className={cn('bg-background sm:max-w-lg min-w-[400px] min-h-[200px] max-w-[calc(100%-2rem)] max-h-[calc(100%-2rem)] overflow-y-auto rounded-lg border p-4 shadow-lg duration-200 relative p-4')}>        
+          <div ref={contentRef}>{children}</div>
           {showCloseButton && (
             <DialogPrimitive.Close
               data-slot='dialog-close'
               className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute end-4 top-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
             >
-              <XIcon />
+              <XIcon className='size-5' />
               <span className='sr-only'>Close</span>
             </DialogPrimitive.Close>
+          )}
+          {showCopyButton && (
+            <Button
+              type="button"
+              onClick={handleCopy}
+              variant="ghost"
+              size="icon"
+              className="absolute end-4 bottom-4"
+              aria-label="拷贝内容"
+              title="拷贝内容"
+            >
+              <Copy className="size-5" />
+            </Button>
           )}
         </div>
       </DialogPrimitive.Content>

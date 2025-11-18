@@ -36,6 +36,9 @@ class ApplicationsApi {
     if (params.project_id) {
       searchParams.append('project_id', params.project_id)
     }
+    if ((params as any).tech_stack) {
+      searchParams.append('tech_stack', (params as any).tech_stack as string)
+    }
 
     const queryString = searchParams.toString()
     const endpoint = `/api/applications${queryString ? `?${queryString}` : ''}`

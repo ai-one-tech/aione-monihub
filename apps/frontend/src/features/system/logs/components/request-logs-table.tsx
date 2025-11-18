@@ -11,10 +11,12 @@ import {
 import { cn } from '@/lib/utils'
 import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { LongText } from '@/components/long-text'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
 import { type LogResponse } from '../data/api-schema'
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
+import { OverflowPreview } from '@/components/overflow-preview'
+import { parse } from 'date-fns'
+import { useApplicationsQuery } from '@/features/applications/hooks/use-applications-query'
 
 declare module '@tanstack/react-table' {
   interface ColumnMeta<TData, TValue> { className: string }
@@ -36,26 +38,38 @@ export function RequestLogsTable({ data = [], totalPages, search, navigate, expo
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [sorting, setSorting] = useState<SortingState>([])
 
+  const formatLocalTimestamp = (ts: string) => {
+    try {
+      const d = parse(ts, 'yyyy-MM-dd HH:mm:ss.SSS xxx', new Date())
+      if (!isNaN(d.getTime())) return d.toLocaleString()
+    } catch {}
+    const d2 = new Date(ts)
+    return isNaN(d2.getTime()) ? ts : d2.toLocaleString()
+  }
+
+  const { data: appsData } = useApplicationsQuery({ page: 1, limit: 50 })
+  const applicationNameMap = useMemo(() => {
+    const list = appsData?.data ?? []
+    return new Map(list.map((a: any) => [a.id, a.name ?? a.id]))
+  }, [appsData])
+
   const columns: ColumnDef<LogResponse, any>[] = useMemo(() => [
-    { accessorKey: 'timestamp', header: '时间', meta: { className: 'w-[100px]' }, cell: ({ row }) => row.original.timestamp },
-    { accessorKey: 'method', header: '方法', meta: { className: 'w-[20px]' }, cell: ({ row }) => row.original.method ?? '' },
-    { accessorKey: 'path', header: 'URL', meta: { className: 'min-w-[200px]' }, cell: ({ row }) => <LongText className='w-[200px]'>{row.original.path ?? ''}</LongText> },
+    { accessorKey: 'timestamp', header: '时间', meta: { className: 'w-[120px]' }, cell: ({ row }) => formatLocalTimestamp(row.original.timestamp) },
+    { accessorKey: 'method', header: '方法', meta: { className: 'w-[60px]' }, cell: ({ row }) => row.original.method ?? '' },
+    { accessorKey: 'path', header: 'URL', meta: { className: 'w-[150px]' }, cell: ({ row }) => <OverflowPreview value={row.original.path ?? ''} title='URL' /> },
     { accessorKey: 'status', header: '状态码', meta: { className: 'w-[100px]' }, cell: ({ row }) => row.original.status ?? '' },
-    { accessorKey: 'ip_address', header: 'IP', meta: { className: 'w-[140px]' } },
-    { accessorKey: 'user_agent', header: 'UA', meta: { className: 'w-[100px]' },
-      cell: ({ row }) => (
-        <LongText className='w-[100px]'>
-          {row.original.user_agent ?? ''}
-        </LongText>
-      )
-    },
-    { accessorKey: 'duration_ms', header: '耗时(ms)', meta: { className: 'w-[80px]' }, cell: ({ row }) => row.original.duration_ms ?? '' },
+    { accessorKey: 'application_name', header: '应用', meta: { className: 'w-[160px]' }, cell: ({ row }) => applicationNameMap.get(row.original.user_id) ?? '-' },
+    { accessorKey: 'instance_hostname', header: '实例主机名', meta: { className: 'w-[180px]' }, cell: () => '-' },
+    { accessorKey: 'ip_address', header: 'IP', meta: { className: 'w-[150px]' }, cell: ({ row }) => <OverflowPreview value={row.original.ip_address ?? ''} title='IP' /> },
+    { accessorKey: 'user_agent', header: 'UA', meta: { className: 'w-[150px]' }, cell: ({ row }) => <OverflowPreview value={row.original.user_agent ?? ''} title='UA' /> },
+    { accessorKey: 'duration_ms', header: '耗时(ms)', meta: { className: 'w-[100px]' }, cell: ({ row }) => row.original.duration_ms ?? '' },
     { accessorKey: 'trace_id', header: 'TraceID', meta: { className: 'w-[160px]' }, cell: ({ row }) => row.original.trace_id ?? '' },
-    { accessorKey: 'request_headers', header: '请求头', meta: { className: 'min-w-[200px]' }, cell: ({ row }) => <LongText className='w-[200px]'>{JSON.stringify(row.original.request_headers ?? {})}</LongText> },
-    { accessorKey: 'request_body', header: '请求体', meta: { className: 'min-w-[200px]' }, cell: ({ row }) => <LongText className='w-[200px]'>{JSON.stringify(row.original.request_body ?? '')}</LongText> },
-    { accessorKey: 'response_body', header: '响应体', meta: { className: 'min-w-[200px]' }, cell: ({ row }) => <LongText className='w-[200px]'>{JSON.stringify(row.original.response_body ?? '')}</LongText> },
+    { accessorKey: 'request_headers', header: '请求头', meta: { className: 'w-[150px]' }, cell: ({ row }) => <OverflowPreview value={row.original.request_headers ?? {}} title='请求头' /> },
+    { accessorKey: 'request_body', header: '请求体', meta: { className: 'w-[150px]' }, cell: ({ row }) => <OverflowPreview value={row.original.request_body ?? ''} title='请求体' /> },
+    { accessorKey: 'response_body', header: '响应体', meta: { className: 'w-[150px]' }, cell: ({ row }) => <OverflowPreview value={row.original.response_body ?? ''} title='响应体' /> },
+    { accessorKey: 'log_type', header: '类型', meta: { className: 'w-[100px]' }, cell: () => 'request' },
     { accessorKey: 'log_source', header: '来源', meta: { className: 'w-[120px]' } },
-  ], [])
+  ], [applicationNameMap])
 
   const { columnFilters, onColumnFiltersChange, pagination, onPaginationChange, ensurePageInRange } = useTableUrlState({
     search,

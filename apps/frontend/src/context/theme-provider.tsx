@@ -108,3 +108,7 @@ export const useTheme = () => {
 
   return context
 }
+
+export const isDarkTheme = () => {
+  return useTheme().resolvedTheme === 'dark'
+}

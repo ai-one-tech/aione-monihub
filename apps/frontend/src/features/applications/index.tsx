@@ -26,8 +26,9 @@ export function Applications() {
     page: search.page ?? DEFAULT_PAGE,
     limit: search.pageSize ?? DEFAULT_PAGE_SIZE,
     search: search.search || undefined,
-    status: (search.status) ? search.status as 'active' | 'inactive' | 'archived' : undefined,
+    status: (search.status) ? search.status as 'active' | 'disabled' : undefined,
     project_id: search.project_id || undefined,
+    tech_stack: (search as any).tech_stack || undefined,
   }
 
   const { data, isLoading, error, refetch } = useApplicationsQuery(apiParams)

@@ -241,6 +241,12 @@ impl From<sea_orm::DbErr> for ApiError {
     }
 }
 
+#[track_caller]
+pub fn db_error_here_with_context<E: std::fmt::Display>(error: E, context: &str) -> ApiError {
+    let loc = std::panic::Location::caller();
+    ApiError::DatabaseError(format!("{} | at {}:{} | {}", error, loc.file(), loc.line(), context))
+}
+
 // Implement From<serde_json::Error> for our custom error type
 impl From<serde_json::Error> for ApiError {
     fn from(error: serde_json::Error) -> Self {

@@ -22,6 +22,7 @@ export const applicationResponseSchema = z.object({
   code: z.string(),
   status: applicationStatusSchema,
   description: z.string(),
+  tech_stacks: z.array(z.object({ name: z.string(), version: z.string() })).default([]),
   created_at: z.string(),
   updated_at: z.string(),
 })
@@ -48,7 +49,8 @@ export const createApplicationRequestSchema = z.object({
   name: z.string().min(1, '应用名称不能为空'),
   code: z.string().min(1, '应用代码不能为空'),
   description: z.string().min(1, '应用描述不能为空'),
-  status: applicationStatusSchema
+  status: applicationStatusSchema,
+  tech_stacks: z.array(z.object({ name: z.string().min(1), version: z.string().min(1) })).optional(),
 })
 
 export type CreateApplicationRequest = z.infer<typeof createApplicationRequestSchema>
@@ -64,6 +66,7 @@ export const getApplicationsParamsSchema = z.object({
   search: z.string().optional(),
   status: applicationStatusSchema.optional(),
   project_id: z.string().optional(),
+  tech_stack: z.string().optional(),
 })
 
 export type GetApplicationsParams = z.infer<typeof getApplicationsParamsSchema>

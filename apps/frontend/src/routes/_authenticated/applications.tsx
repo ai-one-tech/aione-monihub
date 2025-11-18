@@ -10,6 +10,7 @@ const applicationsSearchSchema = z.object({
   search: z.string().optional().catch(''),
   status: z.string().optional().catch(''),
   project_id: z.string().optional().catch(''),
+  tech_stack: z.string().optional().catch(''),
 })
 
 export const Route = createFileRoute('/_authenticated/applications')({
