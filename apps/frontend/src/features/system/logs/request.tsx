@@ -8,6 +8,7 @@ import { useLogsQuery } from './hooks/use-logs-query'
 import { DatePicker } from '@/components/date-picker'
 import { useMemo, useState } from 'react'
 import { requestLogsColumns } from './components/request-logs-columns'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 
 const route = getRouteApi('/_authenticated/logs/requests')
 
@@ -24,8 +25,8 @@ export function RequestLogs() {
 
   const apiParams = useMemo(() => {
     return {
-      page: (search.page as number) || 1,
-      limit: (search.pageSize as number) || 10,
+      page: search.page ?? DEFAULT_PAGE,
+      limit: search.pageSize ?? DEFAULT_PAGE_SIZE,
       log_level: (search.level as string) || undefined,
       keyword: (search.keyword as string) || undefined,
       start_date: startDate ? startDate.toISOString() : ((search.startDate as string) || undefined),
@@ -38,7 +39,7 @@ export function RequestLogs() {
 
   const totalPages = useMemo(() => {
     const total = data?.pagination?.total ?? 0
-    const pageSize = (search.pageSize as number) || 10
+    const pageSize = (search.pageSize as number) || DEFAULT_PAGE_SIZE
     return Math.max(1, Math.ceil(total / pageSize))
   }, [data?.pagination?.total, search.pageSize])
 

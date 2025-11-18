@@ -6,6 +6,7 @@ import { AlertCircle } from 'lucide-react'
 import { useLogsQuery } from './hooks/use-logs-query'
 import { SystemLogsTable } from './components/system-logs-table'
 import { logsApi } from './api/logs-api'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 
 const route = getRouteApi('/_authenticated/logs/system')
 
@@ -14,8 +15,8 @@ export function SystemLogs() {
   const navigate = route.useNavigate()
 
   const apiParams = {
-    page: search.page || 1,
-    limit: search.pageSize || 10,
+    page: search.page ?? DEFAULT_PAGE,
+    limit: search.pageSize ?? DEFAULT_PAGE_SIZE,
     log_level: search.log_level || undefined,
     keyword: search.keyword || undefined,
     source: search.source || undefined,
@@ -54,7 +55,7 @@ export function SystemLogs() {
         ) : (
           <SystemLogsTable
             data={data?.data || []}
-            totalPages={Math.ceil((data?.pagination?.total || 0) / (data?.pagination?.limit || (search.pageSize || 10)))}
+            totalPages={Math.ceil((data?.pagination?.total || 0) / (data?.pagination?.limit || (search.pageSize ?? DEFAULT_PAGE_SIZE)))}
             search={search}
             navigate={navigate as any}
             exportUrl={exportUrl}

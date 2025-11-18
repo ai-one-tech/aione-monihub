@@ -130,8 +130,8 @@ export function RequestLogsTable({ data = [], totalPages, search, navigate, expo
           ], multiSelect: false },
         ]}
       />
-      <div className='flex-1 flex min-h-0 overflow-x-auto overflow-y-auto rounded-md border mt-4'>
-        <Table className='w-full min-w-max'>
+      <div className='flex-1 flex min-h-0 overflow-auto rounded-md border mt-4'>
+        <Table>
           <TableHeader className='sticky top-0 z-10'>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className='group/row'>
@@ -143,7 +143,7 @@ export function RequestLogsTable({ data = [], totalPages, search, navigate, expo
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody className='overflow-y-auto overflow-x-auto'>
+          <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'} className='group/row'>

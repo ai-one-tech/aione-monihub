@@ -65,7 +65,7 @@ function OperationsLogsPage() {
         ) : (
           <OperationsLogsTable
             data={data?.data || []}
-            totalPages={Math.ceil((data?.pagination?.total || 0) / (data?.pagination?.limit || ((search as any).pageSize || 10)))}
+            totalPages={Math.ceil((data?.pagination?.total || 0) / (data?.pagination?.limit || ((search as any).pageSize ?? DEFAULT_PAGE_SIZE)))}
             search={search}
             navigate={navigate as any}
           />
