@@ -152,7 +152,7 @@ export function SystemLogsTable({ data = [], totalPages, search, navigate, expor
           ] : []),
         ]}
       />
-      <div className='flex-1 min-h-0 overflow-hidden rounded-md border mt-4'>
+      <div className='flex-1 min-h-0 overflow-auto rounded-md border mt-4'>
         <Table className='w-full min-w-max h-full'>
           <TableHeader className='sticky top-0 z-10'>
             {table.getHeaderGroups().map((headerGroup) => (

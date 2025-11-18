@@ -1,4 +1,5 @@
 import z from 'zod'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import { createFileRoute, getRouteApi } from '@tanstack/react-router'
 import { Main } from '@/components/layout/main'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -8,8 +9,8 @@ import { useOperationLogsQuery } from '@/features/system/logs/operations/hooks/u
 import { OperationsLogsTable } from '@/features/system/logs/operations/components/operations-logs-table'
 
 const searchSchema = z.object({
-  page: z.number().optional().catch(1),
-  pageSize: z.number().optional().catch(10),
+  page: z.number().optional().catch(DEFAULT_PAGE),
+  pageSize: z.number().optional().catch(DEFAULT_PAGE_SIZE),
   user: z.string().optional().catch(''),
   ip: z.string().optional().catch(''),
   trace_id: z.string().optional().catch(''),
@@ -25,8 +26,8 @@ function OperationsLogsPage() {
   const navigate = route.useNavigate()
 
   const apiParams = {
-    page: (search as any).page || 1,
-    limit: (search as any).pageSize || 10,
+    page: (search as any).page || DEFAULT_PAGE,
+    limit: (search as any).pageSize || DEFAULT_PAGE_SIZE,
     user: (search as any).user || undefined,
     ip: (search as any).ip || undefined,
     trace_id: (search as any).trace_id || undefined,
