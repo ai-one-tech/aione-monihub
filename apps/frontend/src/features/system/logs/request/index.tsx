@@ -3,8 +3,8 @@ import { Main } from '@/components/layout/main'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
-import { useLogsQuery } from './hooks/use-logs-query'
-import { logsApi } from './api/logs-api'
+import { useLogsQuery } from '../hooks/use-logs-query'
+import { logsApi } from '../api/logs-api'
 import { RequestLogsTable } from './components/request-logs-table'
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 
@@ -46,7 +46,7 @@ export function RequestLogs() {
           <Alert variant='destructive'>
             <AlertCircle className='h-4 w-4' />
             <AlertDescription>
-              加载日志失败：{error.message}
+              加载日志失败：{(error as any)?.message}
               <button onClick={() => refetch()} className='ml-2 underline'>重试</button>
             </AlertDescription>
           </Alert>
@@ -66,3 +66,4 @@ export function RequestLogs() {
 }
 
 export default RequestLogs
+

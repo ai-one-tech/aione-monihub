@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
-import { type LogItem } from '../data/api-schema'
+import { type LogItem } from '../../data/api-schema'
 
 export const requestLogsColumns: ColumnDef<LogItem>[] = [
   {

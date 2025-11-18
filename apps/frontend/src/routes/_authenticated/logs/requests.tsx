@@ -1,7 +1,7 @@
-import z from 'zod'
+import { z } from 'zod'
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import { createFileRoute } from '@tanstack/react-router'
-import { RequestLogs } from '@/features/system/logs/request-logs'
+import { RequestLogs } from '@/features/system/logs/request'
 
 const requestLogsSearchSchema = z.object({
   page: z.number().optional().catch(DEFAULT_PAGE),
