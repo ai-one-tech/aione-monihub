@@ -120,6 +120,7 @@ export const getInstancesParamsSchema = z.object({
   status: instanceStatusSchema.optional(),
   online_status: onlineStatusSchema.optional(),
   application_id: z.string().optional(),
+  instance_id: z.string().optional(),
   ip_address: z.string().optional(),
   public_ip: z.string().optional(),
   hostname: z.string().optional(),

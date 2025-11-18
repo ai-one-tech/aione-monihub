@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use crate::shared::enums;
+use crate::shared::enums::LogType;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Pagination {
@@ -56,8 +57,9 @@ pub struct LogResponse {
     pub id: String,
     #[serde(rename = "log_level")]
     pub log_level: enums::LogLevel,
-    pub user_id: String,
-    pub action: String,
+    pub application_id: String,
+    pub instance_id: String,
+    pub message: String,
     pub ip_address: String,
     pub user_agent: String,
     pub log_source: enums::LogSource,
@@ -73,6 +75,8 @@ pub struct LogResponse {
     pub response_body: Option<serde_json::Value>,
     pub duration_ms: Option<i64>,
     pub trace_id: Option<String>,
+    pub context: Option<serde_json::Value>,
+    pub log_type: LogType,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

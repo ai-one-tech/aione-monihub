@@ -102,8 +102,10 @@ pub async fn get_logs(
         .map(|log| ModelLogResponse {
             id: log.id,
             log_level: log.log_level,
-            user_id: log.application_id.unwrap_or_default(),
-            action: log.message,
+            application_id: log.application_id.unwrap_or_default(),
+            instance_id: log.instance_id.unwrap_or_default(),
+            message: log.message,
+            log_type: log.log_type,
             ip_address: log
                 .context
                 .as_ref()
@@ -122,6 +124,7 @@ pub async fn get_logs(
             timestamp: log.timestamp.to_string(),
             created_at: log.created_at.to_string(),
             updated_at: log.created_at.to_string(), // 使用created_at因为没有updated_at字段
+            context: log.context.clone(), // 使用created_at因为没有updated_at字段
             method: log.context.as_ref().and_then(|ctx| ctx.get("method")).and_then(|v| v.as_str()).map(|s| s.to_string()),
             path: log.context.as_ref().and_then(|ctx| ctx.get("path")).and_then(|v| v.as_str()).map(|s| s.to_string()),
             status: log.context.as_ref().and_then(|ctx| ctx.get("status")).and_then(|v| v.as_i64()).map(|n| n as i32),

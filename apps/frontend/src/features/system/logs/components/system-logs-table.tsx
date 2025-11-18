@@ -60,11 +60,13 @@ export function SystemLogsTable({ data = [], totalPages, search, navigate, expor
   }, [appsData])
 
   const columns: ColumnDef<LogResponse, any>[] = useMemo(() => [
+    { accessorKey: 'id', header: 'ID', meta: { className: 'hidden' } },
     { accessorKey: 'timestamp', header: '时间', meta: { className: 'w-[180px]' }, cell: ({ row }) => formatLocalTimestamp(row.original.timestamp) },
     { accessorKey: 'log_level', header: '级别', meta: { className: 'w-[100px]' } },
-    { accessorKey: 'action', header: '内容', meta: { className: 'w-[150px]' }, cell: ({ row }) => <OverflowPreview value={row.original.action} title='内容' /> },
-    { accessorKey: 'application_name', header: '应用', meta: { className: 'w-[160px]' }, cell: ({ row }) => applicationNameMap.get(row.original.user_id) ?? '-' },
-    { accessorKey: 'user_id', header: '应用ID', meta: { className: 'w-[140px]' } },
+    { accessorKey: 'message', header: '内容', meta: { className: 'w-[150px]' }, cell: ({ row }) => <OverflowPreview value={row.original.message} title='内容' /> },
+    { accessorKey: 'application_name', header: '应用', meta: { className: 'w-[160px]' }, cell: ({ row }) => applicationNameMap.get(row.original.application_id) ?? '-' },
+    { accessorKey: 'instance_id', header: '实例ID', meta: { className: 'w-[160px]' }, cell: ({ row }) => <OverflowPreview value={row.original.instance_id} title='实例ID' /> },
+    { accessorKey: 'application_id', header: '应用ID', meta: { className: 'w-[140px]' } },
     { accessorKey: 'instance_hostname', header: '实例主机名', meta: { className: 'w-[180px]' }, cell: () => '-' },
     { accessorKey: 'ip_address', header: 'IP', meta: { className: 'w-[150px]' }, cell: ({ row }) => <OverflowPreview value={row.original.ip_address} title='IP' /> },
     { accessorKey: 'user_agent', header: 'UA', meta: { className: 'w-[150px]' }, cell: ({row}) => <OverflowPreview value={row.original.user_agent || '-'} title='UA' /> },
@@ -80,8 +82,8 @@ export function SystemLogsTable({ data = [], totalPages, search, navigate, expor
     columnFilters: [
       { columnId: 'log_level', searchKey: 'log_level', type: 'string' },
       { columnId: 'log_source', searchKey: 'source', type: 'string' },
-      { columnId: 'user_id', searchKey: 'user_id', type: 'string' },
-      { columnId: 'id', searchKey: 'instance_id', type: 'string' },
+      { columnId: 'application_id', searchKey: 'application_id', type: 'string' },
+      { columnId: 'instance_id', searchKey: 'instance_id', type: 'string' },
     ],
   })
 
@@ -102,7 +104,7 @@ export function SystemLogsTable({ data = [], totalPages, search, navigate, expor
   })
 
   const sourceFilter = table.getColumn('log_source')?.getFilterValue() as string | undefined
-  const appFilter = table.getColumn('user_id')?.getFilterValue() as string | undefined
+  const appFilter = table.getColumn('application_id')?.getFilterValue() as string | undefined
   const { data: instancesData } = useInstancesQuery({ page: 1, limit: 100, application_id: appFilter || undefined })
   const applicationOptions = useMemo(() => {
     const list = appsData?.data ?? []
@@ -121,7 +123,7 @@ export function SystemLogsTable({ data = [], totalPages, search, navigate, expor
       const name = i.hostname || i.id
       const ips = `${(i.ip_address || '').split(',')[0]}${i.public_ip ? ` / ${(i.public_ip || '').split(',')[0]}` : ''}`
       return {
-        label: `<span><span style="color: #666">${index}</span> <span style="color: #000; font-weight: 500;">${name}</span> <br /> ${ips}</span>`,
+        label: `<span><span>${index}</span> <span style="font-weight: 500;">${name}</span> <br /> ${ips}</span>`,
         icon: i.online_status === 'online' ? OnlineIcon : OfflineIcon,
         value: i.id,
       }
@@ -147,8 +149,8 @@ export function SystemLogsTable({ data = [], totalPages, search, navigate, expor
             { label: '代理端', value: 'agent' },
           ], multiSelect: false },
           ...(sourceFilter === 'agent' ? [
-            { columnId: 'user_id', title: '应用', options: applicationOptions, multiSelect: false, contentClassName: 'w-[300px]' },
-            { columnId: 'id', title: '实例', options: instanceOptions, multiSelect: false, contentClassName: 'w-[300px]' },
+            { columnId: 'application_id', title: '应用', options: applicationOptions, multiSelect: false, contentClassName: 'w-[300px]' },
+            { columnId: 'instance_id', title: '实例', options: instanceOptions, multiSelect: false, contentClassName: 'w-[300px]' },
           ] : []),
         ]}
       />
