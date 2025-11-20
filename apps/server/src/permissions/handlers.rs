@@ -237,6 +237,25 @@ pub async fn create_permission(
         updated_at: saved_permission.updated_at.to_rfc3339(),
     };
 
+    // 审计记录：新增权限
+    let after = serde_json::json!({
+        "id": response.id,
+        "name": response.name,
+        "description": response.description,
+        "action": response.action,
+        "permission_type": response.permission_type,
+        "created_at": response.created_at,
+        "updated_at": response.updated_at,
+    });
+    let _ = crate::shared::request::record_audit_log_simple(
+        &**db,
+        "permissions",
+        "create",
+        &req,
+        None,
+        Some(after),
+    ).await;
+
     Ok(HttpResponse::Ok().json(response))
 }
 
@@ -349,6 +368,8 @@ pub async fn update_permission(
     let current_revision = existing_permission.revision;
 
     // 更新权限
+    let existing_permission_before = existing_permission.clone();
+    let existing_permission_before = existing_permission.clone();
     let mut permission_active: crate::entities::permissions::ActiveModel =
         existing_permission.into();
     permission_active.name = Set(permission.name.clone());
@@ -383,6 +404,34 @@ pub async fn update_permission(
         created_at: updated_permission.created_at.to_rfc3339(),
         updated_at: updated_permission.updated_at.to_rfc3339(),
     };
+
+    // 审计记录：更新权限
+    let before = serde_json::json!({
+        "id": existing_permission_before.id,
+        "name": existing_permission_before.name,
+        "description": existing_permission_before.description,
+        "action": existing_permission_before.permission_action,
+        "permission_type": existing_permission_before.permission_type,
+        "created_at": existing_permission_before.created_at.to_rfc3339(),
+        "updated_at": existing_permission_before.updated_at.to_rfc3339(),
+    });
+    let after = serde_json::json!({
+        "id": response.id,
+        "name": response.name,
+        "description": response.description,
+        "action": response.action,
+        "permission_type": response.permission_type,
+        "created_at": response.created_at,
+        "updated_at": response.updated_at,
+    });
+    let _ = crate::shared::request::record_audit_log_simple(
+        &**db,
+        "permissions",
+        "update",
+        &req,
+        Some(before),
+        Some(after),
+    ).await;
 
     Ok(HttpResponse::Ok().json(response))
 }
@@ -427,6 +476,7 @@ pub async fn delete_permission(
     let current_user_id = get_user_id_from_request(&req)?;
 
     // 软删除权限
+    let existing_permission_before = existing_permission.clone();
     let mut permission_active: crate::entities::permissions::ActiveModel =
         existing_permission.into();
     permission_active.deleted_at = Set(Some(Utc::now().into()));
@@ -434,6 +484,25 @@ pub async fn delete_permission(
     permission_active.updated_at = Set(Utc::now().into());
 
     permission_active.update(&**db).await?;
+
+    // 审计记录：删除权限
+    let before = serde_json::json!({
+        "id": existing_permission_before.id,
+        "name": existing_permission_before.name,
+        "description": existing_permission_before.description,
+        "action": existing_permission_before.permission_action,
+        "permission_type": existing_permission_before.permission_type,
+        "created_at": existing_permission_before.created_at.to_rfc3339(),
+        "updated_at": existing_permission_before.updated_at.to_rfc3339(),
+    });
+    let _ = crate::shared::request::record_audit_log_simple(
+        &**db,
+        "permissions",
+        "delete",
+        &req,
+        Some(before),
+        None,
+    ).await;
 
     Ok(HttpResponse::Ok().json("权限删除成功"))
 }

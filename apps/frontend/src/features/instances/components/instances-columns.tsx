@@ -1,5 +1,6 @@
 import { type ColumnDef } from '@tanstack/react-table'
 import { cn } from '@/lib/utils'
+import { formatDateTime } from '@/lib/datetime'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
@@ -197,7 +198,7 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
       if (!lastReportAt) return <div className='text-sm text-muted-foreground'>-</div>
       return (
         <div className='w-fit text-nowrap text-sm text-muted-foreground'>
-          {new Date(lastReportAt).toLocaleString('zh-CN', { hour12: false })}
+          {formatDateTime(lastReportAt)}
         </div>
       )
     },

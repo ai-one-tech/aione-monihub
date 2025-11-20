@@ -185,7 +185,7 @@ export const applicationsColumns: ColumnDef<ApplicationResponse>[] = [
     ),
     cell: ({ row }) => (
       <div className='w-fit text-nowrap text-sm text-muted-foreground'>
-        {new Date(row.getValue('created_at')).toLocaleDateString('zh-CN')}
+        {formatDate(row.getValue('created_at'))}
       </div>
     ),
   },
@@ -196,7 +196,7 @@ export const applicationsColumns: ColumnDef<ApplicationResponse>[] = [
     ),
     cell: ({ row }) => (
       <div className='w-fit text-nowrap text-sm text-muted-foreground'>
-        {new Date(row.getValue('updated_at')).toLocaleDateString('zh-CN')}
+        {formatDate(row.getValue('updated_at'))}
       </div>
     ),
   },
@@ -205,3 +205,4 @@ export const applicationsColumns: ColumnDef<ApplicationResponse>[] = [
     cell: ApplicationsDataTableRowActions,
   },
 ]
+import { formatDate } from '@/lib/datetime'

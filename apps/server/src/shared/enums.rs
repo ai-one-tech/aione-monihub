@@ -86,15 +86,15 @@ pub enum PermissionAction {
     #[sea_orm(string_value = "import")] Import,
 }
 
-// 配置类型
+// 配置类型（仅保留 object, array, html, text）
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveActiveEnum, EnumIter, ToSchema)]
 #[sea_orm(rs_type = "String", db_type = "Text")]
 #[serde(rename_all = "snake_case")]
 pub enum ConfigType {
-    #[sea_orm(string_value = "json")] Json,
-    #[sea_orm(string_value = "yaml")] Yaml,
-    #[sea_orm(string_value = "env")] Env,
-    #[sea_orm(string_value = "properties")] Properties,
+    #[sea_orm(string_value = "object")] Object,
+    #[sea_orm(string_value = "array")] Array,
+    #[sea_orm(string_value = "html")] Html,
+    #[sea_orm(string_value = "text")] Text,
 }
 
 // 环境

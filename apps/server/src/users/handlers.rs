@@ -237,9 +237,6 @@ pub async fn create_user(
     };
 
     // 审计记录：新增用户
-    let ci = req.connection_info();
-    let ip_str = ci.realip_remote_addr().unwrap_or("").to_string();
-    let trace_id = req.headers().get("x-trace-id").and_then(|v| v.to_str().ok());
     let after = serde_json::json!({
         "id": response.id,
         "username": response.username,
@@ -248,13 +245,11 @@ pub async fn create_user(
         "created_at": response.created_at,
         "updated_at": response.updated_at,
     });
-    let _ = crate::audit::handlers::record_audit_log(
+    let _ = crate::shared::request::record_audit_log_simple(
         &**db,
         "users",
         "create",
-        &current_user_id.to_string(),
-        &ip_str,
-        trace_id,
+        &req,
         None,
         Some(after),
     ).await;
@@ -416,6 +411,15 @@ pub async fn update_user(
     // 如果请求中包含角色名称，则更新用户角色（通过角色名称匹配）
     if let Some(role_names) = &user.roles {
         // 删除现有角色关联
+        // 审计：变更前用户角色集合
+        let before_roles: Vec<String> = UserRoles::find()
+            .filter(crate::entities::user_roles::Column::UserId.eq(&saved_user.id))
+            .find_with_related(Roles)
+            .all(&**db)
+            .await?
+            .into_iter()
+            .flat_map(|(_, roles)| roles.into_iter().map(|r| r.name))
+            .collect();
         UserRoles::delete_many()
             .filter(crate::entities::user_roles::Column::UserId.eq(&saved_user.id))
             .exec(&**db)
@@ -442,6 +446,27 @@ pub async fn update_user(
                 user_role.insert(&**db).await?;
             }
         }
+
+        // 审计：变更后用户角色集合
+        let after_roles: Vec<String> = UserRoles::find()
+            .filter(crate::entities::user_roles::Column::UserId.eq(&saved_user.id))
+            .find_with_related(Roles)
+            .all(&**db)
+            .await?
+            .into_iter()
+            .flat_map(|(_, roles)| roles.into_iter().map(|r| r.name))
+            .collect();
+
+        let before_json = serde_json::json!({ "user_id": saved_user.id, "roles": before_roles });
+        let after_json = serde_json::json!({ "user_id": saved_user.id, "roles": after_roles });
+        let _ = crate::shared::request::record_audit_log_simple(
+            &**db,
+            "user_roles",
+            "update",
+            &req,
+            Some(before_json),
+            Some(after_json),
+        ).await;
     }
 
     // 查询用户角色
@@ -472,9 +497,6 @@ pub async fn update_user(
     };
 
     // 审计记录：更新用户
-    let ci = req.connection_info();
-    let ip_str = ci.realip_remote_addr().unwrap_or("").to_string();
-    let trace_id = req.headers().get("x-trace-id").and_then(|v| v.to_str().ok());
     let before = serde_json::json!({
         "id": existing_user.id,
         "username": existing_user.username,
@@ -491,13 +513,11 @@ pub async fn update_user(
         "created_at": response.created_at,
         "updated_at": response.updated_at,
     });
-    let _ = crate::audit::handlers::record_audit_log(
+    let _ = crate::shared::request::record_audit_log_simple(
         &**db,
         "users",
         "update",
-        &current_user_id.to_string(),
-        &ip_str,
-        trace_id,
+        &req,
         Some(before),
         Some(after),
     ).await;
@@ -562,9 +582,6 @@ pub async fn delete_user(
     deleted_user.update(&**db).await?;
 
     // 审计记录：删除用户
-    let ci = req.connection_info();
-    let ip_str = ci.realip_remote_addr().unwrap_or("").to_string();
-    let trace_id = req.headers().get("x-trace-id").and_then(|v| v.to_str().ok());
     let before = serde_json::json!({
         "id": existing_user.id,
         "username": existing_user.username,
@@ -573,13 +590,11 @@ pub async fn delete_user(
         "created_at": existing_user.created_at.to_rfc3339(),
         "updated_at": existing_user.updated_at.to_rfc3339(),
     });
-    let _ = crate::audit::handlers::record_audit_log(
+    let _ = crate::shared::request::record_audit_log_simple(
         &**db,
         "users",
         "delete",
-        &current_user_id.to_string(),
-        &ip_str,
-        trace_id,
+        &req,
         Some(before),
         None,
     ).await;

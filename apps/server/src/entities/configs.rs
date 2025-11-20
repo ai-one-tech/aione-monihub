@@ -20,6 +20,8 @@ pub struct Model {
     pub revision: i32,
     pub created_at: DateTimeWithTimeZone,  // 支持毫秒精度
     pub updated_at: DateTimeWithTimeZone,  // 支持毫秒精度
+    pub generate_values: bool,
+    pub schema: Option<Json>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

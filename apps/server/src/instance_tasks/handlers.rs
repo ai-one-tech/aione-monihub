@@ -52,7 +52,7 @@ pub async fn create_task(
         timeout_seconds: Set(request.timeout_seconds),
         retry_count: Set(request.retry_count),
         application_id: Set(request.application_id.clone()),
-        created_by: Set(user_id),
+        created_by: Set(user_id.clone()),
         created_at: Set(Utc::now().into()),
         updated_at: Set(Utc::now().into()),
         deleted_at: Set(None),
@@ -85,6 +85,23 @@ pub async fn create_task(
     }
 
     let response = TaskResponse::from_entity(saved_task);
+    // 审计记录：创建任务
+    let after = serde_json::json!({
+        "id": response.id,
+        "task_name": response.task_name,
+        "task_type": response.task_type,
+        "application_id": response.application_id,
+        "created_at": response.created_at,
+        "updated_at": response.updated_at,
+    });
+    let _ = crate::shared::request::record_audit_log_simple(
+        &**db,
+        "instance_tasks",
+        "create",
+        &req,
+        None,
+        Some(after),
+    ).await;
     Ok(HttpResponse::Ok().json(response))
 }
 
@@ -192,10 +209,30 @@ pub async fn delete_task(
 
     match task {
         Some(task) => {
-            let mut active: instance_tasks::ActiveModel = task.into();
+            let mut active: instance_tasks::ActiveModel = task.clone().into();
             active.deleted_at = Set(Some(Utc::now().into()));
             active.updated_at = Set(Utc::now().into());
             active.update(&**db).await?;
+
+            // 审计记录：删除任务
+            let before = serde_json::json!({
+                "id": task.id,
+                "task_name": task.task_name,
+                "task_type": task.task_type,
+                "application_id": task.application_id,
+                "created_at": task.created_at.to_rfc3339(),
+                "updated_at": task.updated_at.to_rfc3339(),
+            });
+            let _ = crate::audit::handlers::record_audit_log(
+                &**db,
+                "instance_tasks",
+                "delete",
+                "",
+                "",
+                None,
+                Some(before),
+                None,
+            ).await;
 
             Ok(HttpResponse::Ok().json(json!({
                 "status": "success",
@@ -230,6 +267,18 @@ pub async fn cancel_task(
         active.updated_at = Set(Utc::now().into());
         active.update(&**db).await?;
     }
+
+    // 审计记录：取消任务（状态批量更新）
+    let _ = crate::audit::handlers::record_audit_log(
+        &**db,
+        "instance_tasks",
+        "update",
+        "",
+        "",
+        None,
+        None,
+        Some(serde_json::json!({ "task_id": task_id, "status": "cancelled" })),
+    ).await;
 
     Ok(HttpResponse::Ok().json(json!({
         "status": "success",

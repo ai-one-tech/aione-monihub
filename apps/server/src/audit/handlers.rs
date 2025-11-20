@@ -128,12 +128,16 @@ pub async fn record_audit_log(
     after: Option<serde_json::Value>,
 ) -> Result<(), sea_orm::DbErr> {
     let id = crate::shared::snowflake::generate_snowflake_id();
+    let trace_id_val = match trace_id {
+        Some(t) if !t.is_empty() => t.to_string(),
+        _ => crate::shared::snowflake::generate_snowflake_id(),
+    };
     let mut context = serde_json::json!({
         "table": table,
         "operation": operation,
         "user_id": user_id,
         "ip": ip,
-        "trace_id": trace_id.unwrap_or(""),
+        "trace_id": trace_id_val,
     });
 
     // Compute diff

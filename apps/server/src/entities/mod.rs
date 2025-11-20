@@ -1,5 +1,6 @@
 pub mod applications;
 pub mod configs;
+pub mod config_values;
 pub mod files;
 pub mod instance_records;
 pub mod instance_task_records;
@@ -16,6 +17,7 @@ pub mod users;
 
 pub use applications::Entity as Applications;
 pub use configs::Entity as Configs;
+pub use config_values::Entity as ConfigValues;
 pub use files::Entity as Files;
 pub use instance_records::Entity as InstanceRecords;
 pub use instance_task_records::Entity as InstanceTaskRecords;

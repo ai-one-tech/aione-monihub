@@ -167,6 +167,25 @@ pub async fn create_project(
         updated_at: saved_project.updated_at.to_rfc3339(),
     };
 
+    // 审计记录：新增项目
+    let after = serde_json::json!({
+        "id": response.id,
+        "name": response.name,
+        "code": response.code,
+        "status": response.status,
+        "description": response.description,
+        "created_at": response.created_at,
+        "updated_at": response.updated_at,
+    });
+    let _ = crate::shared::request::record_audit_log_simple(
+        &**db,
+        "projects",
+        "create",
+        &req,
+        None,
+        Some(after),
+    ).await;
+
     Ok(HttpResponse::Ok().json(response))
 }
 
@@ -237,7 +256,7 @@ pub async fn update_project(
     // 查找项目
     let existing_project = Projects::find_by_id(&project_id).one(&**db).await?;
 
-    let _existing_project = match existing_project {
+    let existing_project = match existing_project {
         Some(project) => project,
         None => return Err(ApiError::NotFound("项目不存在".to_string())),
     };
@@ -280,6 +299,34 @@ pub async fn update_project(
         updated_at: saved_project.updated_at.to_rfc3339(),
     };
 
+    // 审计记录：更新项目
+    let before = serde_json::json!({
+        "id": existing_project.id,
+        "name": existing_project.name,
+        "code": existing_project.code,
+        "status": existing_project.status,
+        "description": existing_project.description.unwrap_or_default(),
+        "created_at": existing_project.created_at.to_rfc3339(),
+        "updated_at": existing_project.updated_at.to_rfc3339(),
+    });
+    let after = serde_json::json!({
+        "id": response.id,
+        "name": response.name,
+        "code": response.code,
+        "status": response.status,
+        "description": response.description,
+        "created_at": response.created_at,
+        "updated_at": response.updated_at,
+    });
+    let _ = crate::shared::request::record_audit_log_simple(
+        &**db,
+        "projects",
+        "update",
+        &req,
+        Some(before),
+        Some(after),
+    ).await;
+
     Ok(HttpResponse::Ok().json(response))
 }
 
@@ -306,7 +353,7 @@ pub async fn delete_project(
     // 查找项目
     let existing_project = Projects::find_by_id(&project_id).one(&**db).await?;
 
-    let _existing_project = match existing_project {
+    let existing_project = match existing_project {
         Some(project) => {
             if project.deleted_at.is_some() {
                 return Err(ApiError::NotFound("项目不存在".to_string()));
@@ -341,6 +388,28 @@ pub async fn delete_project(
     };
 
     updated_project.update(&**db).await?;
+
+    // 审计记录：删除项目
+    // 无法从此函数获取操作者IP与trace_id，保留空字符串与None
+    let before = serde_json::json!({
+        "id": existing_project.id,
+        "name": existing_project.name,
+        "code": existing_project.code,
+        "status": existing_project.status,
+        "description": existing_project.description.unwrap_or_default(),
+        "created_at": existing_project.created_at.to_rfc3339(),
+        "updated_at": existing_project.updated_at.to_rfc3339(),
+    });
+    let _ = crate::audit::handlers::record_audit_log(
+        &**db,
+        "projects",
+        "delete",
+        "",
+        "",
+        None,
+        Some(before),
+        None,
+    ).await;
 
     Ok(HttpResponse::Ok().json("项目删除成功"))
 }

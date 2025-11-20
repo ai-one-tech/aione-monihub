@@ -3,7 +3,12 @@ use crate::entities::logs;
 use crate::shared::enums;
 use crate::shared::snowflake::generate_snowflake_id;
 use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
+
 use actix_web::{web, Error};
+use actix_web::http::header::{HeaderName, HeaderValue};
+use actix_web::HttpMessage;
+use actix_web::HttpRequest;
+use crate::shared::request::{TraceIdExt, get_trace_id};
 use chrono::Utc;
 use futures_util::future::ready;
 use futures_util::future::{LocalBoxFuture, Ready};
@@ -38,6 +43,8 @@ pub struct RequestLoggingService<S> {
     service: Rc<S>,
 }
 
+ 
+
 impl<S, B> Service<ServiceRequest> for RequestLoggingService<S>
 where
     S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
@@ -50,7 +57,7 @@ where
 
     forward_ready!(service);
 
-    fn call(&self, req: ServiceRequest) -> Self::Future {
+    fn call(&self, mut req: ServiceRequest) -> Self::Future {
         let service = self.service.clone();
 
         let method = req.method().to_string();
@@ -64,7 +71,15 @@ where
             .and_then(|v| v.to_str().ok())
             .unwrap_or("")
             .to_string();
-        let trace_id = generate_snowflake_id();
+        let trace_id = {
+            let h = req
+                .headers()
+                .get("x-trace-id")
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or("");
+            if h.is_empty() { generate_snowflake_id() } else { h.to_string() }
+        };
+        req.extensions_mut().insert(TraceIdExt(trace_id.clone()));
         let start = Instant::now();
 
         let db_opt = req
@@ -106,8 +121,31 @@ where
 
             let duration_ms = start.elapsed().as_millis() as i64;
 
+            let mut response_body_value: serde_json::Value = serde_json::Value::Null;
+            let mut response_content_type = String::new();
+            let result = match result {
+                Ok(mut resp) => {
+                    let hn = HeaderName::from_static("x-trace-id");
+                    if let Ok(hv) = HeaderValue::from_str(&trace_id) {
+                        resp.response_mut().headers_mut().insert(hn, hv);
+                    }
+                    response_content_type = resp
+                        .headers()
+                        .get("Content-Type")
+                        .and_then(|v| v.to_str().ok())
+                        .unwrap_or("")
+                        .to_string();
+                    if response_content_type.starts_with("application/json") || response_content_type.starts_with("text/") {
+                        response_body_value = json!({ "skipped": true, "reason": "capturing_disabled" });
+                    } else {
+                        response_body_value = json!({ "skipped": true, "reason": "binary" });
+                    }
+                    Ok(resp)
+                }
+                Err(e) => Err(e)
+            };
+
             if let Some(db) = db_opt {
-                
                 let mut log_level = enums::LogLevel::Info;
                 let status_code: i32;
                 match &result {
@@ -120,24 +158,6 @@ where
                     Err(_) => {
                         status_code = 500;
                         log_level = enums::LogLevel::Error;
-                    }
-                }
-
-                // 捕获响应头与可读响应体（仅JSON/text，限制长度）
-                let mut response_body_value: serde_json::Value = serde_json::Value::Null;
-                let mut response_content_type = String::new();
-                if let Ok(resp) = &result {
-                    response_content_type = resp
-                        .headers()
-                        .get("Content-Type")
-                        .and_then(|v| v.to_str().ok())
-                        .unwrap_or("")
-                        .to_string();
-                    // 暂未捕获响应体字节，进行标记
-                    if response_content_type.starts_with("application/json") || response_content_type.starts_with("text/") {
-                        response_body_value = json!({ "skipped": true, "reason": "capturing_disabled" });
-                    } else {
-                        response_body_value = json!({ "skipped": true, "reason": "binary" });
                     }
                 }
 

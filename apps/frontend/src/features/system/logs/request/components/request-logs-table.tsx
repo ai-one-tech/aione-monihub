@@ -16,6 +16,7 @@ import { type LogResponse } from '../../data/api-schema'
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import { OverflowPreview } from '@/components/overflow-preview'
 import { parse } from 'date-fns'
+import { formatDateTime } from '@/lib/datetime'
 import { useApplicationsQuery } from '@/features/applications/hooks/use-applications-query'
 
 declare module '@tanstack/react-table' {
@@ -41,10 +42,10 @@ export function RequestLogsTable({ data = [], totalPages, search, navigate, expo
   const formatLocalTimestamp = (ts: string) => {
     try {
       const d = parse(ts, 'yyyy-MM-dd HH:mm:ss.SSS xxx', new Date())
-      if (!isNaN(d.getTime())) return d.toLocaleString()
+      if (!isNaN(d.getTime())) return formatDateTime(d)
     } catch {}
     const d2 = new Date(ts)
-    return isNaN(d2.getTime()) ? ts : d2.toLocaleString()
+    return isNaN(d2.getTime()) ? ts : formatDateTime(d2)
   }
 
   const { data: appsData } = useApplicationsQuery({ page: 1, limit: 50 })
@@ -58,11 +59,12 @@ export function RequestLogsTable({ data = [], totalPages, search, navigate, expo
     { accessorKey: 'method', header: '方法', meta: { className: 'w-[60px]' }, cell: ({ row }) => row.original.method ?? '' },
     { accessorKey: 'path', header: 'URL', meta: { className: 'w-[150px]' }, cell: ({ row }) => <OverflowPreview value={row.original.path ?? ''} title='URL' /> },
     { accessorKey: 'status', header: '状态码', meta: { className: 'w-[100px]' }, cell: ({ row }) => row.original.status ?? '' },
-    { accessorKey: 'application_name', header: '应用', meta: { className: 'w-[160px]' }, cell: ({ row }) => applicationNameMap.get(row.original.user_id) ?? '-' },
-    { accessorKey: 'instance_hostname', header: '实例主机名', meta: { className: 'w-[180px]' }, cell: () => '-' },
+    { accessorKey: 'application_name', header: '应用', meta: { className: 'w-[160px]' }, cell: ({ row }) => row.original.application_name || applicationNameMap.get(row.original.application_id) || '-' },
+    { accessorKey: 'instance_hostname', header: '实例主机名', meta: { className: 'w-[180px]' }, cell: ({ row }) => row.original.instance_hostname || '-' },
     { accessorKey: 'ip_address', header: 'IP', meta: { className: 'w-[150px]' }, cell: ({ row }) => <OverflowPreview value={row.original.ip_address ?? ''} title='IP' /> },
     { accessorKey: 'user_agent', header: 'UA', meta: { className: 'w-[150px]' }, cell: ({ row }) => <OverflowPreview value={row.original.user_agent ?? ''} title='UA' /> },
     { accessorKey: 'duration_ms', header: '耗时(ms)', meta: { className: 'w-[100px]' }, cell: ({ row }) => row.original.duration_ms ?? '' },
+    { accessorKey: 'user_name', header: '用户', meta: { className: 'w-[140px]' }, cell: ({ row }) => row.original.user_name || '-' },
     { accessorKey: 'trace_id', header: 'TraceID', meta: { className: 'w-[160px]' }, cell: ({ row }) => row.original.trace_id ?? '' },
     { accessorKey: 'request_headers', header: '请求头', meta: { className: 'w-[150px]' }, cell: ({ row }) => <OverflowPreview value={row.original.request_headers ?? {}} title='请求头' /> },
     { accessorKey: 'request_body', header: '请求体', meta: { className: 'w-[150px]' }, cell: ({ row }) => <OverflowPreview value={row.original.request_body ?? ''} title='请求体' /> },

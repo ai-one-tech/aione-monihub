@@ -244,7 +244,7 @@ function ResultCard({ result, onViewDetails }: ResultCardProps) {
           {result.completed_at && (
             <div>
               <div className="text-xs text-muted-foreground">完成时间</div>
-              <div className="text-sm">{new Date(result.completed_at).toLocaleString()}</div>
+              <div className="text-sm">{formatDateTime(result.completed_at)}</div>
             </div>
           )}
           {result.result_data && (
@@ -299,3 +299,4 @@ function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text
   return text.substring(0, maxLength) + '...'
 }
+import { formatDateTime } from '@/lib/datetime'

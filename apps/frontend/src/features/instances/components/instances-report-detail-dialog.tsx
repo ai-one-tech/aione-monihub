@@ -2,8 +2,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { format } from 'date-fns'
-import { zhCN } from 'date-fns/locale'
+import { formatDateTime } from '@/lib/datetime'
 import { type InstanceReportRecord, type NetworkType } from '../data/api-schema'
 
 interface InstanceReportDetailDialogProps {
@@ -46,7 +45,7 @@ export function InstanceReportDetailDialog({
         <DialogHeader>
           <DialogTitle>上报记录详情</DialogTitle>
           <DialogDescription>
-            上报时间: {format(new Date(report.report_timestamp), 'yyyy-MM-dd HH:mm:ss', { locale: zhCN })}
+            上报时间: {formatDateTime(report.report_timestamp)}
           </DialogDescription>
         </DialogHeader>
 
@@ -77,13 +76,13 @@ export function InstanceReportDetailDialog({
                 <div>
                   <span className='text-muted-foreground'>上报时间:</span>
                   <p className='mt-1'>
-                    {format(new Date(report.report_timestamp), 'yyyy-MM-dd HH:mm:ss', { locale: zhCN })}
+                    {formatDateTime(report.report_timestamp)}
                   </p>
                 </div>
                 <div>
                   <span className='text-muted-foreground'>接收时间:</span>
                   <p className='mt-1'>
-                    {format(new Date(report.received_at), 'yyyy-MM-dd HH:mm:ss', { locale: zhCN })}
+                    {formatDateTime(report.received_at)}
                   </p>
                 </div>
               </div>

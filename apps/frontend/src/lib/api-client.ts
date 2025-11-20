@@ -178,6 +178,12 @@ class ApiClient {
     }
 
     const authHeaders = this.addAuthHeader(headers, options.skipAuth)
+    if (!authHeaders['x-trace-id']) {
+      const rid = (typeof crypto !== 'undefined' && (crypto as any).randomUUID)
+        ? (crypto as any).randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`
+      authHeaders['x-trace-id'] = rid
+    }
 
     const requestOptions: RequestOptions = {
       credentials: 'include', // 包含cookie

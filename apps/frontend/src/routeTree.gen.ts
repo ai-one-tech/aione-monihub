@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedInstancesRouteImport } from './routes/_authenticated/instances'
+import { Route as AuthenticatedConfigsRouteImport } from './routes/_authenticated/configs'
 import { Route as AuthenticatedApplicationsRouteImport } from './routes/_authenticated/applications'
 import { Route as AuthenticatedApplicationTasksRouteImport } from './routes/_authenticated/application-tasks'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
@@ -73,6 +74,11 @@ const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
 const AuthenticatedInstancesRoute = AuthenticatedInstancesRouteImport.update({
   id: '/instances',
   path: '/instances',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedConfigsRoute = AuthenticatedConfigsRouteImport.update({
+  id: '/configs',
+  path: '/configs',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedApplicationsRoute =
@@ -286,6 +292,7 @@ export interface FileRoutesByFullPath {
   '/503': typeof errors503Route
   '/application-tasks': typeof AuthenticatedApplicationTasksRoute
   '/applications': typeof AuthenticatedApplicationsRoute
+  '/configs': typeof AuthenticatedConfigsRoute
   '/instances': typeof AuthenticatedInstancesRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/': typeof AuthenticatedIndexRoute
@@ -325,6 +332,7 @@ export interface FileRoutesByTo {
   '/503': typeof errors503Route
   '/application-tasks': typeof AuthenticatedApplicationTasksRoute
   '/applications': typeof AuthenticatedApplicationsRoute
+  '/configs': typeof AuthenticatedConfigsRoute
   '/instances': typeof AuthenticatedInstancesRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/': typeof AuthenticatedIndexRoute
@@ -369,6 +377,7 @@ export interface FileRoutesById {
   '/(errors)/503': typeof errors503Route
   '/_authenticated/application-tasks': typeof AuthenticatedApplicationTasksRoute
   '/_authenticated/applications': typeof AuthenticatedApplicationsRoute
+  '/_authenticated/configs': typeof AuthenticatedConfigsRoute
   '/_authenticated/instances': typeof AuthenticatedInstancesRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -411,6 +420,7 @@ export interface FileRouteTypes {
     | '/503'
     | '/application-tasks'
     | '/applications'
+    | '/configs'
     | '/instances'
     | '/projects'
     | '/'
@@ -450,6 +460,7 @@ export interface FileRouteTypes {
     | '/503'
     | '/application-tasks'
     | '/applications'
+    | '/configs'
     | '/instances'
     | '/projects'
     | '/'
@@ -493,6 +504,7 @@ export interface FileRouteTypes {
     | '/(errors)/503'
     | '/_authenticated/application-tasks'
     | '/_authenticated/applications'
+    | '/_authenticated/configs'
     | '/_authenticated/instances'
     | '/_authenticated/projects'
     | '/_authenticated/'
@@ -569,6 +581,13 @@ declare module '@tanstack/react-router' {
       path: '/instances'
       fullPath: '/instances'
       preLoaderRoute: typeof AuthenticatedInstancesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/configs': {
+      id: '/_authenticated/configs'
+      path: '/configs'
+      fullPath: '/configs'
+      preLoaderRoute: typeof AuthenticatedConfigsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/applications': {
@@ -853,6 +872,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedApplicationTasksRoute: typeof AuthenticatedApplicationTasksRoute
   AuthenticatedApplicationsRoute: typeof AuthenticatedApplicationsRoute
+  AuthenticatedConfigsRoute: typeof AuthenticatedConfigsRoute
   AuthenticatedInstancesRoute: typeof AuthenticatedInstancesRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -875,6 +895,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedApplicationTasksRoute: AuthenticatedApplicationTasksRoute,
   AuthenticatedApplicationsRoute: AuthenticatedApplicationsRoute,
+  AuthenticatedConfigsRoute: AuthenticatedConfigsRoute,
   AuthenticatedInstancesRoute: AuthenticatedInstancesRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,

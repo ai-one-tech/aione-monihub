@@ -21,15 +21,15 @@ export function OperationLogDetailDialog({ id, open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='sm:max-w-3xl'>
+      <DialogContent className=''>
         <DialogHeader>
           <DialogTitle>操作详情</DialogTitle>
           <DialogDescription>
             {data?.table} · {data?.operation} · {data?.timestamp}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className='max-h-[70vh] pr-4'>
-          <div className='space-y-6'>
+        <ScrollArea className='pr-4 w-[1000px] max-h-[70vh]'>
+          <div className='space-y-6 pr-4'>
             <div className='grid grid-cols-2 gap-4 text-sm'>
               <div>
                 <span className='text-muted-foreground'>操作用户</span>

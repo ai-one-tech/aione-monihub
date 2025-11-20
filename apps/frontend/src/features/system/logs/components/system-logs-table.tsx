@@ -25,6 +25,7 @@ const OfflineIcon: React.FC<{ className?: string }> = ({ className }) => (
 import { type LogResponse } from '../data/api-schema'
 import { OverflowPreview } from '@/components/overflow-preview'
 import { parse } from 'date-fns'
+import { formatDateTime } from '@/lib/datetime'
 
 declare module '@tanstack/react-table' {
   interface ColumnMeta<TData, TValue> { className: string }
@@ -47,10 +48,10 @@ export function SystemLogsTable({ data = [], totalPages, search, navigate, expor
   const formatLocalTimestamp = (ts: string) => {
     try {
       const d = parse(ts, 'yyyy-MM-dd HH:mm:ss.SSS xxx', new Date())
-      if (!isNaN(d.getTime())) return d.toLocaleString()
+      if (!isNaN(d.getTime())) return formatDateTime(d)
     } catch {}
     const d2 = new Date(ts)
-    return isNaN(d2.getTime()) ? ts : d2.toLocaleString()
+    return isNaN(d2.getTime()) ? ts : formatDateTime(d2)
   }
 
   const { data: appsData } = useApplicationsQuery({ page: 1, limit: 50 })
@@ -64,12 +65,13 @@ export function SystemLogsTable({ data = [], totalPages, search, navigate, expor
     { accessorKey: 'timestamp', header: '时间', meta: { className: 'w-[180px]' }, cell: ({ row }) => formatLocalTimestamp(row.original.timestamp) },
     { accessorKey: 'log_level', header: '级别', meta: { className: 'w-[100px]' } },
     { accessorKey: 'message', header: '内容', meta: { className: 'w-[150px]' }, cell: ({ row }) => <OverflowPreview value={row.original.message} title='内容' /> },
-    { accessorKey: 'application_name', header: '应用', meta: { className: 'w-[160px]' }, cell: ({ row }) => applicationNameMap.get(row.original.application_id) ?? '-' },
+    { accessorKey: 'application_name', header: '应用', meta: { className: 'w-[160px]' }, cell: ({ row }) => row.original.application_name || applicationNameMap.get(row.original.application_id) || '-' },
     { accessorKey: 'instance_id', header: '实例ID', meta: { className: 'w-[160px]' }, cell: ({ row }) => <OverflowPreview value={row.original.instance_id} title='实例ID' /> },
     { accessorKey: 'application_id', header: '应用ID', meta: { className: 'w-[140px]' } },
-    { accessorKey: 'instance_hostname', header: '实例主机名', meta: { className: 'w-[180px]' }, cell: () => '-' },
+    { accessorKey: 'instance_hostname', header: '实例主机名', meta: { className: 'w-[180px]' }, cell: ({ row }) => row.original.instance_hostname || '-' },
     { accessorKey: 'ip_address', header: 'IP', meta: { className: 'w-[150px]' }, cell: ({ row }) => <OverflowPreview value={row.original.ip_address} title='IP' /> },
     { accessorKey: 'user_agent', header: 'UA', meta: { className: 'w-[150px]' }, cell: ({row}) => <OverflowPreview value={row.original.user_agent || '-'} title='UA' /> },
+    { accessorKey: 'user_name', header: '用户', meta: { className: 'w-[140px]' }, cell: ({ row }) => row.original.user_name || '-' },
     { accessorKey: 'log_type', header: '类型', meta: { className: 'w-[100px]' }, cell: () => 'system' },
     { accessorKey: 'log_source', header: '来源', meta: { className: 'w-[160px]' } },
   ], [applicationNameMap])

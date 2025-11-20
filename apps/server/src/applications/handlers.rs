@@ -215,6 +215,27 @@ pub async fn create_application(
         updated_at: created_app.updated_at.to_rfc3339(),
     };
 
+    // 审计记录：新增应用
+    let after = serde_json::json!({
+        "id": response.id,
+        "project_id": response.project_id,
+        "name": response.name,
+        "code": response.code,
+        "status": response.status,
+        "tech_stacks": response.tech_stacks,
+        "description": response.description,
+        "created_at": response.created_at,
+        "updated_at": response.updated_at,
+    });
+    let _ = crate::shared::request::record_audit_log_simple(
+        db.get_ref(),
+        "applications",
+        "create",
+        &req,
+        None,
+        Some(after),
+    ).await;
+
     Ok(HttpResponse::Ok().json(response))
 }
 
@@ -336,6 +357,7 @@ pub async fn update_application(
         }
 
         // 转换为 ActiveModel 并更新字段
+        let application_before = application.clone();
         let mut active_app: crate::entities::applications::ActiveModel = application.into();
         active_app.name = ActiveValue::Set(app.name.clone());
         active_app.project_id = ActiveValue::Set(app.project_id.clone());
@@ -361,6 +383,36 @@ pub async fn update_application(
             created_at: updated_app.created_at.to_rfc3339(),
             updated_at: updated_app.updated_at.to_rfc3339(),
         };
+
+        // 审计记录：更新应用
+        let before = serde_json::json!({
+            "id": application_before.id,
+            "project_id": application_before.project_id,
+            "name": application_before.name,
+            "code": application_before.code,
+            "status": application_before.status,
+            "description": application_before.description.unwrap_or_default(),
+            "created_at": application_before.created_at.to_rfc3339(),
+            "updated_at": application_before.updated_at.to_rfc3339(),
+        });
+        let after = serde_json::json!({
+            "id": response.id,
+            "project_id": response.project_id,
+            "name": response.name,
+            "code": response.code,
+            "status": response.status,
+            "description": response.description,
+            "created_at": response.created_at,
+            "updated_at": response.updated_at,
+        });
+        let _ = crate::shared::request::record_audit_log_simple(
+            db.get_ref(),
+            "applications",
+            "update",
+            &req,
+            Some(before),
+            Some(after),
+        ).await;
 
         Ok(HttpResponse::Ok().json(response))
     } else {
@@ -409,6 +461,26 @@ pub async fn delete_application(
         // 删除应用
         applications_module.delete_application(&app_id).await?;
 
+        // 审计记录：删除应用
+        let before = serde_json::json!({
+            "id": application.id,
+            "project_id": application.project_id,
+            "name": application.name,
+            "code": application.code,
+            "status": application.status,
+            "description": application.description.unwrap_or_default(),
+            "created_at": application.created_at.to_rfc3339(),
+            "updated_at": application.updated_at.to_rfc3339(),
+        });
+        let _ = crate::shared::request::record_audit_log_simple(
+            db.get_ref(),
+            "applications",
+            "delete",
+            &req,
+            Some(before),
+            None,
+        ).await;
+
         Ok(HttpResponse::Ok().json("Application deleted successfully"))
     } else {
         Err(ApiError::NotFound("Application not found".to_string()))
@@ -455,6 +527,17 @@ pub async fn enable_application(
             created_at: saved.created_at.to_rfc3339(),
             updated_at: saved.updated_at.to_rfc3339(),
         };
+        // 审计记录：启用应用（作为更新）
+        let before = serde_json::json!({ "status": Status::Disabled });
+        let after = serde_json::json!({ "status": Status::Active });
+        let _ = crate::shared::request::record_audit_log_simple(
+            db.get_ref(),
+            "applications",
+            "update",
+            &req,
+            Some(before),
+            Some(after),
+        ).await;
         Ok(HttpResponse::Ok().json(response))
     } else {
         Err(ApiError::NotFound("Application not found".to_string()))
@@ -501,6 +584,17 @@ pub async fn disable_application(
             created_at: saved.created_at.to_rfc3339(),
             updated_at: saved.updated_at.to_rfc3339(),
         };
+        // 审计记录：禁用应用（作为更新）
+        let before = serde_json::json!({ "status": Status::Active });
+        let after = serde_json::json!({ "status": Status::Disabled });
+        let _ = crate::shared::request::record_audit_log_simple(
+            db.get_ref(),
+            "applications",
+            "update",
+            &req,
+            Some(before),
+            Some(after),
+        ).await;
         Ok(HttpResponse::Ok().json(response))
     } else {
         Err(ApiError::NotFound("Application not found".to_string()))

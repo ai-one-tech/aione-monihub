@@ -2,11 +2,12 @@ use crate::entities::configs::{ActiveModel, Column, Entity as Configs};
 use crate::shared::enums::{Environment, ConfigType};
 use crate::shared::error::ApiError;
 use crate::shared::generate_snowflake_id;
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpResponse, HttpRequest};
 use chrono::Utc;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set, Order, PaginatorTrait};
 use serde_json::Value;
-use crate::configs::models::{ConfigCreateRequest, ConfigListQuery, ConfigListResponse, ConfigResponse, Pagination};
+use crate::configs::value_sync::sync_config_values;
+use crate::configs::models::{ConfigCreateRequest, ConfigUpdateRequest, ConfigListQuery, ConfigListResponse, ConfigResponse, Pagination};
 
 #[utoipa::path(
     get,
@@ -81,6 +82,8 @@ pub async fn get_configs(
             version: config.version as u32,
             created_at: config.created_at.to_rfc3339(),
             updated_at: config.updated_at.to_rfc3339(),
+            generate_values: config.generate_values,
+            schema: config.schema.as_ref().map(|v| serde_json::to_string(v).unwrap_or_default()),
         })
         .collect();
 
@@ -115,6 +118,7 @@ pub async fn get_configs(
 pub async fn create_config(
     config: web::Json<ConfigCreateRequest>,
     db: web::Data<DatabaseConnection>,
+    req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
     // 验证请求数据
     if config.code.is_empty() {
@@ -133,10 +137,37 @@ pub async fn create_config(
         return Err(ApiError::ValidationError("Config type is required".to_string()));
     }
     
-    // 验证content是否为有效的JSON
-    if config.config_type == "json" {
-        if let Err(e) = serde_json::from_str::<Value>(&config.content) {
-            return Err(ApiError::ValidationError(format!("Invalid JSON content: {}", e)));
+    // 按类型校验内容
+    let ct = config.config_type.to_lowercase();
+    match ct.as_str() {
+        "object" => {
+            let v: Value = serde_json::from_str(&config.content)
+                .map_err(|e| ApiError::ValidationError(format!("Invalid JSON object content: {}", e)))?;
+            if !v.is_object() {
+                return Err(ApiError::ValidationError("content 必须是 JSON 对象".to_string()));
+            }
+        }
+        "array" => {
+            let v: Value = serde_json::from_str(&config.content)
+                .map_err(|e| ApiError::ValidationError(format!("Invalid JSON array content: {}", e)))?;
+            if !v.is_array() {
+                return Err(ApiError::ValidationError("content 必须是 JSON 数组".to_string()));
+            }
+            if config.generate_values.unwrap_or(false) {
+                for item in v.as_array().unwrap() {
+                    let obj = item.as_object().ok_or_else(|| ApiError::ValidationError("array 项必须是对象".to_string()))?;
+                    if obj.get("code").and_then(|x| x.as_str()).is_none() {
+                        return Err(ApiError::ValidationError("array 每项必须包含字符串字段 code".to_string()));
+                    }
+                    if obj.get("name").and_then(|x| x.as_str()).is_none() {
+                        return Err(ApiError::ValidationError("array 每项必须包含字符串字段 name".to_string()));
+                    }
+                }
+            }
+        }
+        "html" | "text" => { /* 无结构校验 */ }
+        _ => {
+            return Err(ApiError::ValidationError("Invalid config_type".to_string()));
         }
     }
 
@@ -174,14 +205,12 @@ pub async fn create_config(
             }
         }),
         name: Set(config.name.clone()),
-        config_type: Set(match config.config_type.to_lowercase().as_str() {
-            "json" => ConfigType::Json,
-            "yaml" | "yml" => ConfigType::Yaml,
-            "env" => ConfigType::Env,
-            "properties" => ConfigType::Properties,
-            _ => {
-                return Err(ApiError::ValidationError("Invalid config_type".to_string()));
-            }
+        config_type: Set(match ct.as_str() {
+            "object" => ConfigType::Object,
+            "array" => ConfigType::Array,
+            "html" => ConfigType::Html,
+            "text" => ConfigType::Text,
+            _ => { return Err(ApiError::ValidationError("Invalid config_type".to_string())); }
         }),
         content: Set(config.content.clone()),
         description: Set(Some(config.description.clone())),
@@ -192,6 +221,14 @@ pub async fn create_config(
         revision: Set(1),
         created_at: Set(Utc::now().into()),
         updated_at: Set(Utc::now().into()),
+        generate_values: Set(config.generate_values.unwrap_or(false)),
+        schema: Set(match &config.schema {
+            Some(s) if !s.is_empty() => {
+                let v: Value = serde_json::from_str(s).map_err(|e| ApiError::ValidationError(format!("Invalid schema JSON: {}", e)))?;
+                Some(v)
+            }
+            _ => None,
+        }),
 
     };
 
@@ -213,8 +250,195 @@ pub async fn create_config(
         version: saved_config.version as u32,
         created_at: saved_config.created_at.to_rfc3339(),
         updated_at: saved_config.updated_at.to_rfc3339(),
+        generate_values: saved_config.generate_values,
+        schema: saved_config.schema.as_ref().map(|v| serde_json::to_string(v).unwrap_or_default()),
 
     };
+
+    // 审计记录：新增配置
+    let after = serde_json::json!({
+        "id": response.id,
+        "code": response.code,
+        "environment": response.environment,
+        "name": response.name,
+        "config_type": response.config_type,
+        "version": response.version,
+        "created_at": response.created_at,
+        "updated_at": response.updated_at,
+    });
+    let _ = crate::shared::request::record_audit_log_simple(
+        db.get_ref(),
+        "configs",
+        "create",
+        &req,
+        None,
+        Some(after),
+    ).await;
+
+    // 若需要生成选项值，执行同步
+    if ct == "array" && config.generate_values.unwrap_or(false) {
+        let parsed: Value = serde_json::from_str(&config.content).map_err(|e| ApiError::ValidationError(format!("Invalid JSON array content: {}", e)))?;
+        let items = parsed.as_array().unwrap().clone();
+        sync_config_values(
+            db.get_ref(),
+            &response.id,
+            &response.code,
+            &match response.environment { Environment::Dev => "dev", Environment::Test => "test", Environment::Staging => "staging", Environment::Prod => "prod" },
+            response.version as i32,
+            &items,
+        ).await?;
+    }
+
+    Ok(HttpResponse::Ok().json(response))
+}
+
+#[utoipa::path(
+    put,
+    path = "/api/configs/{id}",
+    request_body = ConfigUpdateRequest,
+    responses(
+        (status = 200, description = "Config updated (new version) successfully", body = ConfigResponse),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Configs"
+)]
+pub async fn update_config(
+    id: web::Path<String>,
+    config: web::Json<ConfigUpdateRequest>,
+    db: web::Data<DatabaseConnection>,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiError> {
+    if config.code.is_empty() || config.environment.is_empty() || config.name.is_empty() || config.config_type.is_empty() {
+        return Err(ApiError::ValidationError("必填字段缺失".to_string()));
+    }
+
+    let ct = config.config_type.to_lowercase();
+    match ct.as_str() {
+        "object" => {
+            let v: Value = serde_json::from_str(&config.content)
+                .map_err(|e| ApiError::ValidationError(format!("Invalid JSON object content: {}", e)))?;
+            if !v.is_object() { return Err(ApiError::ValidationError("content 必须是 JSON 对象".to_string())); }
+        }
+        "array" => {
+            let v: Value = serde_json::from_str(&config.content)
+                .map_err(|e| ApiError::ValidationError(format!("Invalid JSON array content: {}", e)))?;
+            if !v.is_array() { return Err(ApiError::ValidationError("content 必须是 JSON 数组".to_string())); }
+            if config.generate_values.unwrap_or(false) {
+                for item in v.as_array().unwrap() {
+                    let obj = item.as_object().ok_or_else(|| ApiError::ValidationError("array 项必须是对象".to_string()))?;
+                    if obj.get("code").and_then(|x| x.as_str()).is_none() { return Err(ApiError::ValidationError("array 每项必须包含字符串字段 code".to_string())); }
+                    if obj.get("name").and_then(|x| x.as_str()).is_none() { return Err(ApiError::ValidationError("array 每项必须包含字符串字段 name".to_string())); }
+                }
+            }
+        }
+        "html" | "text" => {}
+        _ => { return Err(ApiError::ValidationError("Invalid config_type".to_string())); }
+    }
+
+    // 计算新版本号
+    let max_version_result = Configs::find()
+        .filter(Column::Code.eq(&config.code))
+        .filter(Column::Environment.eq(&config.environment))
+        .select_only()
+        .column(Column::Version)
+        .order_by(Column::Version, Order::Desc)
+        .one(db.get_ref())
+        .await
+        .map_err(|e| ApiError::DatabaseError(e.to_string()))?;
+
+    let version = if let Some(model) = max_version_result { model.version + 1 } else { 1 };
+
+    let id_new = generate_snowflake_id();
+    let config_model = ActiveModel {
+        id: Set(id_new.clone()),
+        code: Set(config.code.clone()),
+        environment: Set(match config.environment.to_lowercase().as_str() {
+            "dev" | "development" => Environment::Dev,
+            "test" => Environment::Test,
+            "staging" => Environment::Staging,
+            "prod" | "production" => Environment::Prod,
+            _ => { return Err(ApiError::ValidationError("Invalid environment".to_string())); }
+        }),
+        name: Set(config.name.clone()),
+        config_type: Set(match ct.as_str() {
+            "object" => ConfigType::Object,
+            "array" => ConfigType::Array,
+            "html" => ConfigType::Html,
+            "text" => ConfigType::Text,
+            _ => { return Err(ApiError::ValidationError("Invalid config_type".to_string())); }
+        }),
+        content: Set(config.content.clone()),
+        description: Set(Some(config.description.clone())),
+        version: Set(version),
+        created_by: Set("system".to_string()),
+        updated_by: Set("system".to_string()),
+        deleted_at: Set(None),
+        revision: Set(1),
+        created_at: Set(Utc::now().into()),
+        updated_at: Set(Utc::now().into()),
+        generate_values: Set(config.generate_values.unwrap_or(false)),
+        schema: Set(match &config.schema {
+            Some(s) if !s.is_empty() => {
+                let v: Value = serde_json::from_str(s).map_err(|e| ApiError::ValidationError(format!("Invalid schema JSON: {}", e)))?;
+                Some(v)
+            }
+            _ => None,
+        }),
+    };
+
+    let saved_config = config_model
+        .insert(db.get_ref())
+        .await
+        .map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
+
+    let response = ConfigResponse {
+        id: saved_config.id.clone(),
+        code: saved_config.code.clone(),
+        environment: saved_config.environment,
+        name: saved_config.name.clone(),
+        config_type: saved_config.config_type,
+        content: saved_config.content.clone(),
+        description: saved_config.description.clone().unwrap_or_default(),
+        version: saved_config.version as u32,
+        created_at: saved_config.created_at.to_rfc3339(),
+        updated_at: saved_config.updated_at.to_rfc3339(),
+        generate_values: saved_config.generate_values,
+        schema: saved_config.schema.as_ref().map(|v| serde_json::to_string(v).unwrap_or_default()),
+    };
+
+    // 审计记录：更新配置（新版本）
+    let after = serde_json::json!({
+        "id": response.id,
+        "code": response.code,
+        "environment": response.environment,
+        "name": response.name,
+        "config_type": response.config_type,
+        "version": response.version,
+        "created_at": response.created_at,
+        "updated_at": response.updated_at,
+    });
+    let _ = crate::shared::request::record_audit_log_simple(
+        db.get_ref(),
+        "configs",
+        "update",
+        &req,
+        None,
+        Some(after),
+    ).await;
+
+    if ct == "array" && config.generate_values.unwrap_or(false) {
+        let parsed: Value = serde_json::from_str(&config.content).map_err(|e| ApiError::ValidationError(format!("Invalid JSON array content: {}", e)))?;
+        let items = parsed.as_array().unwrap().clone();
+        sync_config_values(
+            db.get_ref(),
+            &response.id,
+            &response.code,
+            &match response.environment { Environment::Dev => "dev", Environment::Test => "test", Environment::Staging => "staging", Environment::Prod => "prod" },
+            response.version as i32,
+            &items,
+        ).await?;
+    }
 
     Ok(HttpResponse::Ok().json(response))
 }
@@ -264,6 +488,8 @@ pub async fn get_config_by_code(
             version: config.version as u32,
             created_at: config.created_at.to_rfc3339(),
             updated_at: config.updated_at.to_rfc3339(),
+            generate_values: config.generate_values,
+            schema: config.schema.as_ref().map(|v| serde_json::to_string(v).unwrap_or_default()),
         })
         .collect();
 
@@ -332,6 +558,8 @@ pub async fn get_config_by_code_and_environment(
         version: config.version as u32,
         created_at: config.created_at.to_rfc3339(),
         updated_at: config.updated_at.to_rfc3339(),
+        generate_values: config.generate_values,
+        schema: config.schema.as_ref().map(|v| serde_json::to_string(v).unwrap_or_default()),
     };
 
     Ok(HttpResponse::Ok().json(response))
@@ -384,6 +612,8 @@ pub async fn get_config_by_code_env_and_version(
         version: config.version as u32,
         created_at: config.created_at.to_rfc3339(),
         updated_at: config.updated_at.to_rfc3339(),
+        generate_values: config.generate_values,
+        schema: config.schema.as_ref().map(|v| serde_json::to_string(v).unwrap_or_default()),
     };
 
     Ok(HttpResponse::Ok().json(response))
@@ -405,6 +635,7 @@ pub async fn get_config_by_code_env_and_version(
 pub async fn delete_config(
     path: web::Path<String>,
     db: web::Data<DatabaseConnection>,
+    req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
     let config_id = path.into_inner();
 
@@ -421,6 +652,7 @@ pub async fn delete_config(
     };
 
     // 实现软删除：更新deleted_at字段和revision字段
+    let config_before = config.clone();
     let mut config_active_model: ActiveModel = config.into();
     config_active_model.deleted_at = Set(Some(Utc::now().into()));
     config_active_model.revision = Set(config_active_model.revision.unwrap() + 1);
@@ -430,6 +662,26 @@ pub async fn delete_config(
         .update(db.get_ref())
         .await
         .map_err(|e| ApiError::DatabaseError(e.to_string()))?;
+
+    // 审计记录：删除配置
+    let before = serde_json::json!({
+        "id": config_before.id,
+        "code": config_before.code,
+        "environment": config_before.environment,
+        "name": config_before.name,
+        "config_type": config_before.config_type,
+        "version": config_before.version,
+        "created_at": config_before.created_at.to_rfc3339(),
+        "updated_at": config_before.updated_at.to_rfc3339(),
+    });
+    let _ = crate::shared::request::record_audit_log_simple(
+        db.get_ref(),
+        "configs",
+        "delete",
+        &req,
+        Some(before),
+        None,
+    ).await;
 
     Ok(HttpResponse::Ok().json("Config deleted successfully"))
 }

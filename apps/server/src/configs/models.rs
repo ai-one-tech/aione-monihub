@@ -33,6 +33,8 @@ pub struct ConfigResponse {
     pub version: u32,
     pub created_at: String,
     pub updated_at: String,
+    pub generate_values: bool,
+    pub schema: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -43,6 +45,8 @@ pub struct ConfigCreateRequest {
     pub config_type: String,
     pub content: String,
     pub description: String,
+    pub generate_values: Option<bool>,
+    pub schema: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -53,6 +57,8 @@ pub struct ConfigUpdateRequest {
     pub config_type: String,
     pub content: String,
     pub description: String,
+    pub generate_values: Option<bool>,
+    pub schema: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]

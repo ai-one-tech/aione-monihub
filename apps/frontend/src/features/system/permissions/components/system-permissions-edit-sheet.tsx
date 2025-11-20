@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react'
-import { Button } from '@/components/ui/button'
+import { useEffect, useRef, useState } from 'react'
+import { Button, buttonVariants } from '@/components/ui/button'
 import {
   Sheet,
   SheetContent,
@@ -25,6 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Textarea } from '@/components/ui/textarea'
 import { useForm } from 'react-hook-form'
@@ -35,17 +37,19 @@ import { type UpdatePermissionRequest, type CreatePermissionRequest } from '../d
 import { ACTION_MAP, PERMISSION_TYPE_MAP } from '../data/permission-enums'
 import { usePermissionDetailQuery } from '../hooks/use-permission-detail-query'
 import { useUpdatePermissionMutation, useCreatePermissionMutation } from '../hooks/use-permission-mutations'
+import { usePermissionsQuery } from '../hooks/use-permissions-query'
 import { toast } from 'sonner'
+import { Check, ChevronsUpDown } from 'lucide-react'
 
 // 统一的权限表单schema
 const permissionFormSchema = z.object({
   name: z.string().min(1, '权限名称不能为空'),
   description: z.string().optional().nullable(),
-  action: z.string(),
+  action: z.string().optional().nullable(),
   permission_type: z.string().min(1, '权限类型不能为空'),
   menu_path: z.string().optional().nullable(),
   menu_icon: z.string().optional().nullable(),
-  parent_permission_id: z.string().optional().nullable(),
+  parent_permission_id: z.string().min(1, '父级权限不能为空'),
   sort_order: z.number().optional().nullable(),
   is_hidden: z.boolean().optional().nullable(),
 }).refine(
@@ -77,6 +81,7 @@ export function SystemPermissionsEditSheet() {
   const updatePermissionMutation = useUpdatePermissionMutation()
   const createPermissionMutation = useCreatePermissionMutation()
   const initializedPermissionIdRef = useRef<string | null>(null)
+  const [parentOpen, setParentOpen] = useState(false)
   
   const isCreateMode = permissionSheetMode === 'create'
   const isEditMode = permissionSheetMode === 'edit'
@@ -87,9 +92,9 @@ export function SystemPermissionsEditSheet() {
     defaultValues: {
       name: '',
       description: '',
-      action: '',
+      action: null,
       permission_type: '',
-      menu_path: '',
+      menu_path: null,
       menu_icon: '',
       parent_permission_id: '',
       sort_order: null,
@@ -167,7 +172,7 @@ export function SystemPermissionsEditSheet() {
       permission_type: data.permission_type,
       menu_path: data.menu_path || null,
       menu_icon: data.menu_icon || null,
-      parent_permission_id: data.parent_permission_id || null,
+      parent_permission_id: data.parent_permission_id,
       sort_order: data.sort_order,
       is_hidden: data.is_hidden || false,
     }
@@ -213,6 +218,10 @@ export function SystemPermissionsEditSheet() {
     return '查看权限详细信息'
   }
 
+  const { data: permissionsList } = usePermissionsQuery({ limit: 1000 })
+  const allPermissions = permissionsList?.data || []
+  const selectedParent = allPermissions.find(p => p.id === form.watch('parent_permission_id'))
+
   return (
     <Sheet open={isPermissionSheetOpen} onOpenChange={setIsPermissionSheetOpen}>
       <SheetContent side='right' className='!w-[500px] !max-w-[500px]'>
@@ -240,6 +249,58 @@ export function SystemPermissionsEditSheet() {
                   </FormItem>
                 )}
                 
+                <FormField
+                  control={form.control}
+                  name='parent_permission_id'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>父级权限</FormLabel>
+                      <Popover open={parentOpen} onOpenChange={setParentOpen}>
+                        <PopoverTrigger asChild>
+                          <button
+                            type='button'
+                            role='combobox'
+                            className={`${buttonVariants({ variant: 'outline' })} w-full justify-between`}
+                            disabled={isViewMode}
+                          >
+                            {selectedParent ? `${selectedParent.name}${selectedParent.description ? `（${selectedParent.description}）` : ''}` : '请选择父级权限'}
+                            <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className='w-[400px] p-0'>
+                          <Command>
+                            <CommandInput placeholder='搜索名称或描述' />
+                            <CommandList>
+                              <CommandEmpty>无匹配项</CommandEmpty>
+                              <CommandGroup>
+                                {allPermissions.map((p) => (
+                                  <CommandItem
+                                    key={p.id}
+                                    value={`${p.name} ${p.description ?? ''}`}
+                                    onSelect={() => {
+                                      field.onChange(p.id)
+                                      setParentOpen(false)
+                                    }}
+                                  >
+                                    <Check
+                                      className={`mr-2 h-4 w-4 ${p.id === field.value ? 'opacity-100' : 'opacity-0'}`}
+                                    />
+                                    <span className='truncate'>{p.name}</span>
+                                    {p.description && (
+                                      <span className='ml-2 text-muted-foreground truncate'>（{p.description}）</span>
+                                    )}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name='name'

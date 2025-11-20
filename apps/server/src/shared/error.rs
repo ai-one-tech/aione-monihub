@@ -102,7 +102,7 @@ impl ResponseError for ApiError {
                     trace_id,
                     details: None,
                 };
-                HttpResponse::InternalServerError().json(body)
+                HttpResponse::InternalServerError().insert_header(("x-trace-id", body.trace_id.clone())).json(body)
             }
             ApiError::BadRequest(msg) => {
                 let trace_id: String = format!(
@@ -121,7 +121,7 @@ impl ResponseError for ApiError {
                     trace_id,
                     details: None,
                 };
-                HttpResponse::BadRequest().json(body)
+                HttpResponse::BadRequest().insert_header(("x-trace-id", body.trace_id.clone())).json(body)
             }
             ApiError::Unauthorized(msg) => {
                 let trace_id: String = format!(
@@ -140,7 +140,7 @@ impl ResponseError for ApiError {
                     trace_id,
                     details: None,
                 };
-                HttpResponse::Unauthorized().json(body)
+                HttpResponse::Unauthorized().insert_header(("x-trace-id", body.trace_id.clone())).json(body)
             }
             ApiError::Forbidden(msg) => {
                 let trace_id: String = format!(
@@ -159,7 +159,7 @@ impl ResponseError for ApiError {
                     trace_id,
                     details: None,
                 };
-                HttpResponse::Forbidden().json(body)
+                HttpResponse::Forbidden().insert_header(("x-trace-id", body.trace_id.clone())).json(body)
             }
             ApiError::NotFound(msg) => {
                 let trace_id: String = format!(
@@ -178,7 +178,7 @@ impl ResponseError for ApiError {
                     trace_id,
                     details: None,
                 };
-                HttpResponse::NotFound().json(body)
+                HttpResponse::NotFound().insert_header(("x-trace-id", body.trace_id.clone())).json(body)
             }
             ApiError::DatabaseError(msg) => {
                 let trace_id: String = format!(
@@ -205,7 +205,7 @@ impl ResponseError for ApiError {
                     trace_id,
                     details: None,
                 };
-                HttpResponse::InternalServerError().json(body)
+                HttpResponse::InternalServerError().insert_header(("x-trace-id", body.trace_id.clone())).json(body)
             }
             ApiError::ValidationError(msg) => {
                 let trace_id: String = format!(
@@ -224,7 +224,7 @@ impl ResponseError for ApiError {
                     trace_id,
                     details: None,
                 };
-                HttpResponse::BadRequest().json(body)
+                HttpResponse::BadRequest().insert_header(("x-trace-id", body.trace_id.clone())).json(body)
             }
         }
     }

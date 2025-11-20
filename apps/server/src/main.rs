@@ -249,6 +249,7 @@ async fn main() -> io::Result<()> {
                     .allow_any_origin() // 允许所有源（生产环境中应该指定具体的域名）
                     .allow_any_method() // 允许所有HTTP方法
                     .allow_any_header() // 允许所有请求头
+                    .expose_headers(["x-trace-id"]) // 允许前端读取自定义响应头
                     .supports_credentials(), // 支持cookies和认证信息
             )
             .wrap(AuthMiddleware)

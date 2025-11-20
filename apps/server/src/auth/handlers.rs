@@ -121,6 +121,7 @@ pub async fn login(
 pub async fn forgot_password(
     db: web::Data<DatabaseConnection>,
     forgot_req: web::Json<ForgotPasswordRequest>,
+    req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
     // 查找用户
     let user = users::Entity::find()
@@ -145,6 +146,21 @@ pub async fn forgot_password(
                         "重置链接: http://localhost:3000/reset-password?token={}",
                         token
                     );
+
+                    // 审计记录：生成密码重置令牌（不记录令牌明文）
+                    let after = serde_json::json!({
+                        "user_id": user.id,
+                        "event": "create_token",
+                        "email": forgot_req.email,
+                    });
+                    let _ = crate::shared::request::record_audit_log_simple(
+                        db.get_ref(),
+                        "password_reset_tokens",
+                        "create",
+                        &req,
+                        None,
+                        Some(after),
+                    ).await;
 
                     Ok(HttpResponse::Ok().json("密码重置邮件已发送"))
                 }
@@ -178,6 +194,7 @@ pub async fn forgot_password(
 pub async fn reset_password(
     db: web::Data<DatabaseConnection>,
     reset_req: web::Json<ResetPasswordRequest>,
+    req: HttpRequest,
 ) -> Result<HttpResponse, ApiError> {
     // 验证令牌
     if reset_req.token.is_empty() {
@@ -204,6 +221,19 @@ pub async fn reset_password(
             {
                 Ok(()) => {
                     log::info!("用户 {} 密码重置成功", user_id);
+                    // 审计记录：核销密码重置令牌
+                    let before = serde_json::json!({
+                        "user_id": user_id,
+                        "event": "use_token",
+                    });
+                    let _ = crate::shared::request::record_audit_log_simple(
+                        db.get_ref(),
+                        "password_reset_tokens",
+                        "delete",
+                        &req,
+                        Some(before),
+                        None,
+                    ).await;
                     Ok(HttpResponse::Ok().json("密码重置成功"))
                 }
                 Err(err) => {

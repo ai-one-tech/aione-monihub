@@ -1,6 +1,7 @@
 pub mod handlers;
 pub mod models;
 pub mod routes;
+pub mod value_sync;
 
 use crate::entities::{configs, Configs};
 use sea_orm::DatabaseConnection;

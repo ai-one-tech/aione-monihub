@@ -206,6 +206,24 @@ pub async fn create_role(
         updated_at: saved_role.updated_at.to_rfc3339(),
     };
 
+    // 审计记录：新增角色
+    let after = serde_json::json!({
+        "id": response.id,
+        "name": response.name,
+        "description": response.description,
+        "permissions": response.permissions,
+        "created_at": response.created_at,
+        "updated_at": response.updated_at,
+    });
+    let _ = crate::shared::request::record_audit_log_simple(
+        &**db,
+        "roles",
+        "create",
+        &req,
+        None,
+        Some(after),
+    ).await;
+
     Ok(HttpResponse::Ok().json(response))
 }
 
@@ -335,6 +353,14 @@ pub async fn update_role(
     let saved_role = updated_role.update(&**db).await?;
 
     // 更新权限关联（删除旧权限，插入新权限）
+    // 变更前权限集合（用于审计 before）
+    let before_permissions_ids: Vec<String> = RolePermissions::find()
+        .filter(crate::entities::role_permissions::Column::RoleId.eq(&saved_role.id))
+        .all(&**db)
+        .await?
+        .into_iter()
+        .map(|rp| rp.permission_id)
+        .collect();
     // 首先删除旧权限
     RolePermissions::delete_many()
         .filter(crate::entities::role_permissions::Column::RoleId.eq(&saved_role.id))
@@ -377,6 +403,32 @@ pub async fn update_role(
         created_at: saved_role.created_at.to_rfc3339(),
         updated_at: saved_role.updated_at.to_rfc3339(),
     };
+
+    // 审计记录：更新角色（含权限集合前后）
+    let before = serde_json::json!({
+        "id": existing_role.id,
+        "name": existing_role.name,
+        "description": existing_role.description.unwrap_or_default(),
+        "permissions": before_permissions_ids,
+        "created_at": existing_role.created_at.to_rfc3339(),
+        "updated_at": existing_role.updated_at.to_rfc3339(),
+    });
+    let after = serde_json::json!({
+        "id": response.id,
+        "name": response.name,
+        "description": response.description,
+        "permissions": response.permissions,
+        "created_at": response.created_at,
+        "updated_at": response.updated_at,
+    });
+    let _ = crate::shared::request::record_audit_log_simple(
+        &**db,
+        "roles",
+        "update",
+        &req,
+        Some(before),
+        Some(after),
+    ).await;
 
     Ok(HttpResponse::Ok().json(response))
 }
@@ -431,6 +483,23 @@ pub async fn delete_role(
     };
 
     deleted_role.update(&**db).await?;
+
+    // 审计记录：删除角色
+    let before = serde_json::json!({
+        "id": existing_role.id,
+        "name": existing_role.name,
+        "description": existing_role.description.unwrap_or_default(),
+        "created_at": existing_role.created_at.to_rfc3339(),
+        "updated_at": existing_role.updated_at.to_rfc3339(),
+    });
+    let _ = crate::shared::request::record_audit_log_simple(
+        &**db,
+        "roles",
+        "delete",
+        &req,
+        Some(before),
+        None,
+    ).await;
 
     Ok(HttpResponse::Ok().json("角色删除成功"))
 }

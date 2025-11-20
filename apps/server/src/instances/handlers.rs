@@ -211,13 +211,34 @@ pub async fn delete_instance(
     let deleted_instance = ActiveModel {
         id: Set(instance_id),
         deleted_at: Set(Some(Utc::now().into())),
-        updated_by: Set(current_user_id),
+        updated_by: Set(current_user_id.clone()),
         revision: Set(existing_instance.revision + 1),
         updated_at: Set(Utc::now().into()),
         ..Default::default()
     };
 
     deleted_instance.update(&**db).await?;
+
+    // 审计记录：删除实例
+    let before = serde_json::json!({
+        "id": existing_instance.id,
+        "application_id": existing_instance.application_id,
+        "hostname": existing_instance.hostname,
+        "ip_address": existing_instance.ip_address,
+        "status": existing_instance.status,
+        "created_at": existing_instance.created_at.to_rfc3339(),
+        "updated_at": existing_instance.updated_at.to_rfc3339(),
+    });
+    let _ = crate::audit::handlers::record_audit_log(
+        &**db,
+        "instances",
+        "delete",
+        &current_user_id,
+        "",
+        None,
+        Some(before),
+        None,
+    ).await;
 
     Ok(HttpResponse::Ok().json("实例删除成功"))
 }
@@ -274,6 +295,17 @@ pub async fn enable_instance(
     active.updated_at = Set(Utc::now().into());
     let saved = active.update(&**db).await?;
     let response = InstanceResponse::from_entity(saved);
+    // 审计记录：启用实例（作为更新）
+    let before = serde_json::json!({ "status": Status::Disabled });
+    let after = serde_json::json!({ "status": Status::Active });
+    let _ = crate::shared::request::record_audit_log_simple(
+        &**db,
+        "instances",
+        "update",
+        &req,
+        Some(before),
+        Some(after),
+    ).await;
     Ok(HttpResponse::Ok().json(response))
 }
 
@@ -300,6 +332,17 @@ pub async fn disable_instance(
     active.updated_at = Set(Utc::now().into());
     let saved = active.update(&**db).await?;
     let response = InstanceResponse::from_entity(saved);
+    // 审计记录：禁用实例（作为更新）
+    let before = serde_json::json!({ "status": Status::Active });
+    let after = serde_json::json!({ "status": Status::Disabled });
+    let _ = crate::shared::request::record_audit_log_simple(
+        &**db,
+        "instances",
+        "update",
+        &req,
+        Some(before),
+        Some(after),
+    ).await;
     Ok(HttpResponse::Ok().json(response))
 }
 
@@ -329,6 +372,7 @@ pub async fn update_config(
         .unwrap_or_else(|_| InstanceConfig::default());
     let merged_value = serde_json::to_value(merged).unwrap_or(json!({}));
 
+    let before_instance = instance.clone();
     let mut active: ActiveModel = instance.into();
     active.config = Set(Some(merged_value.clone()));
     active.updated_by = Set(user_id.to_string());
@@ -340,6 +384,18 @@ pub async fn update_config(
     if resp.config.is_none() {
         resp.config = Some(merged_value);
     }
+
+    // 审计记录：更新实例配置
+    let before = serde_json::json!({ "config": before_instance.config });
+    let after = serde_json::json!({ "config": resp.config });
+    let _ = crate::shared::request::record_audit_log_simple(
+        &**db,
+        "instances",
+        "update",
+        &req_header,
+        Some(before),
+        Some(after),
+    ).await;
     Ok(HttpResponse::Ok().json(resp))
 }
 

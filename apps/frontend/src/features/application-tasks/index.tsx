@@ -663,7 +663,7 @@ export function ApplicationTasks() {
                       <div className="flex items-center justify-between text-xs text-gray-500">
                         <LongText className="text-sm w-1/2 text-gray-700 mb-1">{task.task_name}</LongText>
                         <span>
-                          {new Date(task.created_at).toLocaleString()}
+                          {formatDateTime(task.created_at)}
                         </span>
                       </div>
                     </div>
@@ -791,9 +791,9 @@ export function ApplicationTasks() {
                         <div className="flex items-center space-x-2">
                           <span className="text-xs text-gray-500">
                             {taskInstance.execution_record.start_time
-                              ? new Date(taskInstance.execution_record.start_time).toLocaleString()
+                              ? formatDateTime(taskInstance.execution_record.start_time)
                               : taskInstance.instance.updated_at
-                                ? new Date(taskInstance.instance.updated_at).toLocaleString()
+                                ? formatDateTime(taskInstance.instance.updated_at)
                                 : '未开始'
                             }
                           </span>
@@ -1147,7 +1147,7 @@ function TaskFilesPane({ selectedTask, selectedInstanceId }: TaskFilesPaneProps)
               </div>
               <div className="text-sm text-gray-600 space-y-1">
                 <div>大小：{fmtSize(f.file_size)}</div>
-                <div>上传完成时间：{new Date(f.uploaded_at).toLocaleString()}</div>
+                <div>上传完成时间：{formatDateTime(f.uploaded_at)}</div>
               </div>
             </Card>
           ))}
@@ -1179,3 +1179,4 @@ function buildHttpTaskContent(p: any) {
     parts: p.parts || [],
   }
 }
+import { formatDateTime } from '@/lib/datetime'

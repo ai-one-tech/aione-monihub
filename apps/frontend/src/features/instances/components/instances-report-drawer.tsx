@@ -9,7 +9,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 import { DataTablePagination } from '@/components/data-table'
-import { addDays, format } from 'date-fns'
+import { addDays } from 'date-fns'
+import { toUtcStartOfDayIso, toUtcEndOfDayIso } from '@/lib/datetime'
 
 interface InstanceReportDrawerProps {
   instance: InstanceResponse | null
@@ -25,8 +26,8 @@ export function InstanceReportDrawer({ instance, open, onOpenChange }: InstanceR
   const queryParams = {
     page,
     limit: 20,
-    start_time: startDate ? format(startDate, "yyyy-MM-dd'T'00:00:00'Z'") : undefined,
-    end_time: endDate ? format(endDate, "yyyy-MM-dd'T'23:59:59'Z'") : undefined,
+    start_time: toUtcStartOfDayIso(startDate),
+    end_time: toUtcEndOfDayIso(endDate),
   }
 
   const { data, isLoading, error, refetch } = useInstanceReports(instance?.id || '', queryParams)

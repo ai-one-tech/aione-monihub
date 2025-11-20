@@ -3,6 +3,7 @@ import { type ColumnDef, flexRender, getCoreRowModel, getSortedRowModel, type So
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DataTableToolbar, DataTablePagination } from '@/components/data-table'
 import { Input } from '@/components/ui/input'
+import { toLocalInput, fromLocalInputToIso } from '@/lib/datetime'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
@@ -71,17 +72,7 @@ export function OperationsLogsTable({ data = [], totalPages, search, navigate }:
     { label: '删除', value: 'delete' },
   ]
 
-  const toLocalInput = (iso?: string) => {
-    if (!iso) return ''
-    const d = new Date(iso)
-    const pad = (n: number) => String(n).padStart(2, '0')
-    const yyyy = d.getFullYear()
-    const mm = pad(d.getMonth() + 1)
-    const dd = pad(d.getDate())
-    const hh = pad(d.getHours())
-    const mi = pad(d.getMinutes())
-    return `${yyyy}-${mm}-${dd}T${hh}:${mi}`
-  }
+  
 
   return (
     <div className='flex flex-col h-full min-h-0'>
@@ -95,8 +86,8 @@ export function OperationsLogsTable({ data = [], totalPages, search, navigate }:
       </div>
 
       <div className='mt-2 grid grid-cols-2 gap-2'>
-        <Input type='datetime-local' value={toLocalInput(search['start_date'] as string | undefined)} onChange={(e) => navigate({ search: (prev) => ({ ...prev, page: undefined, start_date: e.target.value ? new Date(e.target.value).toISOString() : undefined }) })} />
-        <Input type='datetime-local' value={toLocalInput(search['end_date'] as string | undefined)} onChange={(e) => navigate({ search: (prev) => ({ ...prev, page: undefined, end_date: e.target.value ? new Date(e.target.value).toISOString() : undefined }) })} />
+        <Input type='datetime-local' value={toLocalInput(search['start_date'] as string | undefined)} onChange={(e) => navigate({ search: (prev) => ({ ...prev, page: undefined, start_date: fromLocalInputToIso(e.target.value) }) })} />
+        <Input type='datetime-local' value={toLocalInput(search['end_date'] as string | undefined)} onChange={(e) => navigate({ search: (prev) => ({ ...prev, page: undefined, end_date: fromLocalInputToIso(e.target.value) }) })} />
       </div>
 
       <div className='flex-1 min-h-0 overflow-auto rounded-md border mt-4'>

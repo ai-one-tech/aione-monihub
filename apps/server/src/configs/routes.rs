@@ -19,5 +19,9 @@ pub fn config_routes(cfg: &mut web::ServiceConfig) {
         .route(
             "/configs/{id}",
             web::delete().to(handlers::delete_config),
+        )
+        .route(
+            "/configs/{id}",
+            web::put().to(handlers::update_config),
         );
 }

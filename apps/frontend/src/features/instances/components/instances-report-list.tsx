@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { format } from 'date-fns'
-import { zhCN } from 'date-fns/locale'
+import { formatDateTime } from '@/lib/datetime'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Eye, Cpu, HardDrive, Activity, AppWindowMac } from 'lucide-react'
@@ -44,7 +43,7 @@ export function InstanceReportList({
             <div className='flex items-start justify-between'>
               <div>
                 <CardTitle className='text-base'>
-                  {format(new Date(report.report_timestamp), 'yyyy-MM-dd HH:mm:ss', { locale: zhCN })}
+                  {formatDateTime(report.report_timestamp)}
                 </CardTitle>
                 <CardDescription className='mt-1'>
                   Agent: {report.agent_type} {report.agent_version ? `v${report.agent_version}` : ''}

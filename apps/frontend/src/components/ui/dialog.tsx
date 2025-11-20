@@ -77,8 +77,8 @@ function DialogContent({
         )}
         {...props}
       >
-        <div className={cn('bg-background sm:max-w-lg min-w-[400px] min-h-[200px] max-w-[calc(100%-2rem)] max-h-[calc(100%-2rem)] overflow-y-auto rounded-lg border p-4 shadow-lg duration-200 relative p-4')}>        
-          <div ref={contentRef}>{children}</div>
+        <div className={cn('bg-background min-w-[400px] min-h-[200px] max-w-[calc(100%-2rem)] max-h-[calc(100%-2rem)] overflow-y-auto rounded-lg border p-4 shadow-lg duration-200 relative p-4')}>        
+          <div className={cn('w-full h-full')} ref={contentRef}>{children}</div>
           {showCloseButton && (
             <DialogPrimitive.Close
               data-slot='dialog-close'

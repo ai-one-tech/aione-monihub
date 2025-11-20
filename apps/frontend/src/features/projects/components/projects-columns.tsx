@@ -117,7 +117,7 @@ export const projectsColumns: ColumnDef<ProjectResponse>[] = [
     ),
     cell: ({ row }) => (
       <div className='w-fit text-nowrap text-sm text-muted-foreground'>
-        {new Date(row.getValue('created_at')).toLocaleDateString('zh-CN')}
+        {formatDate(row.getValue('created_at'))}
       </div>
     ),
   },
@@ -128,7 +128,7 @@ export const projectsColumns: ColumnDef<ProjectResponse>[] = [
     ),
     cell: ({ row }) => (
       <div className='w-fit text-nowrap text-sm text-muted-foreground'>
-        {new Date(row.getValue('updated_at')).toLocaleDateString('zh-CN')}
+        {formatDate(row.getValue('updated_at'))}
       </div>
     ),
   },
@@ -140,3 +140,4 @@ export const projectsColumns: ColumnDef<ProjectResponse>[] = [
     cell: ProjectsDataTableRowActions,
   },
 ]
+import { formatDate } from '@/lib/datetime'
