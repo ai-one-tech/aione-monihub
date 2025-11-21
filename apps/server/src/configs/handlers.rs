@@ -266,7 +266,7 @@ pub async fn create_config(
         "created_at": response.created_at,
         "updated_at": response.updated_at,
     });
-    let _ = crate::shared::request::record_audit_log_simple(
+    let _ = crate::shared::request_context::record_audit_log_simple(
         db.get_ref(),
         "configs",
         "create",
@@ -418,7 +418,7 @@ pub async fn update_config(
         "created_at": response.created_at,
         "updated_at": response.updated_at,
     });
-    let _ = crate::shared::request::record_audit_log_simple(
+    let _ = crate::shared::request_context::record_audit_log_simple(
         db.get_ref(),
         "configs",
         "update",
@@ -674,7 +674,7 @@ pub async fn delete_config(
         "created_at": config_before.created_at.to_rfc3339(),
         "updated_at": config_before.updated_at.to_rfc3339(),
     });
-    let _ = crate::shared::request::record_audit_log_simple(
+    let _ = crate::shared::request_context::record_audit_log_simple(
         db.get_ref(),
         "configs",
         "delete",

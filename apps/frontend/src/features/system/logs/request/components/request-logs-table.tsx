@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import { Input } from '@/components/ui/input'
 import { type LogResponse } from '../../data/api-schema'
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import { OverflowPreview } from '@/components/overflow-preview'
@@ -43,7 +44,7 @@ export function RequestLogsTable({ data = [], totalPages, search, navigate, expo
     try {
       const d = parse(ts, 'yyyy-MM-dd HH:mm:ss.SSS xxx', new Date())
       if (!isNaN(d.getTime())) return formatDateTime(d)
-    } catch {}
+    } catch { }
     const d2 = new Date(ts)
     return isNaN(d2.getTime()) ? ts : formatDateTime(d2)
   }
@@ -82,6 +83,7 @@ export function RequestLogsTable({ data = [], totalPages, search, navigate, expo
       { columnId: 'method', searchKey: 'method', type: 'string' },
       { columnId: 'status', searchKey: 'status', type: 'string' },
       { columnId: 'path', searchKey: 'url', type: 'string' },
+      { columnId: 'trace_id', searchKey: 'trace_id', type: 'string' },
     ],
   })
 
@@ -117,22 +119,34 @@ export function RequestLogsTable({ data = [], totalPages, search, navigate, expo
         table={table}
         searchPlaceholder='搜索URL或内容...'
         filters={[
-          { columnId: 'method', title: '方法', options: [
-            { label: 'GET', value: 'GET' },
-            { label: 'POST', value: 'POST' },
-            { label: 'PUT', value: 'PUT' },
-            { label: 'DELETE', value: 'DELETE' },
-            { label: 'PATCH', value: 'PATCH' },
-          ], multiSelect: false },
-          { columnId: 'status', title: '状态码', options: [
-            { label: '200', value: '200' },
-            { label: '400', value: '400' },
-            { label: '404', value: '404' },
-            { label: '500', value: '500' },
-          ], multiSelect: false },
+          {
+            columnId: 'method', title: '方法', options: [
+              { label: 'GET', value: 'GET' },
+              { label: 'POST', value: 'POST' },
+              { label: 'PUT', value: 'PUT' },
+              { label: 'DELETE', value: 'DELETE' },
+              { label: 'PATCH', value: 'PATCH' },
+            ], multiSelect: false
+          },
+          {
+            columnId: 'status', title: '状态码', options: [
+              { label: '200', value: '200' },
+              { label: '400', value: '400' },
+              { label: '404', value: '404' },
+              { label: '500', value: '500' },
+            ], multiSelect: false
+          },
         ]}
       />
-      <div className='flex-1 flex min-h-0 overflow-auto rounded-md border mt-4'>
+      {/* TraceID 筛选输入框 */}
+      <div className='mt-3'>
+        <Input
+          placeholder='输入 TraceID 搜索...'
+          value={(table.getColumn('trace_id')?.getFilterValue() as string) || ''}
+          onChange={(e) => table.getColumn('trace_id')?.setFilterValue(e.target.value)}
+        />
+      </div>
+      <div className='flex-1 flex min-h-0 overflow-auto rounded-md border mt-3'>
         <Table>
           <TableHeader className='sticky top-0 z-10'>
             {table.getHeaderGroups().map((headerGroup) => (

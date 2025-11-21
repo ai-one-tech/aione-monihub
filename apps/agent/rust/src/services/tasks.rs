@@ -55,12 +55,10 @@ pub async fn start(state: AppState) {
                         }
                         Err(e) => {
                             let preview: String = content.chars().take(512).collect();
-                            agent_logger::error(&format!("拉取任务响应JSON解析失败: {}，响应预览: {}", e, preview));
                         }
                     }
                 }
                 Err(e) => {
-                    agent_logger::warn(&format!("拉取任务失败: {}", e));
                     // 非超时错误轻微退避
                     sleep(Duration::from_millis(800)).await;
                 }

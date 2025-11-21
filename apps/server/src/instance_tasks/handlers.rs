@@ -94,7 +94,7 @@ pub async fn create_task(
         "created_at": response.created_at,
         "updated_at": response.updated_at,
     });
-    let _ = crate::shared::request::record_audit_log_simple(
+    let _ = crate::shared::request_context::record_audit_log_simple(
         &**db,
         "instance_tasks",
         "create",

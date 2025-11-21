@@ -160,6 +160,7 @@ pub async fn record_audit_log(
         id: Set(id.clone()),
         application_id: Set(Some(user_id.to_string())), // 复用字段保存操作者ID
         instance_id: Set(None),
+        trace_id: Set(trace_id.map(|v| v.to_string())),
         log_level: Set(crate::shared::enums::LogLevel::Info),
         message: Set(format!("AUDIT {} {}", table, operation)),
         context: Set(Some(context)),

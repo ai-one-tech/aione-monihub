@@ -10,6 +10,7 @@ const requestLogsSearchSchema = z.object({
   url: z.string().optional().catch(''),
   method: z.string().optional().catch(''),
   status: z.string().optional().catch(''),
+  trace_id: z.string().optional().catch(''),
 })
 
 export const Route = createFileRoute('/_authenticated/logs/requests')({

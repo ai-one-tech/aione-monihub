@@ -25,6 +25,7 @@ export function SystemLogs() {
     agent_instance_id: search.agent_instance_id || undefined,
     instance_id: search.instance_id || undefined,
     application_id: (search as any).application_id || undefined,
+    trace_id: search.trace_id || undefined,
   }
 
   const { data, isLoading, error, refetch } = useLogsQuery(apiParams)

@@ -21,6 +21,7 @@ export function RequestLogs() {
     url: search.url || undefined,
     method: search.method || undefined,
     status: search.status || undefined,
+    trace_id: search.trace_id || undefined,
     log_type: 'request',
   }
 

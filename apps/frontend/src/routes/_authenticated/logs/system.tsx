@@ -13,6 +13,7 @@ const systemLogsSearchSchema = z.object({
   agent_instance_id: z.string().optional().catch(''),
   instance_id: z.string().optional().catch(''),
   application_id: z.string().optional().catch(''),
+  trace_id: z.string().optional().catch(''),
 })
 
 export const Route = createFileRoute('/_authenticated/logs/system')({

@@ -215,7 +215,7 @@ pub async fn create_role(
         "created_at": response.created_at,
         "updated_at": response.updated_at,
     });
-    let _ = crate::shared::request::record_audit_log_simple(
+    let _ = crate::shared::request_context::record_audit_log_simple(
         &**db,
         "roles",
         "create",
@@ -421,7 +421,7 @@ pub async fn update_role(
         "created_at": response.created_at,
         "updated_at": response.updated_at,
     });
-    let _ = crate::shared::request::record_audit_log_simple(
+    let _ = crate::shared::request_context::record_audit_log_simple(
         &**db,
         "roles",
         "update",
@@ -492,7 +492,7 @@ pub async fn delete_role(
         "created_at": existing_role.created_at.to_rfc3339(),
         "updated_at": existing_role.updated_at.to_rfc3339(),
     });
-    let _ = crate::shared::request::record_audit_log_simple(
+    let _ = crate::shared::request_context::record_audit_log_simple(
         &**db,
         "roles",
         "delete",

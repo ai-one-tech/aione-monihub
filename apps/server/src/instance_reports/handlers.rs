@@ -3,10 +3,10 @@ use crate::instance_reports::models::{
     InstanceReportRequest, InstanceReportResponse, Pagination,
 };
 use crate::shared::error::ApiError;
-use crate::shared::generate_snowflake_id;
+use crate::shared::{generate_snowflake_id, get_trace_id_from_request};
 use crate::entities::{instance_records, instances, applications, logs};
 use crate::shared::enums::{Status, OnlineStatus, LogSource};
-use actix_web::{web, HttpResponse, Result};
+use actix_web::{web, HttpRequest, HttpResponse, Result};
 use chrono::Utc;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait,
@@ -19,6 +19,7 @@ use std::str::FromStr;
 /// POST /api/open/instances/report
 /// 实例信息上报接口（开放接口，无需认证）
 pub async fn report_instance_info(
+    req: HttpRequest,
     db: web::Data<DatabaseConnection>,
     request: web::Json<InstanceReportRequest>,
 ) -> Result<HttpResponse, ApiError> {
@@ -26,6 +27,8 @@ pub async fn report_instance_info(
     if request.application_code.trim().is_empty() {
         return Err(ApiError::BadRequest("application_code cannot be empty".to_string()));
     }
+
+    let trace_id = get_trace_id_from_request(&req);
 
     // 2. 通过 application_code 查询 application_id，如果不存在则报错
     let application = applications::Entity::find()
@@ -149,8 +152,6 @@ pub async fn report_instance_info(
         received_at: Set(Utc::now().into()),
         created_at: Set(Utc::now().into()),
     };
-
-    // ... existing code ...
     record.insert(&**db).await?;
 
     // 8. 更新实例表的最新状态
@@ -233,6 +234,7 @@ pub async fn report_instance_info(
                 id: Set(generate_snowflake_id()),
                 application_id: Set(Some(application_id.clone())),
                 instance_id: Set(Some(instance_id_db.clone())),
+                trace_id: Set(Some(trace_id.clone())),
                 log_level: Set(item.log_level.clone()),
                 message: Set(item.message.clone()),
                 context: Set(Some(ctx)),

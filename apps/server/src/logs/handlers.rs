@@ -3,7 +3,7 @@ use crate::entities::{applications::{Entity as Applications, Column as Applicati
 use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
 use actix_web::{web, HttpResponse};
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, PaginatorTrait, Order, QuerySelect};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, PaginatorTrait, Order};
 use sea_orm::sea_query::Expr;
 use sea_orm::Condition;
 use crate::logs::models::{LogListQuery, LogListResponse as ModelLogListResponse, LogResponse as ModelLogResponse, Pagination as ModelPagination};
@@ -20,14 +20,19 @@ pub async fn get_logs(
     // 构建查询
     let mut query_builder = Logs::find();
 
+    // TraceId
+    if let Some(trace_id) = &query.trace_id {
+        query_builder = query_builder.filter(Column::TraceId.eq(trace_id))
+    }
+
     // 日志级别
     if let Some(log_level) = &query.log_level {
         query_builder = query_builder.filter(Column::LogLevel.eq(log_level.clone()));
     }
 
     // 用户ID（对应 application_id）
-    if let Some(user_id) = &query.user_id {
-        query_builder = query_builder.filter(Column::ApplicationId.eq(user_id));
+    if let Some(application_id) = &query.application_id {
+        query_builder = query_builder.filter(Column::ApplicationId.eq(application_id));
     }
 
     // 关键字（匹配 message）
@@ -191,7 +196,7 @@ pub async fn get_logs(
             request_body: ctx.as_ref().and_then(|c| c.get("request_body")).cloned(),
             response_body: ctx.as_ref().and_then(|c| c.get("response_body")).cloned(),
             duration_ms: ctx.as_ref().and_then(|c| c.get("duration_ms")).and_then(|v| v.as_i64()),
-            trace_id: ctx.as_ref().and_then(|c| c.get("trace_id")).and_then(|v| v.as_str()).map(|s| s.to_string()),
+            trace_id: log.trace_id.clone(),
         }
         })
         .collect();
@@ -226,7 +231,7 @@ pub async fn export_logs(
     }
 
     // 添加用户ID过滤
-    if let Some(user_id) = &query.user_id {
+    if let Some(user_id) = &query.application_id {
         query_builder = query_builder.filter(Column::ApplicationId.eq(user_id));
     }
 

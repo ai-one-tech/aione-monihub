@@ -7,8 +7,7 @@ use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Tr
 use actix_web::{web, Error};
 use actix_web::http::header::{HeaderName, HeaderValue};
 use actix_web::HttpMessage;
-use actix_web::HttpRequest;
-use crate::shared::request::{TraceIdExt, get_trace_id};
+use crate::shared::request_context::{TraceIdExt};
 use chrono::Utc;
 use futures_util::future::ready;
 use futures_util::future::{LocalBoxFuture, Ready};
@@ -57,7 +56,7 @@ where
 
     forward_ready!(service);
 
-    fn call(&self, mut req: ServiceRequest) -> Self::Future {
+    fn call(&self, req: ServiceRequest) -> Self::Future {
         let service = self.service.clone();
 
         let method = req.method().to_string();
@@ -191,6 +190,7 @@ where
                     id: Set(generate_snowflake_id()),
                     application_id: Set(None),
                     instance_id: Set(None),
+                    trace_id: Set(Some(trace_id.clone())),
                     log_level: Set(log_level),
                     message: Set(message),
                     context: Set(Some(context)),

@@ -9,6 +9,7 @@ pub struct Model {
     pub id: String, // 改为String支持雪花ID
     pub application_id: Option<String>, // 改为String支持雪花ID
     pub instance_id: Option<String>,    // 实例ID
+    pub trace_id: Option<String>,
     pub log_level: enums::LogLevel,     // 修改字段名
     pub message: String,
     pub context: Option<serde_json::Value>, // 使用JSON类型

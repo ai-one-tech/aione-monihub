@@ -153,7 +153,7 @@ pub async fn forgot_password(
                         "event": "create_token",
                         "email": forgot_req.email,
                     });
-                    let _ = crate::shared::request::record_audit_log_simple(
+                    let _ = crate::shared::request_context::record_audit_log_simple(
                         db.get_ref(),
                         "password_reset_tokens",
                         "create",
@@ -226,7 +226,7 @@ pub async fn reset_password(
                         "user_id": user_id,
                         "event": "use_token",
                     });
-                    let _ = crate::shared::request::record_audit_log_simple(
+                    let _ = crate::shared::request_context::record_audit_log_simple(
                         db.get_ref(),
                         "password_reset_tokens",
                         "delete",

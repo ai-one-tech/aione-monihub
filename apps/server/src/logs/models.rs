@@ -14,8 +14,9 @@ pub struct Pagination {
 pub struct LogListQuery {
     pub page: Option<u32>,
     pub limit: Option<u32>,
+    pub trace_id: Option<String>,
     pub log_level: Option<enums::LogLevel>,
-    pub user_id: Option<String>,
+    pub application_id: Option<String>,
     pub keyword: Option<String>,
     pub start_date: Option<String>,
     pub end_date: Option<String>,

@@ -227,7 +227,7 @@ pub async fn create_application(
         "created_at": response.created_at,
         "updated_at": response.updated_at,
     });
-    let _ = crate::shared::request::record_audit_log_simple(
+    let _ = crate::shared::request_context::record_audit_log_simple(
         db.get_ref(),
         "applications",
         "create",
@@ -405,7 +405,7 @@ pub async fn update_application(
             "created_at": response.created_at,
             "updated_at": response.updated_at,
         });
-        let _ = crate::shared::request::record_audit_log_simple(
+        let _ = crate::shared::request_context::record_audit_log_simple(
             db.get_ref(),
             "applications",
             "update",
@@ -472,7 +472,7 @@ pub async fn delete_application(
             "created_at": application.created_at.to_rfc3339(),
             "updated_at": application.updated_at.to_rfc3339(),
         });
-        let _ = crate::shared::request::record_audit_log_simple(
+        let _ = crate::shared::request_context::record_audit_log_simple(
             db.get_ref(),
             "applications",
             "delete",
@@ -530,7 +530,7 @@ pub async fn enable_application(
         // 审计记录：启用应用（作为更新）
         let before = serde_json::json!({ "status": Status::Disabled });
         let after = serde_json::json!({ "status": Status::Active });
-        let _ = crate::shared::request::record_audit_log_simple(
+        let _ = crate::shared::request_context::record_audit_log_simple(
             db.get_ref(),
             "applications",
             "update",
@@ -587,7 +587,7 @@ pub async fn disable_application(
         // 审计记录：禁用应用（作为更新）
         let before = serde_json::json!({ "status": Status::Active });
         let after = serde_json::json!({ "status": Status::Disabled });
-        let _ = crate::shared::request::record_audit_log_simple(
+        let _ = crate::shared::request_context::record_audit_log_simple(
             db.get_ref(),
             "applications",
             "update",

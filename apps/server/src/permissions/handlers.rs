@@ -247,7 +247,7 @@ pub async fn create_permission(
         "created_at": response.created_at,
         "updated_at": response.updated_at,
     });
-    let _ = crate::shared::request::record_audit_log_simple(
+    let _ = crate::shared::request_context::record_audit_log_simple(
         &**db,
         "permissions",
         "create",
@@ -369,7 +369,6 @@ pub async fn update_permission(
 
     // 更新权限
     let existing_permission_before = existing_permission.clone();
-    let existing_permission_before = existing_permission.clone();
     let mut permission_active: crate::entities::permissions::ActiveModel =
         existing_permission.into();
     permission_active.name = Set(permission.name.clone());
@@ -424,7 +423,7 @@ pub async fn update_permission(
         "created_at": response.created_at,
         "updated_at": response.updated_at,
     });
-    let _ = crate::shared::request::record_audit_log_simple(
+    let _ = crate::shared::request_context::record_audit_log_simple(
         &**db,
         "permissions",
         "update",
@@ -495,7 +494,7 @@ pub async fn delete_permission(
         "created_at": existing_permission_before.created_at.to_rfc3339(),
         "updated_at": existing_permission_before.updated_at.to_rfc3339(),
     });
-    let _ = crate::shared::request::record_audit_log_simple(
+    let _ = crate::shared::request_context::record_audit_log_simple(
         &**db,
         "permissions",
         "delete",

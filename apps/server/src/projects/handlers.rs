@@ -5,7 +5,7 @@ use crate::permissions::handlers::get_user_permission_by_name;
 use crate::projects::models::{
     Pagination, ProjectCreateRequest, ProjectListQuery, ProjectListResponse, ProjectResponse,
 };
-use crate::shared::enums;
+use crate::shared::{enums, request_context};
 use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
 use actix_web::{web, HttpRequest, HttpResponse, Result};
@@ -177,7 +177,7 @@ pub async fn create_project(
         "created_at": response.created_at,
         "updated_at": response.updated_at,
     });
-    let _ = crate::shared::request::record_audit_log_simple(
+    let _ = crate::shared::request_context::record_audit_log_simple(
         &**db,
         "projects",
         "create",
@@ -318,7 +318,7 @@ pub async fn update_project(
         "created_at": response.created_at,
         "updated_at": response.updated_at,
     });
-    let _ = crate::shared::request::record_audit_log_simple(
+    let _ = crate::shared::request_context::record_audit_log_simple(
         &**db,
         "projects",
         "update",
@@ -352,6 +352,8 @@ pub async fn delete_project(
 
     // 查找项目
     let existing_project = Projects::find_by_id(&project_id).one(&**db).await?;
+
+    let trace_id = request_context::get_trace_id();
 
     let existing_project = match existing_project {
         Some(project) => {
@@ -391,7 +393,7 @@ pub async fn delete_project(
 
     // 审计记录：删除项目
     // 无法从此函数获取操作者IP与trace_id，保留空字符串与None
-    let before = serde_json::json!({
+    let before = json!({
         "id": existing_project.id,
         "name": existing_project.name,
         "code": existing_project.code,
@@ -406,7 +408,7 @@ pub async fn delete_project(
         "delete",
         "",
         "",
-        None,
+        Some(&trace_id),
         Some(before),
         None,
     ).await;

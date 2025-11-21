@@ -245,7 +245,7 @@ pub async fn create_user(
         "created_at": response.created_at,
         "updated_at": response.updated_at,
     });
-    let _ = crate::shared::request::record_audit_log_simple(
+    let _ = crate::shared::request_context::record_audit_log_simple(
         &**db,
         "users",
         "create",
@@ -459,7 +459,7 @@ pub async fn update_user(
 
         let before_json = serde_json::json!({ "user_id": saved_user.id, "roles": before_roles });
         let after_json = serde_json::json!({ "user_id": saved_user.id, "roles": after_roles });
-        let _ = crate::shared::request::record_audit_log_simple(
+        let _ = crate::shared::request_context::record_audit_log_simple(
             &**db,
             "user_roles",
             "update",
@@ -513,7 +513,7 @@ pub async fn update_user(
         "created_at": response.created_at,
         "updated_at": response.updated_at,
     });
-    let _ = crate::shared::request::record_audit_log_simple(
+    let _ = crate::shared::request_context::record_audit_log_simple(
         &**db,
         "users",
         "update",
@@ -590,7 +590,7 @@ pub async fn delete_user(
         "created_at": existing_user.created_at.to_rfc3339(),
         "updated_at": existing_user.updated_at.to_rfc3339(),
     });
-    let _ = crate::shared::request::record_audit_log_simple(
+    let _ = crate::shared::request_context::record_audit_log_simple(
         &**db,
         "users",
         "delete",

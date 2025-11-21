@@ -1,5 +1,6 @@
 import { authToken } from './auth-token'
 import { env } from '@/config/env'
+import { generateSnowflakeId } from './snowflake'
 
 /**
  * API客户端配置
@@ -179,10 +180,7 @@ class ApiClient {
 
     const authHeaders = this.addAuthHeader(headers, options.skipAuth)
     if (!authHeaders['x-trace-id']) {
-      const rid = (typeof crypto !== 'undefined' && (crypto as any).randomUUID)
-        ? (crypto as any).randomUUID()
-        : `${Date.now()}-${Math.random().toString(16).slice(2)}`
-      authHeaders['x-trace-id'] = rid
+      authHeaders['x-trace-id'] = generateSnowflakeId()
     }
 
     const requestOptions: RequestOptions = {
@@ -208,17 +206,17 @@ class ApiClient {
     if (error instanceof TypeError) {
       return true
     }
-    
+
     // AbortError是超时错误
     if (error instanceof Error && error.name === 'AbortError') {
       return true
     }
-    
+
     // 自定义的超时错误
     if (error instanceof ApiError && error.status === 408) {
       return true
     }
-    
+
     return false
   }
 
@@ -258,7 +256,7 @@ class ApiClient {
         try {
           const text = await response.text()
           if (text && text.length > 0) { errorMessage = text }
-        } catch {}
+        } catch { }
       }
       throw new ApiError(errorMessage, response.status, response)
     }

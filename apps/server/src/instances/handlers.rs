@@ -298,7 +298,7 @@ pub async fn enable_instance(
     // 审计记录：启用实例（作为更新）
     let before = serde_json::json!({ "status": Status::Disabled });
     let after = serde_json::json!({ "status": Status::Active });
-    let _ = crate::shared::request::record_audit_log_simple(
+    let _ = crate::shared::request_context::record_audit_log_simple(
         &**db,
         "instances",
         "update",
@@ -335,7 +335,7 @@ pub async fn disable_instance(
     // 审计记录：禁用实例（作为更新）
     let before = serde_json::json!({ "status": Status::Active });
     let after = serde_json::json!({ "status": Status::Disabled });
-    let _ = crate::shared::request::record_audit_log_simple(
+    let _ = crate::shared::request_context::record_audit_log_simple(
         &**db,
         "instances",
         "update",
@@ -388,7 +388,7 @@ pub async fn update_config(
     // 审计记录：更新实例配置
     let before = serde_json::json!({ "config": before_instance.config });
     let after = serde_json::json!({ "config": resp.config });
-    let _ = crate::shared::request::record_audit_log_simple(
+    let _ = crate::shared::request_context::record_audit_log_simple(
         &**db,
         "instances",
         "update",

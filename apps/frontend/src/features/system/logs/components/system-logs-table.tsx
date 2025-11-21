@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import { Input } from '@/components/ui/input'
 import { useApplicationsQuery } from '@/features/applications/hooks/use-applications-query'
 import { useInstancesQuery } from '@/features/instances/hooks/use-instances-query'
 import { CheckCircle2, CircleOff } from 'lucide-react'
@@ -49,7 +50,7 @@ export function SystemLogsTable({ data = [], totalPages, search, navigate, expor
     try {
       const d = parse(ts, 'yyyy-MM-dd HH:mm:ss.SSS xxx', new Date())
       if (!isNaN(d.getTime())) return formatDateTime(d)
-    } catch {}
+    } catch { }
     const d2 = new Date(ts)
     return isNaN(d2.getTime()) ? ts : formatDateTime(d2)
   }
@@ -70,8 +71,9 @@ export function SystemLogsTable({ data = [], totalPages, search, navigate, expor
     { accessorKey: 'application_id', header: '应用ID', meta: { className: 'w-[140px]' } },
     { accessorKey: 'instance_hostname', header: '实例主机名', meta: { className: 'w-[180px]' }, cell: ({ row }) => row.original.instance_hostname || '-' },
     { accessorKey: 'ip_address', header: 'IP', meta: { className: 'w-[150px]' }, cell: ({ row }) => <OverflowPreview value={row.original.ip_address} title='IP' /> },
-    { accessorKey: 'user_agent', header: 'UA', meta: { className: 'w-[150px]' }, cell: ({row}) => <OverflowPreview value={row.original.user_agent || '-'} title='UA' /> },
+    { accessorKey: 'user_agent', header: 'UA', meta: { className: 'w-[150px]' }, cell: ({ row }) => <OverflowPreview value={row.original.user_agent || '-'} title='UA' /> },
     { accessorKey: 'user_name', header: '用户', meta: { className: 'w-[140px]' }, cell: ({ row }) => row.original.user_name || '-' },
+    { accessorKey: 'trace_id', header: 'TraceID', meta: { className: 'w-[160px]' }, cell: ({ row }) => <OverflowPreview value={row.original.trace_id || '-'} title='TraceID' /> },
     { accessorKey: 'log_type', header: '类型', meta: { className: 'w-[100px]' }, cell: () => 'system' },
     { accessorKey: 'log_source', header: '来源', meta: { className: 'w-[160px]' } },
   ], [applicationNameMap])
@@ -86,6 +88,7 @@ export function SystemLogsTable({ data = [], totalPages, search, navigate, expor
       { columnId: 'log_source', searchKey: 'source', type: 'string' },
       { columnId: 'application_id', searchKey: 'application_id', type: 'string' },
       { columnId: 'instance_id', searchKey: 'instance_id', type: 'string' },
+      { columnId: 'trace_id', searchKey: 'trace_id', type: 'string' },
     ],
   })
 
@@ -140,23 +143,35 @@ export function SystemLogsTable({ data = [], totalPages, search, navigate, expor
         table={table}
         searchPlaceholder='搜索日志内容...'
         filters={[
-          { columnId: 'log_level', title: '日志级别', options: [
-            { label: 'DEBUG', value: 'debug' },
-            { label: 'INFO', value: 'info' },
-            { label: 'WARN', value: 'warn' },
-            { label: 'ERROR', value: 'error' },
-          ], multiSelect: false },
-          { columnId: 'log_source', title: '来源', options: [
-            { label: '服务端', value: 'server' },
-            { label: '代理端', value: 'agent' },
-          ], multiSelect: false },
+          {
+            columnId: 'log_level', title: '日志级别', options: [
+              { label: 'DEBUG', value: 'debug' },
+              { label: 'INFO', value: 'info' },
+              { label: 'WARN', value: 'warn' },
+              { label: 'ERROR', value: 'error' },
+            ], multiSelect: false
+          },
+          {
+            columnId: 'log_source', title: '来源', options: [
+              { label: '服务端', value: 'server' },
+              { label: '代理端', value: 'agent' },
+            ], multiSelect: false
+          },
           ...(sourceFilter === 'agent' ? [
             { columnId: 'application_id', title: '应用', options: applicationOptions, multiSelect: false, contentClassName: 'w-[300px]' },
             { columnId: 'instance_id', title: '实例', options: instanceOptions, multiSelect: false, contentClassName: 'w-[300px]' },
           ] : []),
         ]}
       />
-      <div className='flex-1 flex min-h-0 overflow-auto rounded-md border mt-4'>
+      {/* TraceID 筛选输入框 */}
+      <div className='mt-3'>
+        <Input
+          placeholder='输入 TraceID 搜索...'
+          value={(table.getColumn('trace_id')?.getFilterValue() as string) || ''}
+          onChange={(e) => table.getColumn('trace_id')?.setFilterValue(e.target.value)}
+        />
+      </div>
+      <div className='flex-1 flex min-h-0 overflow-auto rounded-md border mt-3'>
         <Table>
           <TableHeader className='sticky top-0 z-10'>
             {table.getHeaderGroups().map((headerGroup) => (
