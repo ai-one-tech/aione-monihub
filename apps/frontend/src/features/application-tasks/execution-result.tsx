@@ -2,11 +2,100 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Copy } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table'
 
 const toText = (v: any) => JSON.stringify(v ?? null, null, 2)
 const renderPre = (_taskType: string | null, data: any, className: string) => (
   <pre className={className}>{toText(data)}</pre>
 )
+
+function JsonTableView({ data }: { data: any }) {
+  const isObj = (v: any) => v && typeof v === 'object' && !Array.isArray(v)
+  
+  const formatValue = (value: any): React.ReactNode => {
+    if (typeof value !== 'string') {
+      return String(value)
+    }
+    
+    const trimmed = value.trim()
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || 
+        (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+      try {
+        const parsed = JSON.parse(trimmed)
+        return <pre className="font-mono text-xs whitespace-pre-wrap">{JSON.stringify(parsed, null, 2)}</pre>
+      } catch {
+        return value
+      }
+    }
+    
+    return value
+  }
+  const renderRows = (v: any, k?: string, level: number = 0): React.ReactNode[] => {
+    const pad = { paddingLeft: `${level * 16}px` }
+    const rows: React.ReactNode[] = []
+    if (Array.isArray(v)) {
+      if (k !== undefined) rows.push(
+        <TableRow key={`grp-${level}-${k}`}>
+          <TableCell colSpan={2} className="font-medium" style={pad}>{String(k)}</TableCell>
+        </TableRow>
+      )
+      v.forEach((item, idx) => {
+        if (isObj(item) || Array.isArray(item)) {
+          rows.push(...renderRows(item, `[${idx}]`, level + 1))
+        } else {
+          rows.push(
+            <TableRow key={`arr-${level}-${k}-${idx}`}>
+              <TableCell className="whitespace-normal break-words" style={pad}>{`[${idx}]`}</TableCell>
+              <TableCell className="whitespace-normal break-words">{formatValue(item)}</TableCell>
+            </TableRow>
+          )
+        }
+      })
+      return rows
+    }
+    if (isObj(v)) {
+      if (k !== undefined) rows.push(
+        <TableRow key={`grp-${level}-${k}`}>
+          <TableCell colSpan={2} className="font-medium" style={pad}>{String(k)}</TableCell>
+        </TableRow>
+      )
+      Object.entries(v).forEach(([ck, cv]) => {
+        if (isObj(cv) || Array.isArray(cv)) {
+          rows.push(...renderRows(cv, ck, level + 1))
+        } else {
+          rows.push(
+            <TableRow key={`obj-${level}-${ck}`}>
+              <TableCell className="whitespace-normal break-words" style={pad}>{ck}</TableCell>
+              <TableCell className="whitespace-normal break-words">{formatValue(cv)}</TableCell>
+            </TableRow>
+          )
+        }
+      })
+      return rows
+    }
+    rows.push(
+      <TableRow key={`prim-${level}-${k ?? 'root'}`}>
+        <TableCell className="whitespace-normal break-words" style={pad}>{k ?? ''}</TableCell>
+        <TableCell className="whitespace-normal break-words">{formatValue(v)}</TableCell>
+      </TableRow>
+    )
+    return rows
+  }
+  return (
+    <Table className="table-fixed">
+      <TableHeader>
+        <TableRow>
+          <TableHead className="w-[200px]">字段</TableHead>
+          <TableHead>值</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {renderRows(data)}
+      </TableBody>
+    </Table>
+  )
+}
 
 interface ExecutionResultPanelProps {
   selectedInstanceResult: any | null
@@ -58,25 +147,37 @@ export function ExecutionResultPanel({ selectedInstanceResult, selectedTaskType,
 
               {selectedInstanceResult.execution_record.result_data && (
                 <div className="flex-1 min-h-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="font-medium text-sm text-primary">输出数据:</div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 text-gray-400 hover:text-gray-400 dark:text-gray-400 dark:hover:text-gray-200"
-                      onClick={() => {
-                        const data = selectedInstanceResult.execution_record.result_data
-                        copyToClipboard(String(toText(data)))
-                      }}
-                    >
-                      <Copy className="h-3 w-3" />
-                    </Button>
-                  </div>
-                  {renderPre(
-                    selectedTaskType,
-                    selectedInstanceResult.execution_record.result_data,
-                    'flex-1 h-full overflow-auto text-sm font-mono text-white bg-gray-800 p-3 rounded border border-green-200 dark:text-gray-800 dark:bg-white dark:border-green-800 whitespace-pre-wrap'
-                  )}
+                  <Tabs defaultValue="raw" className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <TabsList>
+                        <TabsTrigger value="raw">Raw</TabsTrigger>
+                        <TabsTrigger value="table">Table</TabsTrigger>
+                      </TabsList>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-gray-400 hover:text-gray-400 dark:text-gray-400 dark:hover:text-gray-200"
+                        onClick={() => {
+                          const data = selectedInstanceResult.execution_record.result_data
+                          copyToClipboard(String(toText(data)))
+                        }}
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <TabsContent value="raw" className="flex-1 min-h-0">
+                      {renderPre(
+                        selectedTaskType,
+                        selectedInstanceResult.execution_record.result_data,
+                        'flex-1 h-full overflow-auto text-sm font-mono text-white bg-gray-800 p-3 rounded border border-green-200 dark:text-gray-800 dark:bg-white dark:border-green-800 whitespace-pre-wrap'
+                      )}
+                    </TabsContent>
+                    <TabsContent value="table" className="flex-1 min-h-0">
+                      <ScrollArea className="flex-1 h-full">
+                        <JsonTableView data={selectedInstanceResult.execution_record.result_data} />
+                      </ScrollArea>
+                    </TabsContent>
+                  </Tabs>
                 </div>
               )}
             </div>

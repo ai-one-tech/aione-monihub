@@ -11,7 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { LongText } from '@/components/long-text'
 import { Label } from '@/components/ui/label'
-import { ChevronRight, CheckCircle, RefreshCw, Network, Coffee, Cog } from 'lucide-react'
+import { ChevronRight, CheckCircle, RefreshCw, Network, Coffee, Cog, Info } from 'lucide-react'
 import { ExecutionResultPanel } from './execution-result'
 import { OS_TYPE_OPTIONS } from '@/features/instances/data/api-schema'
 import React, { useState } from 'react'
@@ -464,8 +464,8 @@ export function ApplicationTasks() {
   }, [taskInstancesData])
 
   return (
-    <Main fixed className="flex lex-col h-[calc(100vh-50rem)] overflow-auto">
-      <div className="flex flex-col flex-1 min-h-0 overflow-auto">
+    <Main fixed className="flex flex-col h-full overflow-hidden">
+      <div className="flex flex-col flex-1 h-full min-h-0 overflow-auto">
         {/* 页面标题区域 */}
         <div className="shrink-0 p-4 overflow-auto">
           <div className="flex items-center justify-between mb-4">
@@ -475,9 +475,9 @@ export function ApplicationTasks() {
             </h2>
           </div>
 
-          <div className="flex gap-4 h-[300px] min-h-0 overflow-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_2fr] gap-4 h-[300px] min-h-0 overflow-auto">
             {/* 在线实例 */}
-            <Card className="flex-1 p-4 flex flex-col min-h-0">
+            <Card className="col-span-2 h-full p-4 flex flex-col min-h-0">
               <div className="flex items-center justify-between mb-4">
                 <div className='flex items-center'>
                   <Button
@@ -573,7 +573,7 @@ export function ApplicationTasks() {
             </Card>
 
             {/* 创建任务 */}
-            <Card className="flex-1 p-4 flex flex-col min-h-0">
+            <Card className="h-full p-4 flex flex-col min-h-0">
               <h3 className="text-lg font-semibold mb-4">创建任务</h3>
 
               <div className="space-y-4">
@@ -583,6 +583,18 @@ export function ApplicationTasks() {
                       <div className="flex items-center space-x-2" key={key}>
                         <RadioGroupItem value={key} id={key} />
                         <Label htmlFor={key} className="text-sm">{typeMap[key]}</Label>
+                        {(key === 'custom_command' || key === 'run_code') && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="inline-flex">
+                                <Info className="w-3 h-3 text-muted-foreground" />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent sideOffset={8}>
+                              <div className="text-xs">该功能仅支持 java类型的代理</div>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
                       </div>
                     ))}
                   </RadioGroup>
@@ -620,10 +632,10 @@ export function ApplicationTasks() {
         </div>
 
         {/* 底部三个区域 */}
-        <div className="flex-1 p-4 pt-0 overflow-auto flex flex-col min-h-0">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full min-h-0">
+        <div className="flex-1 p-4 pt-0 overflow-hidden flex flex-col min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_2fr] lg:grid-rows-2 gap-4 h-full min-h-0">
             {/* 任务历史 */}
-            <Card className="p-4 flex flex-col h-full min-h-0">
+            <Card className="p-4 lg:row-span-2 flex-col h-full min-h-0">
               <div className="flex items-center justify-between mb-4 shrink-0">
                 <h3 className="text-lg font-semibold">任务历史</h3>
                 <div className="flex items-center gap-2">
@@ -673,7 +685,7 @@ export function ApplicationTasks() {
             </Card>
 
             {/* 相关实例 */}
-            <Card className="p-4 flex flex-col h-full min-h-0">
+            <Card className="p-4 lg:row-span-2 flex flex-col h-full min-h-0">
               <div className="flex items-center justify-between mb-4 shrink-0">
                 <h3 className="text-lg font-semibold">相关实例</h3>
                 <div className="flex items-center gap-2">
@@ -807,7 +819,7 @@ export function ApplicationTasks() {
             </Card>
 
             {/* 执行结果 / 文件夹 */}
-            <Card className="p-4 flex flex-col h-full min-h-0">
+            <Card className="p-4 lg:row-span-2 flex flex-col h-full min-h-0">
               <Tabs defaultValue="result" className="flex h-full flex-col">
                 <div className="flex items-center justify-between mb-2 shrink-0">
                   <TabsList>
@@ -863,17 +875,14 @@ function HttpParamsDrawer({ open, onOpenChange, params, onChange }: HttpParamsDr
   React.useEffect(() => { if (open) setLocal(params) }, [open])
   const setField = (k: string, v: any) => setLocal({ ...local, [k]: v })
   const [jsonText, setJsonText] = React.useState<string>('')
-  const [jsonInvalid, setJsonInvalid] = React.useState<boolean>(false)
 
   React.useEffect(() => {
     if (!open) return
     try {
       const t = JSON.stringify(local.json_body || {}, null, 2)
       setJsonText(t)
-      setJsonInvalid(false)
     } catch {
       setJsonText('{}')
-      setJsonInvalid(false)
     }
   }, [open])
 
@@ -982,9 +991,8 @@ function HttpParamsDrawer({ open, onOpenChange, params, onChange }: HttpParamsDr
                         try {
                           const obj = JSON.parse(v || '{}')
                           setField('json_body', obj)
-                          setJsonInvalid(false)
                         } catch {
-                          setJsonInvalid(true)
+                          // JSON 解析失败时忽略
                         }
                       }}
                     />
@@ -1062,7 +1070,7 @@ type FileItem = {
 
 function TaskFilesPane({ selectedTask, selectedInstanceId }: TaskFilesPaneProps) {
   const enabled = !!(selectedTask && selectedInstanceId)
-  const { data, isLoading, isError, refetch } = useQuery<{ data: FileItem[] } | undefined>({
+  const { data, isLoading, isError } = useQuery<{ data: FileItem[] } | undefined>({
     queryKey: ['task-files', selectedTask, selectedInstanceId],
     queryFn: async () => {
       const params = new URLSearchParams({

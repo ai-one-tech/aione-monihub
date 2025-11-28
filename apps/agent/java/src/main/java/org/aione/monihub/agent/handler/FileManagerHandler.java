@@ -577,7 +577,7 @@ public class FileManagerHandler implements TaskHandler {
         resultData.put("size", initSize != null ? initSize : uploadFile.length());
         resultData.put("server_file_path", filePathResp != null ? filePathResp : initServerFilePath);
 
-        return TaskExecutionResult.success("File uploaded", resultData);
+        return TaskExecutionResult.success(null, resultData);
     }
 
     /**
@@ -594,7 +594,7 @@ public class FileManagerHandler implements TaskHandler {
 
     private void zipSingleFile(Path filePath, Path zipPath, String entryName) throws Exception {
         try (ZipOutputStream zos = new ZipOutputStream(
-                new BufferedOutputStream(new FileOutputStream(zipPath.toFile())))) {
+                new BufferedOutputStream(Files.newOutputStream(zipPath.toFile().toPath())))) {
             zos.putNextEntry(new ZipEntry(entryName));
             Files.copy(filePath, zos);
             zos.closeEntry();

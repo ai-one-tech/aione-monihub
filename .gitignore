@@ -314,3 +314,4 @@ build/
 **/debug/
 **/release/
 apps/agent/java/tmp/
+uploads/

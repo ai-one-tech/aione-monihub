@@ -54,7 +54,6 @@ pub async fn start(state: AppState) {
                             }
                         }
                         Err(e) => {
-                            let preview: String = content.chars().take(512).collect();
                         }
                     }
                 }

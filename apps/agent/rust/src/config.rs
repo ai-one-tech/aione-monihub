@@ -101,15 +101,22 @@ impl Default for HttpConfig {
 }
 
 impl Config {
-    /// 加载配置：优先读取指定文件，否则使用默认与环境变量。
-    /// 若 `instance_id` 缺失或为空，将生成并持久化一个新的实例 ID。
-    pub fn load(path: &str) -> anyhow::Result<Self> {
+    /// 加载配置:优先级为 启动参数 > 环境变量 > 配置文件 > 默认值
+    /// 若 `instance_id` 缺失或为空,将生成并持久化一个新的实例 ID。
+    pub fn load(
+        path: &str,
+        cli_server_url: Option<String>,
+        cli_application_code: Option<String>,
+        cli_debug: Option<bool>,
+    ) -> anyhow::Result<Self> {
         let mut config_path = path;
 
         let mut config = Self::default_fallback();
         if config_path.is_empty() {
             config_path = "./config.yaml";
         }
+        
+        // 1. 从配置文件加载
         if Path::new(config_path).exists() {
             match Self::from_file(config_path) {
                 Ok(file_cfg) => {
@@ -125,7 +132,7 @@ impl Config {
                 }
                 Err(err) => {
                     agent_logger::error(&format!(
-                        "读取配置文件失败: {}，错误: {}",
+                        "读取配置文件失败: {},错误: {}",
                         config_path, err
                     ));
                     if let Ok(cwd) = std::env::current_dir() {
@@ -138,6 +145,38 @@ impl Config {
             if let Ok(cwd) = std::env::current_dir() {
                 agent_logger::error(&format!("当前工作目录: {}", cwd.display()));
             }
+        }
+
+        // 2. 从环境变量加载(覆盖配置文件)
+        if let Ok(env_server_url) = std::env::var("MONIHUB_SERVER_URL") {
+            if !env_server_url.is_empty() {
+                config.server_url = env_server_url;
+            }
+        }
+        if let Ok(env_application_code) = std::env::var("MONIHUB_APPLICATION_CODE") {
+            if !env_application_code.is_empty() {
+                config.application_code = env_application_code;
+            }
+        }
+        if let Ok(env_debug) = std::env::var("MONIHUB_DEBUG") {
+            if let Ok(debug_val) = env_debug.parse::<bool>() {
+                config.debug = debug_val;
+            }
+        }
+
+        // 3. 从启动参数加载(最高优先级)
+        if let Some(url) = cli_server_url {
+            if !url.is_empty() {
+                config.server_url = url;
+            }
+        }
+        if let Some(app_code) = cli_application_code {
+            if !app_code.is_empty() {
+                config.application_code = app_code;
+            }
+        }
+        if let Some(debug_val) = cli_debug {
+            config.debug = debug_val;
         }
 
         if config.application_code.is_empty(){

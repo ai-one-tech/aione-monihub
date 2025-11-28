@@ -19,14 +19,33 @@ mod utils;
 #[derive(Parser, Debug)]
 /// 命令行参数结构体
 struct Cli {
+    /// 配置文件路径
     #[arg(short, long, default_value = "./config.yaml")]
     config: String,
+
+    /// 服务端 URL
+    #[arg(short, long)]
+    server_url: Option<String>,
+
+    /// 应用编码
+    #[arg(short, long)]
+    application_code: Option<String>,
+
+    /// 调试模式
+    #[arg(short, long)]
+    debug: Option<bool>,
 }
 
 #[tokio::main]
 async fn main() {
     let args = Cli::parse();
-    let cfg = config::Config::load(args.config.as_str()).unwrap_or_default();
+    let cfg = config::Config::load(
+        args.config.as_str(),
+        args.server_url,
+        args.application_code,
+        args.debug,
+    )
+    .unwrap_or_default();
     agent_logger::init(&cfg);
     let state = services::AppState::new(cfg.clone());
     agent_logger::set_state(state.clone());
