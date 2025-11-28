@@ -1,4 +1,3 @@
-
 use crate::shared::enums::{PermissionAction, PermissionType};
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};

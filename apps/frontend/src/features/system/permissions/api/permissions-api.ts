@@ -1,13 +1,21 @@
-import { type GetPermissionsParams, type PermissionListResponse, type CreatePermissionRequest, type UpdatePermissionRequest, type ApiPermissionResponse } from '../data/api-schema'
 import { apiClient } from '@/lib/api-client'
+import {
+  type GetPermissionsParams,
+  type PermissionListResponse,
+  type CreatePermissionRequest,
+  type UpdatePermissionRequest,
+  type ApiPermissionResponse,
+} from '../data/api-schema'
 
 class PermissionsApi {
   /**
    * 获取权限列表
    */
-  async getPermissions(params: GetPermissionsParams = {}): Promise<PermissionListResponse> {
+  async getPermissions(
+    params: GetPermissionsParams = {}
+  ): Promise<PermissionListResponse> {
     const searchParams = new URLSearchParams()
-    
+
     if (params.page !== undefined) {
       searchParams.append('page', params.page.toString())
     }
@@ -26,7 +34,7 @@ class PermissionsApi {
 
     const queryString = searchParams.toString()
     const endpoint = `/api/permissions${queryString ? `?${queryString}` : ''}`
-    
+
     const response = await apiClient.get<PermissionListResponse>(endpoint)
     return response.data
   }
@@ -34,16 +42,27 @@ class PermissionsApi {
   /**
    * 创建权限
    */
-  async createPermission(permissionData: CreatePermissionRequest): Promise<ApiPermissionResponse> {
-    const response = await apiClient.post<ApiPermissionResponse>('/api/permissions', permissionData)
+  async createPermission(
+    permissionData: CreatePermissionRequest
+  ): Promise<ApiPermissionResponse> {
+    const response = await apiClient.post<ApiPermissionResponse>(
+      '/api/permissions',
+      permissionData
+    )
     return response.data
   }
 
   /**
    * 更新权限
    */
-  async updatePermission(permissionId: string, permissionData: UpdatePermissionRequest): Promise<ApiPermissionResponse> {
-    const response = await apiClient.put<ApiPermissionResponse>(`/api/permissions/${permissionId}`, permissionData)
+  async updatePermission(
+    permissionId: string,
+    permissionData: UpdatePermissionRequest
+  ): Promise<ApiPermissionResponse> {
+    const response = await apiClient.put<ApiPermissionResponse>(
+      `/api/permissions/${permissionId}`,
+      permissionData
+    )
     return response.data
   }
 
@@ -57,8 +76,12 @@ class PermissionsApi {
   /**
    * 获取权限详情
    */
-  async getPermissionById(permissionId: string): Promise<ApiPermissionResponse> {
-    const response = await apiClient.get<ApiPermissionResponse>(`/api/permissions/${permissionId}`)
+  async getPermissionById(
+    permissionId: string
+  ): Promise<ApiPermissionResponse> {
+    const response = await apiClient.get<ApiPermissionResponse>(
+      `/api/permissions/${permissionId}`
+    )
     return response.data
   }
 }

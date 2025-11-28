@@ -25,8 +25,8 @@ export function getCookie(name: string): string | null {
  * @param options cookie选项
  */
 export function setCookie(
-  name: string, 
-  value: string, 
+  name: string,
+  value: string,
   options: {
     expires?: Date
     maxAge?: number
@@ -37,31 +37,31 @@ export function setCookie(
   } = {}
 ): void {
   let cookieString = `${name}=${encodeURIComponent(value)}`
-  
+
   if (options.expires) {
     cookieString += `; expires=${options.expires.toUTCString()}`
   }
-  
+
   if (options.maxAge) {
     cookieString += `; max-age=${options.maxAge}`
   }
-  
+
   if (options.path) {
     cookieString += `; path=${options.path}`
   }
-  
+
   if (options.domain) {
     cookieString += `; domain=${options.domain}`
   }
-  
+
   if (options.secure) {
     cookieString += `; secure`
   }
-  
+
   if (options.sameSite) {
     cookieString += `; samesite=${options.sameSite}`
   }
-  
+
   document.cookie = cookieString
 }
 
@@ -71,11 +71,15 @@ export function setCookie(
  * @param path cookie路径
  * @param domain cookie域名
  */
-export function deleteCookie(name: string, path?: string, domain?: string): void {
+export function deleteCookie(
+  name: string,
+  path?: string,
+  domain?: string
+): void {
   setCookie(name, '', {
     expires: new Date(0),
     path,
-    domain
+    domain,
   })
 }
 
@@ -85,7 +89,7 @@ export function deleteCookie(name: string, path?: string, domain?: string): void
  */
 export function getAllCookies(): Record<string, string> {
   const cookies: Record<string, string> = {}
-  document.cookie.split(';').forEach(cookie => {
+  document.cookie.split(';').forEach((cookie) => {
     const [name, value] = cookie.trim().split('=')
     if (name && value) {
       cookies[name] = decodeURIComponent(value)

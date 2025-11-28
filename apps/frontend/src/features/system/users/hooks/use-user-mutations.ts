@@ -1,7 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { usersApi } from '../api/users-api'
-import { type UpdateUserRequest, type CreateUserRequest } from '../data/api-schema'
 import { toast } from 'sonner'
+import { usersApi } from '../api/users-api'
+import {
+  type UpdateUserRequest,
+  type CreateUserRequest,
+} from '../data/api-schema'
 
 /**
  * 用户创建mutation hook
@@ -16,7 +19,7 @@ export function useCreateUserMutation() {
     onSuccess: () => {
       // 刷新用户列表
       queryClient.invalidateQueries({ queryKey: ['system-users'] })
-      
+
       toast.success('用户创建成功')
     },
     onError: (error) => {
@@ -33,16 +36,22 @@ export function useUpdateUserMutation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ userId, userData }: { userId: string; userData: UpdateUserRequest }) => {
+    mutationFn: ({
+      userId,
+      userData,
+    }: {
+      userId: string
+      userData: UpdateUserRequest
+    }) => {
       return usersApi.updateUser(userId, userData)
     },
     onSuccess: (data, variables) => {
       // 更新用户详情缓存
       queryClient.setQueryData(['user-detail', variables.userId], data)
-      
+
       // 刷新用户列表
       queryClient.invalidateQueries({ queryKey: ['system-users'] })
-      
+
       toast.success('用户信息更新成功')
     },
     onError: (error) => {
@@ -65,7 +74,7 @@ export function useDeleteUserMutation() {
     onSuccess: () => {
       // 刷新用户列表
       queryClient.invalidateQueries({ queryKey: ['system-users'] })
-      
+
       toast.success('用户删除成功')
     },
     onError: (error) => {

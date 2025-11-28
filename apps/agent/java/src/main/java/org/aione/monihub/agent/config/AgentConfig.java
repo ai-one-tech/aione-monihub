@@ -15,7 +15,7 @@ import java.util.UUID;
 @ConfigurationProperties(prefix = "monihub.agent")
 public class AgentConfig extends InstanceConfig {
 
-    public static AgentConfig instance(){
+    public static AgentConfig instance() {
         return SpringContextUtils.getBean(AgentConfig.class);
     }
 

@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button'
 import { useProjectsContext } from './projects-provider'
 
 export function ProjectsPrimaryButtons() {
-  const { setIsSheetOpen, setSheetMode, setSelectedProjectId } = useProjectsContext()
+  const { setIsSheetOpen, setSheetMode, setSelectedProjectId } =
+    useProjectsContext()
 
   const handleCreateProject = () => {
     setSelectedProjectId(null)

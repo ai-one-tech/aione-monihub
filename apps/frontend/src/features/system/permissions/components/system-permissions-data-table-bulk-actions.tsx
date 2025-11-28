@@ -18,7 +18,7 @@ export function SystemPermissionsDataTableBulkActions({
 
   return (
     <div className='flex items-center gap-2'>
-      <span className='text-sm text-muted-foreground'>
+      <span className='text-muted-foreground text-sm'>
         已选择 {selectedRows.length} 项
       </span>
       <Button
@@ -26,7 +26,10 @@ export function SystemPermissionsDataTableBulkActions({
         size='sm'
         onClick={() => {
           // TODO: 实现批量删除功能
-          console.log('批量删除权限:', selectedRows.map(row => row.original.id))
+          console.log(
+            '批量删除权限:',
+            selectedRows.map((row) => row.original.id)
+          )
         }}
       >
         <Trash2 className='mr-2 h-4 w-4' />

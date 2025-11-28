@@ -9,18 +9,12 @@ const systemPermissionsSearchSchema = z.object({
   name: z.string().optional().catch(''),
   // 权限类型筛选 - 支持多选
   permission_type: z
-    .union([
-      z.string(),
-      z.array(z.string())
-    ])
+    .union([z.string(), z.array(z.string())])
     .optional()
     .catch([]),
   // 操作筛选 - 支持多选
   action: z
-    .union([
-      z.string(),
-      z.array(z.string())
-    ])
+    .union([z.string(), z.array(z.string())])
     .optional()
     .catch([]),
 })

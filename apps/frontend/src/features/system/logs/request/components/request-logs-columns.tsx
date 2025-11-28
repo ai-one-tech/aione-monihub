@@ -39,7 +39,7 @@ export const requestLogsColumns: ColumnDef<LogItem>[] = [
       <DataTableColumnHeader column={column} title='时间' />
     ),
     cell: ({ row }) => (
-      <div className='w-fit text-nowrap ps-3 font-mono text-xs'>
+      <div className='w-fit ps-3 font-mono text-xs text-nowrap'>
         {row.getValue('timestamp') as string}
       </div>
     ),
@@ -61,7 +61,9 @@ export const requestLogsColumns: ColumnDef<LogItem>[] = [
       <DataTableColumnHeader column={column} title='请求' />
     ),
     cell: ({ row }) => (
-      <LongText className='max-w-64'>{row.getValue('action') as string}</LongText>
+      <LongText className='max-w-64'>
+        {row.getValue('action') as string}
+      </LongText>
     ),
     enableSorting: false,
   },
@@ -71,7 +73,9 @@ export const requestLogsColumns: ColumnDef<LogItem>[] = [
       <DataTableColumnHeader column={column} title='IP' />
     ),
     cell: ({ row }) => (
-      <LongText className='max-w-24 font-mono text-xs'>{row.getValue('ip_address') as string}</LongText>
+      <LongText className='max-w-24 font-mono text-xs'>
+        {row.getValue('ip_address') as string}
+      </LongText>
     ),
   },
   {
@@ -80,7 +84,9 @@ export const requestLogsColumns: ColumnDef<LogItem>[] = [
       <DataTableColumnHeader column={column} title='UA' />
     ),
     cell: ({ row }) => (
-      <LongText className='max-w-36'>{row.getValue('user_agent') as string}</LongText>
+      <LongText className='max-w-36'>
+        {row.getValue('user_agent') as string}
+      </LongText>
     ),
   },
   {
@@ -89,8 +95,9 @@ export const requestLogsColumns: ColumnDef<LogItem>[] = [
       <DataTableColumnHeader column={column} title='用户ID' />
     ),
     cell: ({ row }) => (
-      <LongText className='max-w-24 font-mono text-xs'>{row.getValue('user_id') as string}</LongText>
+      <LongText className='max-w-24 font-mono text-xs'>
+        {row.getValue('user_id') as string}
+      </LongText>
     ),
   },
 ]
-

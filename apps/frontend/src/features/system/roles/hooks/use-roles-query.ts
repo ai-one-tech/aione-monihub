@@ -1,7 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { rolesApi } from '../api/roles-api'
-import { type GetRolesParams, type CreateRoleRequest, type UpdateRoleRequest } from '../data/api-schema'
 import { toast } from 'sonner'
+import { rolesApi } from '../api/roles-api'
+import {
+  type GetRolesParams,
+  type CreateRoleRequest,
+  type UpdateRoleRequest,
+} from '../data/api-schema'
 
 // 角色列表查询
 export function useRolesQuery(params: GetRolesParams) {
@@ -25,7 +29,7 @@ export function useRoleQuery(roleId: string) {
 // 创建角色
 export function useCreateRoleMutation() {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: (data: CreateRoleRequest) => rolesApi.createRole(data),
     onSuccess: () => {
@@ -41,10 +45,15 @@ export function useCreateRoleMutation() {
 // 更新角色
 export function useUpdateRoleMutation() {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
-    mutationFn: ({ roleId, data }: { roleId: string; data: UpdateRoleRequest }) => 
-      rolesApi.updateRole(roleId, data),
+    mutationFn: ({
+      roleId,
+      data,
+    }: {
+      roleId: string
+      data: UpdateRoleRequest
+    }) => rolesApi.updateRole(roleId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] })
       queryClient.invalidateQueries({ queryKey: ['role'] })
@@ -59,7 +68,7 @@ export function useUpdateRoleMutation() {
 // 删除角色
 export function useDeleteRoleMutation() {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: (roleId: string) => rolesApi.deleteRole(roleId),
     onSuccess: () => {

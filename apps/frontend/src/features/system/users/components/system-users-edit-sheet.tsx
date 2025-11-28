@@ -1,13 +1,10 @@
 import { useState, useEffect } from 'react'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-} from '@/components/ui/sheet'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Form,
   FormControl,
@@ -24,16 +21,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Checkbox } from '@/components/ui/checkbox'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { useSystemUsersContext } from './system-users-provider'
-import { type UpdateUserRequest, type CreateUserRequest } from '../data/api-schema'
-import { useUserDetailQuery } from '../hooks/use-user-detail-query'
-import { useUpdateUserMutation, useCreateUserMutation } from '../hooks/use-user-mutations'
-import { toast } from 'sonner'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter,
+} from '@/components/ui/sheet'
 import { useRolesQuery } from '@/features/system/roles/hooks/use-roles-query'
+import {
+  type UpdateUserRequest,
+  type CreateUserRequest,
+} from '../data/api-schema'
+import { useUserDetailQuery } from '../hooks/use-user-detail-query'
+import {
+  useUpdateUserMutation,
+  useCreateUserMutation,
+} from '../hooks/use-user-mutations'
+import { useSystemUsersContext } from './system-users-provider'
 
 // 统一的用户表单schema，支持新增和编辑
 const createUserFormSchema = z.object({
@@ -52,24 +58,35 @@ const editUserFormSchema = z.object({
   status: z.string(),
 })
 
-type UserFormData = z.infer<typeof createUserFormSchema> | z.infer<typeof editUserFormSchema>
-
-
+type UserFormData =
+  | z.infer<typeof createUserFormSchema>
+  | z.infer<typeof editUserFormSchema>
 
 export function SystemUsersEditSheet() {
-  const { isUserSheetOpen, setIsUserSheetOpen, userSheetMode, selectedUserId } = useSystemUsersContext()
-  
+  const { isUserSheetOpen, setIsUserSheetOpen, userSheetMode, selectedUserId } =
+    useSystemUsersContext()
+
   // 使用React Query hooks
-  const { data: userDetail, isLoading: isLoadingUser, error } = useUserDetailQuery(selectedUserId)
+  const {
+    data: userDetail,
+    isLoading: isLoadingUser,
+    error,
+  } = useUserDetailQuery(selectedUserId)
   const updateUserMutation = useUpdateUserMutation()
   const createUserMutation = useCreateUserMutation()
-  const { data: rolesData, isLoading: rolesLoading, error: rolesError } = useRolesQuery({})
-  
+  const {
+    data: rolesData,
+    isLoading: rolesLoading,
+    error: rolesError,
+  } = useRolesQuery({})
+
   const isCreateMode = userSheetMode === 'create'
   const isEditMode = userSheetMode === 'edit'
 
   const form = useForm<UserFormData>({
-    resolver: zodResolver(isCreateMode ? createUserFormSchema : editUserFormSchema),
+    resolver: zodResolver(
+      isCreateMode ? createUserFormSchema : editUserFormSchema
+    ),
     defaultValues: {
       username: '',
       email: '',
@@ -84,7 +101,9 @@ export function SystemUsersEditSheet() {
     if (isEditMode && userDetail) {
       // 后端返回的 roles 可能是对象数组({ name, description })，统一转换为名称字符串数组
       const roleNames = Array.isArray(userDetail.roles)
-        ? (userDetail.roles as any[]).map((r) => (typeof r === 'string' ? r : r?.name)).filter(Boolean)
+        ? (userDetail.roles as any[])
+            .map((r) => (typeof r === 'string' ? r : r?.name))
+            .filter(Boolean)
         : []
 
       form.reset({
@@ -136,7 +155,7 @@ export function SystemUsersEditSheet() {
         toast.error('新增用户时密码不能为空')
         return
       }
-      
+
       const createData: CreateUserRequest = {
         username: data.username,
         email: data.email,
@@ -144,7 +163,7 @@ export function SystemUsersEditSheet() {
         password: (data as any).password,
         status: (data as any).status,
       }
-      
+
       createUserMutation.mutate(createData, {
         onSuccess: () => {
           setIsUserSheetOpen(false)
@@ -164,7 +183,7 @@ export function SystemUsersEditSheet() {
         roles: data.roles,
         status: (data as any).status,
       }
-      
+
       updateUserMutation.mutate(
         { userId: selectedUserId, userData: updateData },
         {
@@ -182,160 +201,198 @@ export function SystemUsersEditSheet() {
         <SheetHeader className='px-6 pt-6'>
           <SheetTitle>{isCreateMode ? '新增用户' : '编辑用户'}</SheetTitle>
           <SheetDescription>
-            {isCreateMode ? '填写用户信息以创建新的系统用户账户' : '修改用户信息'}
+            {isCreateMode
+              ? '填写用户信息以创建新的系统用户账户'
+              : '修改用户信息'}
           </SheetDescription>
         </SheetHeader>
-        
-        {(isEditMode && isLoadingUser) ? (
-          <div className='flex-1 flex items-center justify-center'>
-            <div className='text-sm text-muted-foreground'>加载用户信息中...</div>
+
+        {isEditMode && isLoadingUser ? (
+          <div className='flex flex-1 items-center justify-center'>
+            <div className='text-muted-foreground text-sm'>
+              加载用户信息中...
+            </div>
           </div>
         ) : (
           <>
             <div className='flex-1 overflow-y-auto px-6 py-4'>
               <Form {...form}>
-                <form id='user-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
-              {/* 用户ID字段 - 仅编辑模式显示且不可编辑 */}
-              {isEditMode && selectedUserId && (
-                <FormItem>
-                  <FormLabel>用户ID</FormLabel>
-                  <FormControl>
-                    <Input value={selectedUserId} disabled />
-                  </FormControl>
-                </FormItem>
-              )}
-              
-              <FormField
-                control={form.control}
-                name='username'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>用户名</FormLabel>
-                    <FormControl>
-                      <Input placeholder='请输入用户名' {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name='email'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>邮箱</FormLabel>
-                    <FormControl>
-                      <Input placeholder='请输入邮箱' type='email' {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* 状态选择 */}
-              <FormField
-                control={form.control}
-                name='status'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>状态</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value as string}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder='请选择用户状态' />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value='active'>激活</SelectItem>
-                        <SelectItem value='disabled'>禁用</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name='roles'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>角色</FormLabel>
-                    {rolesLoading ? (
-                      <div className='text-sm text-muted-foreground'>角色列表加载中...</div>
-                    ) : (
-                      <div className='grid grid-cols-2 gap-2'>
-                        {(rolesData?.data ?? []).map((role) => (
-                          <label key={role.name} className='flex items-center space-x-2'>
-                            <Checkbox
-                              checked={(field.value as string[]).includes(role.name)}
-                              onCheckedChange={(checked) => {
-                                const current = new Set(field.value as string[])
-                                if (checked) {
-                                  current.add(role.name)
-                                } else {
-                                  current.delete(role.name)
-                                }
-                                field.onChange(Array.from(current))
-                              }}
-                            />
-                            <span>{role.name}</span>
-                          </label>
-                        ))}
-                        {(!rolesData?.data || rolesData.data.length === 0) && (
-                          <div className='text-sm text-muted-foreground'>暂无角色可选</div>
-                        )}
-                      </div>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* 密码 - 仅新增时显示 */}
-              {isCreateMode && (
-                <FormField
-                  control={form.control}
-                  name='password'
-                  render={({ field }) => (
+                <form
+                  id='user-form'
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className='space-y-8'
+                >
+                  {/* 用户ID字段 - 仅编辑模式显示且不可编辑 */}
+                  {isEditMode && selectedUserId && (
                     <FormItem>
-                      <FormLabel>密码</FormLabel>
+                      <FormLabel>用户ID</FormLabel>
                       <FormControl>
-                        <Input placeholder='请输入密码' type='password' {...field} />
+                        <Input value={selectedUserId} disabled />
                       </FormControl>
-                      <FormMessage />
                     </FormItem>
                   )}
-                />
-              )}
-            </form>
-          </Form>
-        </div>
 
-        <SheetFooter>
-          <div className='flex justify-end space-x-2 w-full'>
-            <Button
-              type='button'
-              variant='outline'
-              onClick={() => setIsUserSheetOpen(false)}
-            >
-              取消
-            </Button>
-            <Button 
-              type='submit'
-              form='user-form'
-              disabled={isCreateMode ? createUserMutation.isPending : updateUserMutation.isPending}
-            >
-              {isCreateMode 
-                ? (createUserMutation.isPending ? '创建中...' : '创建用户')
-                : (updateUserMutation.isPending ? '保存中...' : '保存更改')
-              }
-            </Button>
-          </div>
-        </SheetFooter>
-      </>
-    )}
+                  <FormField
+                    control={form.control}
+                    name='username'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>用户名</FormLabel>
+                        <FormControl>
+                          <Input placeholder='请输入用户名' {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name='email'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>邮箱</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder='请输入邮箱'
+                            type='email'
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* 状态选择 */}
+                  <FormField
+                    control={form.control}
+                    name='status'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>状态</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value as string}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder='请选择用户状态' />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value='active'>激活</SelectItem>
+                            <SelectItem value='disabled'>禁用</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name='roles'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>角色</FormLabel>
+                        {rolesLoading ? (
+                          <div className='text-muted-foreground text-sm'>
+                            角色列表加载中...
+                          </div>
+                        ) : (
+                          <div className='grid grid-cols-2 gap-2'>
+                            {(rolesData?.data ?? []).map((role) => (
+                              <label
+                                key={role.name}
+                                className='flex items-center space-x-2'
+                              >
+                                <Checkbox
+                                  checked={(field.value as string[]).includes(
+                                    role.name
+                                  )}
+                                  onCheckedChange={(checked) => {
+                                    const current = new Set(
+                                      field.value as string[]
+                                    )
+                                    if (checked) {
+                                      current.add(role.name)
+                                    } else {
+                                      current.delete(role.name)
+                                    }
+                                    field.onChange(Array.from(current))
+                                  }}
+                                />
+                                <span>{role.name}</span>
+                              </label>
+                            ))}
+                            {(!rolesData?.data ||
+                              rolesData.data.length === 0) && (
+                              <div className='text-muted-foreground text-sm'>
+                                暂无角色可选
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* 密码 - 仅新增时显示 */}
+                  {isCreateMode && (
+                    <FormField
+                      control={form.control}
+                      name='password'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>密码</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder='请输入密码'
+                              type='password'
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </form>
+              </Form>
+            </div>
+
+            <SheetFooter>
+              <div className='flex w-full justify-end space-x-2'>
+                <Button
+                  type='button'
+                  variant='outline'
+                  onClick={() => setIsUserSheetOpen(false)}
+                >
+                  取消
+                </Button>
+                <Button
+                  type='submit'
+                  form='user-form'
+                  disabled={
+                    isCreateMode
+                      ? createUserMutation.isPending
+                      : updateUserMutation.isPending
+                  }
+                >
+                  {isCreateMode
+                    ? createUserMutation.isPending
+                      ? '创建中...'
+                      : '创建用户'
+                    : updateUserMutation.isPending
+                      ? '保存中...'
+                      : '保存更改'}
+                </Button>
+              </div>
+            </SheetFooter>
+          </>
+        )}
       </SheetContent>
     </Sheet>
   )

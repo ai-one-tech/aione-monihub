@@ -1,6 +1,6 @@
 import z from 'zod'
-import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import { createFileRoute } from '@tanstack/react-router'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import { Projects } from '@/features/projects'
 
 const projectsSearchSchema = z.object({

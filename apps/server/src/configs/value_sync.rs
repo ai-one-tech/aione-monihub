@@ -18,9 +18,15 @@ pub async fn sync_config_values(
     let mut incoming_codes = std::collections::HashSet::new();
 
     for item in items {
-        let obj = item.as_object().ok_or_else(|| ApiError::ValidationError("array 项必须是对象".to_string()))?;
-        let code = obj.get("code").and_then(|v| v.as_str()).ok_or_else(|| ApiError::ValidationError("每个项必须包含字符串字段 code".to_string()))?;
-        let name = obj.get("name").and_then(|v| v.as_str()).ok_or_else(|| ApiError::ValidationError("每个项必须包含字符串字段 name".to_string()))?;
+        let obj = item
+            .as_object()
+            .ok_or_else(|| ApiError::ValidationError("array 项必须是对象".to_string()))?;
+        let code = obj.get("code").and_then(|v| v.as_str()).ok_or_else(|| {
+            ApiError::ValidationError("每个项必须包含字符串字段 code".to_string())
+        })?;
+        let name = obj.get("name").and_then(|v| v.as_str()).ok_or_else(|| {
+            ApiError::ValidationError("每个项必须包含字符串字段 name".to_string())
+        })?;
         incoming_codes.insert(code.to_string());
 
         // 查找当前有效记录

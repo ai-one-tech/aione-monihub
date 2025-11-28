@@ -11,7 +11,8 @@ import {
 import { useSystemUsersContext } from './system-users-provider'
 
 export function SystemUsersDeleteDialog() {
-  const { isDeleteDialogOpen, setIsDeleteDialogOpen, selectedUserId } = useSystemUsersContext()
+  const { isDeleteDialogOpen, setIsDeleteDialogOpen, selectedUserId } =
+    useSystemUsersContext()
   const [isLoading, setIsLoading] = useState(false)
 
   const handleDelete = async () => {
@@ -19,10 +20,10 @@ export function SystemUsersDeleteDialog() {
     try {
       // TODO: 实现删除用户的API调用
       console.log('删除用户:', selectedUserId)
-      
+
       // 模拟API调用
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
       setIsDeleteDialogOpen(false)
     } catch (error) {
       console.error('删除用户失败:', error)

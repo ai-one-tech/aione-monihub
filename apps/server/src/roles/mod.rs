@@ -4,8 +4,8 @@ pub mod routes;
 
 use crate::entities::{roles, Roles};
 use crate::shared::generate_snowflake_id;
-use sea_orm::{ActiveValue, DatabaseConnection};
 use chrono::Utc;
+use sea_orm::{ActiveValue, DatabaseConnection};
 
 pub struct RolesModule {
     database: DatabaseConnection,
@@ -23,12 +23,12 @@ impl RolesModule {
         created_by: String,
     ) -> Result<roles::Model, sea_orm::DbErr> {
         use sea_orm::ActiveModelTrait;
-        
+
         // 生成 Snowflake ID
         let id = generate_snowflake_id();
-        
+
         let now = Utc::now().into();
-        
+
         let role_data = roles::ActiveModel {
             id: ActiveValue::Set(id),
             name: ActiveValue::Set(name),
@@ -40,7 +40,7 @@ impl RolesModule {
             created_at: ActiveValue::Set(now),
             updated_at: ActiveValue::Set(now),
         };
-        
+
         role_data.insert(&self.database).await
     }
 

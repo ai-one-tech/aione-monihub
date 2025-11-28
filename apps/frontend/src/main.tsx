@@ -1,7 +1,6 @@
 import { StrictMode, useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import { AxiosError } from 'axios'
-import { ApiError } from '@/lib/api-client'
 import {
   QueryCache,
   QueryClient,
@@ -10,18 +9,24 @@ import {
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
+import { ApiError } from '@/lib/api-client'
 import { handleServerError } from '@/lib/handle-server-error'
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
+import {
+  NetworkErrorProvider,
+  useNetworkError,
+} from './context/network-error-context'
 import { ThemeProvider } from './context/theme-provider'
-import { NetworkErrorProvider, useNetworkError } from './context/network-error-context'
 // Generated Routes
 import { routeTree } from './routeTree.gen'
 // Styles
 import './styles/index.css'
 
 // 创建一个全局的网络错误处理函数
-let globalShowNetworkError: ((error: Error, retryFn: () => Promise<any>) => void) | null = null
+let globalShowNetworkError:
+  | ((error: Error, retryFn: () => Promise<any>) => void)
+  | null = null
 let globalIsDialogOpen: boolean | null = null
 
 const queryClient = new QueryClient({
@@ -67,7 +72,10 @@ const queryClient = new QueryClient({
       // 仅在500错误时显示全局错误弹窗，其余错误使用toast
       if (shouldShowErrorDialog(error) && globalShowNetworkError) {
         // 获取失败的查询信息
-        const queryInfo = queryClient.getQueryCache().getAll().find(q => q.state.error === error)
+        const queryInfo = queryClient
+          .getQueryCache()
+          .getAll()
+          .find((q) => q.state.error === error)
         if (queryInfo) {
           globalShowNetworkError(error as Error, async () => {
             // 重试查询
@@ -76,14 +84,20 @@ const queryClient = new QueryClient({
         }
       } else if (!globalIsDialogOpen) {
         // 401处理：清理认证并通知显示登录弹窗
-        if (error instanceof AxiosError ? error.response?.status === 401 : (error as any)?.status === 401) {
+        if (
+          error instanceof AxiosError
+            ? error.response?.status === 401
+            : (error as any)?.status === 401
+        ) {
           try {
             const store = useAuthStore.getState()
             store.auth.reset()
           } catch {}
-          window.dispatchEvent(new CustomEvent('api-auth-error', {
-            detail: { status: 401, message: '身份验证已过期，请重新登录' }
-          }))
+          window.dispatchEvent(
+            new CustomEvent('api-auth-error', {
+              detail: { status: 401, message: '身份验证已过期，请重新登录' },
+            })
+          )
         }
         handleServerError(error)
       }
@@ -120,12 +134,12 @@ declare module '@tanstack/react-router' {
 // 全局网络错误处理组件
 function GlobalNetworkErrorHandler() {
   const { showError, isDialogOpen } = useNetworkError()
-  
+
   useEffect(() => {
     globalShowNetworkError = showError
     globalIsDialogOpen = isDialogOpen
   }, [showError, isDialogOpen])
-  
+
   return null
 }
 

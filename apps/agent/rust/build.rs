@@ -17,7 +17,11 @@ fn main() {
 
     let primary_dir = base_target.join(&profile);
     if let Err(e) = fs::create_dir_all(&primary_dir) {
-        println!("cargo:warning=创建目录失败: {} - {}", primary_dir.display(), e);
+        println!(
+            "cargo:warning=创建目录失败: {} - {}",
+            primary_dir.display(),
+            e
+        );
     }
     let primary_dst = primary_dir.join("config.yaml");
     match fs::copy(&src, &primary_dst) {
@@ -28,7 +32,11 @@ fn main() {
     if let Ok(triple) = env::var("TARGET") {
         let triple_dir = base_target.join(&triple).join(&profile);
         if let Err(e) = fs::create_dir_all(&triple_dir) {
-            println!("cargo:warning=创建目录失败: {} - {}", triple_dir.display(), e);
+            println!(
+                "cargo:warning=创建目录失败: {} - {}",
+                triple_dir.display(),
+                e
+            );
         }
         let triple_dst = triple_dir.join("config.yaml");
         match fs::copy(&src, &triple_dst) {

@@ -11,11 +11,17 @@ pub fn user_routes(cfg: &mut web::ServiceConfig) {
             "/users/{id}/disable",
             web::post().to(handlers::disable_user),
         )
+        .route("/users/{id}/enable", web::post().to(handlers::enable_user))
         .route(
-            "/users/{id}/enable",
-            web::post().to(handlers::enable_user),
+            "/users/{user_id}/roles",
+            web::get().to(handlers::get_user_roles),
         )
-        .route("/users/{user_id}/roles", web::get().to(handlers::get_user_roles))
-        .route("/users/{user_id}/roles", web::post().to(handlers::assign_user_roles))
-        .route("/users/{user_id}/roles/{role_id}", web::delete().to(handlers::remove_user_role));
+        .route(
+            "/users/{user_id}/roles",
+            web::post().to(handlers::assign_user_roles),
+        )
+        .route(
+            "/users/{user_id}/roles/{role_id}",
+            web::delete().to(handlers::remove_user_role),
+        );
 }

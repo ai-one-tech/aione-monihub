@@ -7,4 +7,5 @@
 -- -------------------------------------------------------------------
 -- 1. 更新 instance_task_records 表的 status 字段注释
 -- -------------------------------------------------------------------
-COMMENT ON COLUMN "public"."instance_task_records"."status" IS '执行状态：pending, dispatched, running, success, failed, timeout, cancelled';
+COMMENT
+ON COLUMN "public"."instance_task_records"."status" IS '执行状态：pending, dispatched, running, success, failed, timeout, cancelled';

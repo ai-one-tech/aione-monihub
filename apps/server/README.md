@@ -9,12 +9,14 @@
 确保您的系统已安装 PostgreSQL 数据库服务器。
 
 **macOS (使用 Homebrew):**
+
 ```bash
 brew install postgresql
 brew services start postgresql
 ```
 
 **Ubuntu/Debian:**
+
 ```bash
 sudo apt update
 sudo apt install postgresql postgresql-contrib
@@ -38,11 +40,13 @@ GRANT ALL PRIVILEGES ON DATABASE aione_monihub TO aione_user;
 ### 3. 配置环境变量
 
 复制环境变量示例文件：
+
 ```bash
-cp .env.example .env
+cp .env.development .env
 ```
 
 编辑 `.env` 文件，设置正确的数据库连接信息：
+
 ```env
 DATABASE_URL=postgresql://postgres:password@localhost:5432/aione_monihub
 ```
@@ -50,6 +54,7 @@ DATABASE_URL=postgresql://postgres:password@localhost:5432/aione_monihub
 ### 4. 初始化数据库
 
 运行数据库初始化脚本：
+
 ```bash
 # 使用默认配置
 ./scripts/init_db.sh

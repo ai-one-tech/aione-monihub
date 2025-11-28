@@ -1,3 +1,4 @@
+use crate::utils::http_util;
 /// 任务拉取与执行服务
 ///
 /// 使用长轮询从服务端拉取任务（支持 wait/timeout），并发执行各类任务，
@@ -13,7 +14,6 @@ use chrono::Utc;
 use reqwest::Client;
 use tokio::sync::Semaphore;
 use tokio::time::{sleep, Duration};
-use crate::utils::http_util;
 
 pub async fn start(state: AppState) {
     let sem = std::sync::Arc::new(Semaphore::new(state.cfg.task.max_concurrent_tasks));
@@ -53,8 +53,7 @@ pub async fn start(state: AppState) {
                                 });
                             }
                         }
-                        Err(e) => {
-                        }
+                        Err(e) => {}
                     }
                 }
                 Err(e) => {
@@ -76,7 +75,10 @@ async fn handle_task(state: AppState, item: TaskDispatchItem) {
         TaskType::CustomCommand => "custom_command",
         TaskType::HttpRequest => "http_request",
     };
-    agent_logger::info(&format!("开始执行任务 record_id={} type={}", item.record_id, task_type_str));
+    agent_logger::info(&format!(
+        "开始执行任务 record_id={} type={}",
+        item.record_id, task_type_str
+    ));
     let status: TaskStatus;
     let mut code = 0;
     let mut message = String::new();
@@ -109,7 +111,10 @@ async fn handle_task(state: AppState, item: TaskDispatchItem) {
             code = -1;
             err = Some(e.to_string());
             message = String::from("failed");
-            agent_logger::error(&format!("任务失败 record_id={} error={}", item.record_id, e));
+            agent_logger::error(&format!(
+                "任务失败 record_id={} error={}",
+                item.record_id, e
+            ));
         }
     }
     let end = Utc::now();

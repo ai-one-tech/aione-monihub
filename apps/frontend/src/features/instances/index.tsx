@@ -1,33 +1,33 @@
 import { getRouteApi } from '@tanstack/react-router'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import { Plus } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { Button } from '@/components/ui/button'
-import { InstancesProvider } from './components/instances-provider'
-import { InstancesTable } from './components/instances-data-table'
-import { InstancesEditSheet } from './components/instances-edit-sheet'
-import { InstancesDeleteDialog } from './components/instances-delete-dialog'
-import { InstancesEnableDisableDialog } from './components/instances-enable-disable-dialog'
-import { InstanceReportDrawer } from './components/instances-report-drawer'
 import { InstancesConfigDrawer } from './components/instances-config-drawer'
-import { useInstancesQuery } from './hooks/use-instances-query'
+import { InstancesTable } from './components/instances-data-table'
+import { InstancesDeleteDialog } from './components/instances-delete-dialog'
+import { InstancesEditSheet } from './components/instances-edit-sheet'
+import { InstancesEnableDisableDialog } from './components/instances-enable-disable-dialog'
+import { InstancesProvider } from './components/instances-provider'
 import { useInstancesProvider } from './components/instances-provider'
-import { Skeleton } from '@/components/ui/skeleton'
-import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AlertCircle } from 'lucide-react'
+import { InstanceReportDrawer } from './components/instances-report-drawer'
+import { useInstancesQuery } from './hooks/use-instances-query'
 
 const route = getRouteApi('/_authenticated/instances')
 
 function InstancesContent() {
   const search = route.useSearch()
   const navigate = route.useNavigate()
-  const { 
-    setIsSheetOpen, 
-    setSheetMode, 
+  const {
+    setIsSheetOpen,
+    setSheetMode,
     setSelectedInstanceId,
     reportDrawerOpen,
     setReportDrawerOpen,
@@ -39,13 +39,17 @@ function InstancesContent() {
     page: search.page ?? DEFAULT_PAGE,
     limit: search.pageSize ?? DEFAULT_PAGE_SIZE,
     search: search.search || undefined,
-    status: (search.status) ? search.status as 'active' | 'disabled' | 'offline' : undefined,
-    online_status: (search.online_status) ? search.online_status as 'online' | 'offline' : undefined,
+    status: search.status
+      ? (search.status as 'active' | 'disabled' | 'offline')
+      : undefined,
+    online_status: search.online_status
+      ? (search.online_status as 'online' | 'offline')
+      : undefined,
     application_id: search.application_id || undefined,
     ip_address: search.ip_address || undefined,
     public_ip: search.public_ip || undefined,
     hostname: search.hostname || undefined,
-    os_type: (search.os_type) ? search.os_type : undefined,
+    os_type: search.os_type ? search.os_type : undefined,
   }
 
   const { data, isLoading, error, refetch } = useInstancesQuery(apiParams)
@@ -62,12 +66,10 @@ function InstancesContent() {
   return (
     <>
       <Main fixed className='flex flex-col'>
-        <div className='mb-2 flex flex-wrap items-center justify-between space-y-2 flex-shrink-0'>
+        <div className='mb-2 flex flex-shrink-0 flex-wrap items-center justify-between space-y-2'>
           <div>
             <h2 className='text-2xl font-bold tracking-tight'>实例管理</h2>
-            <p className='text-muted-foreground'>
-              管理系统中的所有实例信息
-            </p>
+            <p className='text-muted-foreground'>管理系统中的所有实例信息</p>
           </div>
           {/* 移除创建实例按钮 */}
           {/* <Button onClick={handleCreateInstance} size='sm'>
@@ -75,7 +77,7 @@ function InstancesContent() {
             新增实例
           </Button> */}
         </div>
-        <div className='flex-1 min-h-0 min-w-0 overflow-hidden py-1 lg:flex-row lg:space-y-0 lg:space-x-12'>
+        <div className='min-h-0 min-w-0 flex-1 overflow-hidden py-1 lg:flex-row lg:space-y-0 lg:space-x-12'>
           {isLoading ? (
             <div className='space-y-4'>
               <Skeleton className='h-10 w-full' />
@@ -87,20 +89,21 @@ function InstancesContent() {
               <AlertCircle className='h-4 w-4' />
               <AlertDescription>
                 加载实例数据失败：{error.message}
-                <button 
-                  onClick={() => refetch()} 
-                  className='ml-2 underline'
-                >
+                <button onClick={() => refetch()} className='ml-2 underline'>
                   重试
                 </button>
               </AlertDescription>
             </Alert>
           ) : (
-            <InstancesTable 
+            <InstancesTable
               data={data?.data || []}
-              totalPages={Math.ceil((data?.pagination.total || 0) / (data?.pagination.limit || (search.pageSize ?? DEFAULT_PAGE_SIZE)))}
-              search={search} 
-              navigate={navigate} 
+              totalPages={Math.ceil(
+                (data?.pagination.total || 0) /
+                  (data?.pagination.limit ||
+                    (search.pageSize ?? DEFAULT_PAGE_SIZE))
+              )}
+              search={search}
+              navigate={navigate}
               onRefresh={refetch}
             />
           )}
@@ -110,7 +113,7 @@ function InstancesContent() {
       <InstancesEditSheet />
       <InstancesDeleteDialog />
       <InstancesEnableDisableDialog />
-      <InstanceReportDrawer 
+      <InstanceReportDrawer
         instance={reportInstance}
         open={reportDrawerOpen}
         onOpenChange={setReportDrawerOpen}

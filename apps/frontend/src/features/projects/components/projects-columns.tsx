@@ -1,4 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table'
+import { formatDate } from '@/lib/datetime'
 import { cn } from '@/lib/utils'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
@@ -40,7 +41,9 @@ export const projectsColumns: ColumnDef<ProjectResponse>[] = [
       <DataTableColumnHeader column={column} title='项目ID' />
     ),
     cell: ({ row }) => (
-      <LongText className='max-w-24 ps-3 font-mono text-xs'>{row.getValue('id')}</LongText>
+      <LongText className='max-w-24 ps-3 font-mono text-xs'>
+        {row.getValue('id')}
+      </LongText>
     ),
     meta: {
       className: cn(
@@ -56,7 +59,9 @@ export const projectsColumns: ColumnDef<ProjectResponse>[] = [
       <DataTableColumnHeader column={column} title='项目名称' />
     ),
     cell: ({ row }) => (
-      <LongText className='max-w-36 font-medium'>{row.getValue('name')}</LongText>
+      <LongText className='max-w-36 font-medium'>
+        {row.getValue('name')}
+      </LongText>
     ),
   },
   {
@@ -65,7 +70,9 @@ export const projectsColumns: ColumnDef<ProjectResponse>[] = [
       <DataTableColumnHeader column={column} title='项目代码' />
     ),
     cell: ({ row }) => (
-      <div className='w-fit text-nowrap font-mono text-sm'>{row.getValue('code')}</div>
+      <div className='w-fit font-mono text-sm text-nowrap'>
+        {row.getValue('code')}
+      </div>
     ),
   },
   {
@@ -76,7 +83,7 @@ export const projectsColumns: ColumnDef<ProjectResponse>[] = [
     cell: ({ row }) => {
       const description = row.getValue('description') as string
       return (
-        <LongText className='max-w-[200px] text-muted-foreground'>
+        <LongText className='text-muted-foreground max-w-[200px]'>
           {description || '暂无描述'}
         </LongText>
       )
@@ -92,13 +99,17 @@ export const projectsColumns: ColumnDef<ProjectResponse>[] = [
       return (
         <div className='w-fit'>
           <span
-            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
               status === 'active'
                 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                 : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
             }`}
           >
-            {PROJECT_STATUS_LABELS[status as keyof typeof PROJECT_STATUS_LABELS]}
+            {
+              PROJECT_STATUS_LABELS[
+                status as keyof typeof PROJECT_STATUS_LABELS
+              ]
+            }
           </span>
         </div>
       )
@@ -116,7 +127,7 @@ export const projectsColumns: ColumnDef<ProjectResponse>[] = [
       <DataTableColumnHeader column={column} title='创建时间' />
     ),
     cell: ({ row }) => (
-      <div className='w-fit text-nowrap text-sm text-muted-foreground'>
+      <div className='text-muted-foreground w-fit text-sm text-nowrap'>
         {formatDate(row.getValue('created_at'))}
       </div>
     ),
@@ -127,7 +138,7 @@ export const projectsColumns: ColumnDef<ProjectResponse>[] = [
       <DataTableColumnHeader column={column} title='更新时间' />
     ),
     cell: ({ row }) => (
-      <div className='w-fit text-nowrap text-sm text-muted-foreground'>
+      <div className='text-muted-foreground w-fit text-sm text-nowrap'>
         {formatDate(row.getValue('updated_at'))}
       </div>
     ),
@@ -140,4 +151,3 @@ export const projectsColumns: ColumnDef<ProjectResponse>[] = [
     cell: ProjectsDataTableRowActions,
   },
 ]
-import { formatDate } from '@/lib/datetime'

@@ -9,8 +9,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  useDeleteInstance,
+  useInstanceQuery,
+} from '../hooks/use-instances-query'
 import { useInstancesProvider } from './instances-provider'
-import { useDeleteInstance, useInstanceQuery } from '../hooks/use-instances-query'
 
 export function InstancesDeleteDialog() {
   const {
@@ -43,11 +46,14 @@ export function InstancesDeleteDialog() {
   return (
     <>
       {/* 删除确认对话框 */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2'>
-              <AlertTriangle className='h-5 w-5 text-destructive' />
+              <AlertTriangle className='text-destructive h-5 w-5' />
               确认删除实例
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -59,9 +65,7 @@ export function InstancesDeleteDialog() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancel}>
-              取消
-            </AlertDialogCancel>
+            <AlertDialogCancel onClick={handleCancel}>取消</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               className='bg-destructive text-destructive-foreground hover:bg-destructive/90'

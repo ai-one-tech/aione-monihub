@@ -1,10 +1,13 @@
 import { type ColumnDef } from '@tanstack/react-table'
-import { cn } from '@/lib/utils'
 import { formatDateTime } from '@/lib/datetime'
+import { cn } from '@/lib/utils'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
-import { type InstanceResponse, INSTANCE_STATUS_LABELS } from '../data/api-schema'
+import {
+  type InstanceResponse,
+  INSTANCE_STATUS_LABELS,
+} from '../data/api-schema'
 import { InstancesDataTableRowActions } from './instances-data-table-row-actions'
 
 export const instancesColumns: ColumnDef<InstanceResponse>[] = [
@@ -22,7 +25,9 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
       />
     ),
     meta: {
-      className: cn('sticky md:table-cell start-0 z-10 bg-background rounded-tl-[inherit]'),
+      className: cn(
+        'sticky md:table-cell start-0 z-10 bg-background rounded-tl-[inherit]'
+      ),
     },
     cell: ({ row }) => (
       <Checkbox
@@ -41,7 +46,9 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
       <DataTableColumnHeader column={column} title='实例ID' />
     ),
     cell: ({ row }) => (
-      <LongText className='max-w-24 ps-3 font-mono text-xs'>{row.getValue('id')}</LongText>
+      <LongText className='max-w-24 ps-3 font-mono text-xs'>
+        {row.getValue('id')}
+      </LongText>
     ),
     meta: {
       className: cn(
@@ -57,7 +64,9 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
       <DataTableColumnHeader column={column} title='主机名' />
     ),
     cell: ({ row }) => (
-      <LongText className='w-fit text-nowrap font-mono text-sm'>{row.getValue('hostname')}</LongText>
+      <LongText className='w-fit font-mono text-sm text-nowrap'>
+        {row.getValue('hostname')}
+      </LongText>
     ),
   },
   {
@@ -66,7 +75,9 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
       <DataTableColumnHeader column={column} title='内网IP' />
     ),
     cell: ({ row }) => (
-      <LongText className='max-w-24 font-mono text-sm'>{row.getValue('ip_address')}</LongText>
+      <LongText className='max-w-24 font-mono text-sm'>
+        {row.getValue('ip_address')}
+      </LongText>
     ),
   },
   {
@@ -77,7 +88,7 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
     cell: ({ row }) => {
       const publicIp = row.getValue('public_ip') as string | undefined
       return (
-        <LongText className='max-w-24 text-nowrap font-mono text-sm text-muted-foreground'>
+        <LongText className='text-muted-foreground max-w-24 font-mono text-sm text-nowrap'>
           {publicIp || '-'}
         </LongText>
       )
@@ -91,7 +102,7 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
     cell: ({ row }) => {
       const macAddress = row.getValue('mac_address') as string | undefined
       return (
-        <LongText className='max-w-24 font-mono text-xs text-muted-foreground'>
+        <LongText className='text-muted-foreground max-w-24 font-mono text-xs'>
           {macAddress || '-'}
         </LongText>
       )
@@ -105,7 +116,7 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
     cell: ({ row }) => {
       const osType = row.getValue('os_type') as string | undefined
       return (
-        <div className='w-fit text-nowrap text-sm text-muted-foreground'>
+        <div className='text-muted-foreground w-fit text-sm text-nowrap'>
           {osType || '-'}
         </div>
       )
@@ -119,18 +130,24 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
     cell: ({ row }) => {
       const status = row.getValue('status') as string
       const statusConfig = {
-        active: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+        active:
+          'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
         disabled: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-        offline: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+        offline:
+          'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
       }
       return (
         <div className='w-fit'>
           <span
-            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
               statusConfig[status as keyof typeof statusConfig]
             }`}
           >
-            {INSTANCE_STATUS_LABELS[status as keyof typeof INSTANCE_STATUS_LABELS]}
+            {
+              INSTANCE_STATUS_LABELS[
+                status as keyof typeof INSTANCE_STATUS_LABELS
+              ]
+            }
           </span>
         </div>
       )
@@ -150,8 +167,10 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
     cell: ({ row }) => {
       const onlineStatus = row.getValue('online_status') as string
       const statusConfig = {
-        online: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-        offline: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+        online:
+          'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+        offline:
+          'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
       }
       const statusLabels = {
         online: '在线',
@@ -160,7 +179,7 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
       return (
         <div className='w-fit'>
           <span
-            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
               statusConfig[onlineStatus as keyof typeof statusConfig]
             }`}
           >
@@ -182,7 +201,7 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
     cell: ({ row }) => {
       const reportCount = row.getValue('report_count') as number | undefined
       return (
-        <div className='w-fit text-nowrap text-sm text-muted-foreground'>
+        <div className='text-muted-foreground w-fit text-sm text-nowrap'>
           {reportCount || 0}
         </div>
       )
@@ -195,9 +214,10 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
     ),
     cell: ({ row }) => {
       const lastReportAt = row.getValue('last_report_at') as string | undefined
-      if (!lastReportAt) return <div className='text-sm text-muted-foreground'>-</div>
+      if (!lastReportAt)
+        return <div className='text-muted-foreground text-sm'>-</div>
       return (
-        <div className='w-fit text-nowrap text-sm text-muted-foreground'>
+        <div className='text-muted-foreground w-fit text-sm text-nowrap'>
           {formatDateTime(lastReportAt)}
         </div>
       )
@@ -240,7 +260,9 @@ export const instancesColumns: ColumnDef<InstanceResponse>[] = [
     ),
     cell: InstancesDataTableRowActions,
     meta: {
-      className: cn('sticky end-0 z-20 bg-background rounded-tr-[inherit] min-w-[140px]'),
+      className: cn(
+        'sticky end-0 z-20 bg-background rounded-tr-[inherit] min-w-[140px]'
+      ),
     },
     enableHiding: false,
   },

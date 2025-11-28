@@ -1,9 +1,4 @@
-import {
-  Shield,
-  UserCog,
-  Users,
-  Wrench,
-} from 'lucide-react'
+import { Shield, UserCog, Users, Wrench } from 'lucide-react'
 
 export const systemRoles = [
   {

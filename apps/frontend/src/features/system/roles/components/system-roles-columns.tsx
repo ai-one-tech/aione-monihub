@@ -1,13 +1,13 @@
+import { formatDistanceToNow } from 'date-fns'
 import { type ColumnDef } from '@tanstack/react-table'
+import { zhCN } from 'date-fns/locale'
+import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { DataTableColumnHeader } from '@/components/data-table/column-header'
-import { SystemRolesDataTableRowActions } from './system-roles-data-table-row-actions'
-import { type ApiRoleResponse } from '../data/api-schema'
-import { formatDistanceToNow } from 'date-fns'
-import { zhCN } from 'date-fns/locale'
 import { Checkbox } from '@/components/ui/checkbox'
-import { cn } from '@/lib/utils'
+import { DataTableColumnHeader } from '@/components/data-table/column-header'
+import { type ApiRoleResponse } from '../data/api-schema'
+import { SystemRolesDataTableRowActions } from './system-roles-data-table-row-actions'
 
 export const systemRolesColumns: ColumnDef<ApiRoleResponse>[] = [
   // 选择复选框列（支持当前页全选/取消全选）
@@ -61,7 +61,7 @@ export const systemRolesColumns: ColumnDef<ApiRoleResponse>[] = [
     cell: ({ row }) => {
       return (
         <div className='flex space-x-2'>
-          <span className='max-w-[300px] truncate text-muted-foreground'>
+          <span className='text-muted-foreground max-w-[300px] truncate'>
             {row.getValue('description')}
           </span>
         </div>
@@ -75,11 +75,7 @@ export const systemRolesColumns: ColumnDef<ApiRoleResponse>[] = [
     ),
     cell: ({ row }) => {
       const permissions = row.getValue('permissions') as string[]
-      return (
-        <Badge variant='secondary'>
-          {permissions.length} 个权限
-        </Badge>
-      )
+      return <Badge variant='secondary'>{permissions.length} 个权限</Badge>
     },
     // 支持根据数量区间进行筛选
     filterFn: (row, id, value) => {
@@ -115,7 +111,7 @@ export const systemRolesColumns: ColumnDef<ApiRoleResponse>[] = [
       const createdAt = row.getValue('created_at') as string
       return (
         <div className='flex w-[100px] items-center'>
-          <span className='text-sm text-muted-foreground'>
+          <span className='text-muted-foreground text-sm'>
             {formatDistanceToNow(new Date(createdAt), {
               addSuffix: true,
               locale: zhCN,
@@ -134,7 +130,7 @@ export const systemRolesColumns: ColumnDef<ApiRoleResponse>[] = [
       const updatedAt = row.getValue('updated_at') as string
       return (
         <div className='flex w-[100px] items-center'>
-          <span className='text-sm text-muted-foreground'>
+          <span className='text-muted-foreground text-sm'>
             {formatDistanceToNow(new Date(updatedAt), {
               addSuffix: true,
               locale: zhCN,

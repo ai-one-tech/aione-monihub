@@ -1,7 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { applicationsApi } from '../api/applications-api'
-import { type TaskCreateRequest, type GetTasksParams, type GetTaskRecordsParams } from '../data/api-schema'
 import { toast } from 'sonner'
+import { applicationsApi } from '../api/applications-api'
+import {
+  type TaskCreateRequest,
+  type GetTasksParams,
+  type GetTaskRecordsParams,
+} from '../data/api-schema'
 
 /**
  * 创建任务 Hook
@@ -53,15 +57,18 @@ export function useTaskResults(taskId: string) {
 /**
  * 获取任务执行记录 Hook
  */
-export function useTaskRecords(taskId: string, params: GetTaskRecordsParams = {}) {
+export function useTaskRecords(
+  taskId: string,
+  params: GetTaskRecordsParams = {}
+) {
   return useQuery({
     queryKey: ['task-records', taskId, params],
     queryFn: () => applicationsApi.getTaskRecords(taskId, params),
     enabled: !!taskId,
     refetchInterval: (data) => {
       // 如果有任务正在执行，每3秒刷新一次
-      const hasRunning = data?.data.some(
-        (record) => ['pending', 'dispatched', 'running'].includes(record.status)
+      const hasRunning = data?.data.some((record) =>
+        ['pending', 'dispatched', 'running'].includes(record.status)
       )
       return hasRunning ? 3000 : false
     },

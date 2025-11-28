@@ -1,7 +1,7 @@
+use crate::shared::enums;
 use crate::shared::enums::{AgentType, OsType};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
-use crate::shared::enums;
 // ===================================================================
 // 实例信息上报请求/响应模型
 // ===================================================================
@@ -239,4 +239,3 @@ impl InstanceRecordResponse {
         }
     }
 }
-

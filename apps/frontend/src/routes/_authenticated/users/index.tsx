@@ -1,6 +1,6 @@
 import z from 'zod'
-import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import { createFileRoute } from '@tanstack/react-router'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import { Users } from '@/features/users'
 
 const usersSearchSchema = z.object({
@@ -18,10 +18,7 @@ const usersSearchSchema = z.object({
     )
     .optional()
     .catch([]),
-  role: z
-    .array(z.string())
-    .optional()
-    .catch([]),
+  role: z.array(z.string()).optional().catch([]),
   // Per-column text filter (example for username)
   username: z.string().optional().catch(''),
 })

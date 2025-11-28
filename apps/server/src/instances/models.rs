@@ -1,8 +1,8 @@
+use crate::shared::enums::{AgentType, OnlineStatus, OsType, Status};
+use crate::shared::snowflake::generate_snowflake_id;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
-use crate::shared::snowflake::generate_snowflake_id;
-use crate::shared::enums::{Status, OsType, OnlineStatus, AgentType};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Instance {
@@ -168,10 +168,14 @@ impl InstanceResponse {
 }
 
 impl InstanceCreateRequest {
-    pub fn to_active_model(&self, id: String, user_id: String) -> crate::entities::instances::ActiveModel {
-        use sea_orm::ActiveValue::Set;
+    pub fn to_active_model(
+        &self,
+        id: String,
+        user_id: String,
+    ) -> crate::entities::instances::ActiveModel {
         use chrono::Utc;
-        
+        use sea_orm::ActiveValue::Set;
+
         crate::entities::instances::ActiveModel {
             id: Set(id),
             agent_instance_id: Set(self.agent_instance_id.clone()),

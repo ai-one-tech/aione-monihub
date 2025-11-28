@@ -9,7 +9,10 @@ export type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline'
  * 权限操作类型映射
  */
 // 与后端枚举保持一致（snake_case）
-export const ACTION_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
+export const ACTION_MAP: Record<
+  string,
+  { label: string; variant: BadgeVariant }
+> = {
   manage: { label: '管理', variant: 'secondary' },
   create: { label: '创建', variant: 'secondary' },
   read: { label: '读取', variant: 'secondary' },
@@ -22,7 +25,10 @@ export const ACTION_MAP: Record<string, { label: string; variant: BadgeVariant }
 /**
  * 权限类型映射
  */
-export const PERMISSION_TYPE_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
+export const PERMISSION_TYPE_MAP: Record<
+  string,
+  { label: string; variant: BadgeVariant }
+> = {
   menu: { label: '菜单', variant: 'default' },
   page: { label: '页面', variant: 'secondary' },
   action: { label: '操作', variant: 'secondary' },
@@ -39,5 +45,7 @@ export function getActionInfo(action: string) {
  * 获取权限类型的标签和样式
  */
 export function getPermissionTypeInfo(type: string) {
-  return PERMISSION_TYPE_MAP[type] || { label: type, variant: 'outline' as const }
+  return (
+    PERMISSION_TYPE_MAP[type] || { label: type, variant: 'outline' as const }
+  )
 }

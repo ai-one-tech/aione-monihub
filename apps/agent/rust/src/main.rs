@@ -7,10 +7,11 @@
 use clap::Parser;
 use tokio::signal;
 
+
+mod agent_logger;
 mod config;
 mod executor;
 mod handlers;
-mod agent_logger;
 mod log_store;
 mod models;
 mod services;
@@ -50,7 +51,10 @@ async fn main() {
     let state = services::AppState::new(cfg.clone());
     agent_logger::set_state(state.clone());
     agent_logger::info("Agent 启动");
-    agent_logger::info(&format!("配置加载完成 server={} debug={}", cfg.server_url, cfg.debug));
+    agent_logger::info(&format!(
+        "配置加载完成 server={} debug={}",
+        cfg.server_url, cfg.debug
+    ));
     // 开启实例信息上报服务（异步定时任务）
     services::report::start(state.clone()).await;
 

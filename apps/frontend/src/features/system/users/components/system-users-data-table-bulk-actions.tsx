@@ -26,7 +26,7 @@ export function SystemUsersDataTableBulkActions({
 
   return (
     <div className='flex items-center space-x-2'>
-      <span className='text-sm text-muted-foreground'>
+      <span className='text-muted-foreground text-sm'>
         已选择 {selectedCount} 个用户
       </span>
       <DropdownMenu>

@@ -1,19 +1,21 @@
-import { 
-  type GetInstancesParams, 
-  type InstanceListResponse, 
-  type InstanceDetailResponse, 
-  type UpdateInstanceRequest, 
+import { apiClient } from '@/lib/api-client'
+import {
+  type GetInstancesParams,
+  type InstanceListResponse,
+  type InstanceDetailResponse,
+  type UpdateInstanceRequest,
   type CreateInstanceRequest,
   type GetInstanceReportsParams,
-  type InstanceReportListResponse
+  type InstanceReportListResponse,
 } from '../data/api-schema'
-import { apiClient } from '@/lib/api-client'
 
 class InstancesApi {
   /**
    * 获取实例列表
    */
-  async getInstances(params: GetInstancesParams = {}): Promise<InstanceListResponse> {
+  async getInstances(
+    params: GetInstancesParams = {}
+  ): Promise<InstanceListResponse> {
     const searchParams = new URLSearchParams()
 
     if (params.page !== undefined) {
@@ -91,15 +93,23 @@ class InstancesApi {
    * 获取实例详情
    */
   async getInstanceById(instanceId: string): Promise<InstanceDetailResponse> {
-    const response = await apiClient.get<InstanceDetailResponse>(`/api/instances/${instanceId}`)
+    const response = await apiClient.get<InstanceDetailResponse>(
+      `/api/instances/${instanceId}`
+    )
     return response.data
   }
 
   /**
    * 更新实例配置
    */
-  async updateInstanceConfig(instanceId: string, payload: any): Promise<InstanceDetailResponse> {
-    const response = await apiClient.put<InstanceDetailResponse>(`/api/instances/${instanceId}/config`, { config: payload })
+  async updateInstanceConfig(
+    instanceId: string,
+    payload: any
+  ): Promise<InstanceDetailResponse> {
+    const response = await apiClient.put<InstanceDetailResponse>(
+      `/api/instances/${instanceId}/config`,
+      { config: payload }
+    )
     return response.data
   }
 
@@ -107,7 +117,10 @@ class InstancesApi {
    * 启用实例
    */
   async enableInstance(instanceId: string): Promise<InstanceDetailResponse> {
-    const response = await apiClient.post<InstanceDetailResponse>(`/api/instances/${instanceId}/enable`, {})
+    const response = await apiClient.post<InstanceDetailResponse>(
+      `/api/instances/${instanceId}/enable`,
+      {}
+    )
     return response.data
   }
 
@@ -115,7 +128,10 @@ class InstancesApi {
    * 禁用实例
    */
   async disableInstance(instanceId: string): Promise<InstanceDetailResponse> {
-    const response = await apiClient.post<InstanceDetailResponse>(`/api/instances/${instanceId}/disable`, {})
+    const response = await apiClient.post<InstanceDetailResponse>(
+      `/api/instances/${instanceId}/disable`,
+      {}
+    )
     return response.data
   }
 
@@ -123,14 +139,19 @@ class InstancesApi {
    * 获取实例监控数据
    */
   async getInstanceMonitoringData(instanceId: string): Promise<any> {
-    const response = await apiClient.get(`/api/instances/${instanceId}/monitoring`)
+    const response = await apiClient.get(
+      `/api/instances/${instanceId}/monitoring`
+    )
     return response.data
   }
 
   /**
    * 获取实例上报记录列表
    */
-  async getInstanceReports(instanceId: string, params: GetInstanceReportsParams = {}): Promise<InstanceReportListResponse> {
+  async getInstanceReports(
+    instanceId: string,
+    params: GetInstanceReportsParams = {}
+  ): Promise<InstanceReportListResponse> {
     const searchParams = new URLSearchParams()
 
     if (params.page !== undefined) {

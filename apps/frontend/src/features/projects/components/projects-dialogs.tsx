@@ -9,8 +9,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  useDeleteProjectMutation,
+  useProjectQuery,
+} from '../hooks/use-projects-query'
 import { useProjectsContext } from './projects-provider'
-import { useDeleteProjectMutation, useProjectQuery } from '../hooks/use-projects-query'
 
 export function ProjectsDialogs() {
   const {
@@ -47,7 +50,7 @@ export function ProjectsDialogs() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2'>
-              <AlertTriangle className='h-5 w-5 text-destructive' />
+              <AlertTriangle className='text-destructive h-5 w-5' />
               确认删除项目
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -59,9 +62,7 @@ export function ProjectsDialogs() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancel}>
-              取消
-            </AlertDialogCancel>
+            <AlertDialogCancel onClick={handleCancel}>取消</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               className='bg-destructive text-destructive-foreground hover:bg-destructive/90'

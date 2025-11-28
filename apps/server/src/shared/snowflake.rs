@@ -1,10 +1,10 @@
 use once_cell::sync::Lazy;
+use rand::Rng;
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
-use rand::Rng;
 
 /// Snowflake ID 生成器
-/// 
+///
 /// Snowflake ID 结构（64位）：
 /// - 1位符号位（固定为0）
 /// - 41位时间戳（毫秒级，从自定义纪元开始）
@@ -23,15 +23,13 @@ pub struct SnowflakeGenerator {
 
 impl SnowflakeGenerator {
     /// 创建新的 Snowflake 生成器
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `machine_id` - 机器ID（0-1023），如果为None则随机生成
     pub fn new(machine_id: Option<u64>) -> Self {
-        let machine_id = machine_id.unwrap_or_else(|| {
-            rand::thread_rng().gen_range(0..1024)
-        });
-        
+        let machine_id = machine_id.unwrap_or_else(|| rand::thread_rng().gen_range(0..1024));
+
         if machine_id > 1023 {
             panic!("Machine ID must be between 0 and 1023");
         }
@@ -60,7 +58,7 @@ impl SnowflakeGenerator {
         // 如果是同一毫秒内生成的ID，序列号递增
         if timestamp == self.last_timestamp {
             self.sequence = (self.sequence + 1) & 0xFFF; // 12位序列号掩码
-            
+
             // 如果序列号溢出，等待下一毫秒
             if self.sequence == 0 {
                 timestamp = self.wait_next_millis(self.last_timestamp)?;
@@ -75,7 +73,7 @@ impl SnowflakeGenerator {
         // 组装 Snowflake ID
         let id = ((timestamp - self.epoch) << 22) // 时间戳部分（41位）
             | (self.machine_id << 12)             // 机器ID部分（10位）
-            | self.sequence;                      // 序列号部分（12位）
+            | self.sequence; // 序列号部分（12位）
 
         Ok(id)
     }
@@ -119,7 +117,8 @@ impl SnowflakeGenerator {
 
     /// 从字符串解析 Snowflake ID
     pub fn from_string(id_str: &str) -> Result<u64, String> {
-        id_str.parse::<u64>()
+        id_str
+            .parse::<u64>()
             .map_err(|e| format!("Failed to parse snowflake ID: {}", e))
     }
 }
@@ -177,7 +176,7 @@ mod tests {
         let mut generator = SnowflakeGenerator::new(Some(1));
         let id1 = generator.next_id().unwrap();
         let id2 = generator.next_id().unwrap();
-        
+
         assert_ne!(id1, id2);
         assert!(id2 > id1);
     }
@@ -186,7 +185,7 @@ mod tests {
     fn test_id_uniqueness() {
         let mut generator = SnowflakeGenerator::new(Some(1));
         let mut ids = HashSet::new();
-        
+
         for _ in 0..1000 {
             let id = generator.next_id().unwrap();
             assert!(ids.insert(id), "Duplicate ID generated: {}", id);
@@ -197,7 +196,7 @@ mod tests {
     fn test_extract_components() {
         let mut generator = SnowflakeGenerator::new(Some(123));
         let id = generator.next_id().unwrap();
-        
+
         let machine_id = generator.extract_machine_id(id);
         assert_eq!(machine_id, 123);
     }
@@ -214,7 +213,7 @@ mod tests {
     fn test_global_generator() {
         let id1 = generate_snowflake_id();
         let id2 = generate_snowflake_id();
-        
+
         assert_ne!(id1, id2);
         assert!(validate_snowflake_id(&id1));
         assert!(validate_snowflake_id(&id2));
@@ -238,7 +237,11 @@ mod tests {
         for handle in handles {
             let ids = handle.join().unwrap();
             for id in ids {
-                assert!(all_ids.insert(id.clone()), "Duplicate ID in concurrent test: {}", id);
+                assert!(
+                    all_ids.insert(id.clone()),
+                    "Duplicate ID in concurrent test: {}",
+                    id
+                );
             }
         }
     }

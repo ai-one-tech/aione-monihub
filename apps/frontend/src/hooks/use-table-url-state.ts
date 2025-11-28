@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
-import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import type {
   ColumnFiltersState,
   OnChangeFn,
   PaginationState,
 } from '@tanstack/react-table'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 
 type SearchRecord = Record<string, unknown>
 
@@ -96,14 +96,14 @@ export function useTableUrlState(
       const deserialize = cfg.deserialize ?? ((v: unknown) => v)
       if (cfg.type === 'string') {
         // Handle both string and array values for string type
-        let value = '';
+        let value = ''
         if (Array.isArray(raw) && raw.length > 0) {
           // If it's an array, take the first element
-          value = raw[0] as string;
+          value = raw[0] as string
         } else if (typeof raw === 'string') {
-          value = raw;
+          value = raw
         }
-        
+
         if (value.trim() !== '') {
           collected.push({ id: cfg.columnId, value })
         }
@@ -114,11 +114,14 @@ export function useTableUrlState(
           value = raw
         } else if (typeof raw === 'string' && raw.trim() !== '') {
           // 如果是逗号分隔的字符串，拆分为数组
-          value = raw.split(',').map(s => s.trim()).filter(Boolean)
+          value = raw
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
         } else {
           value = (deserialize(raw) as unknown[]) ?? []
         }
-        
+
         if (Array.isArray(value) && value.length > 0) {
           collected.push({ id: cfg.columnId, value })
         }
@@ -190,22 +193,23 @@ export function useTableUrlState(
       const serialize = cfg.serialize ?? ((v: unknown) => v)
       if (cfg.type === 'string') {
         // Handle both string and array values
-        let value = '';
+        let value = ''
         if (Array.isArray(found?.value) && found!.value.length > 0) {
           // If it's an array, take the first element
-          value = found!.value[0] as string;
+          value = found!.value[0] as string
         } else if (typeof found?.value === 'string') {
-          value = found.value;
+          value = found.value
         }
-        
+
         patch[cfg.searchKey] =
-          value.trim() !== '' ? serialize(value) : undefined;
+          value.trim() !== '' ? serialize(value) : undefined
       } else {
         const value = Array.isArray(found?.value)
           ? (found!.value as unknown[])
           : []
-        const arraySerialization = ('arraySerialization' in cfg) ? cfg.arraySerialization : 'array'
-        
+        const arraySerialization =
+          'arraySerialization' in cfg ? cfg.arraySerialization : 'array'
+
         if (arraySerialization === 'string') {
           // 序列化为逗号分隔的字符串
           patch[cfg.searchKey] = value.length > 0 ? value.join(',') : undefined

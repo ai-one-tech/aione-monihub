@@ -14,12 +14,12 @@ class AuthTokenManager {
   getToken(): string | null {
     // 优先从cookie获取
     let token = getCookie(this.TOKEN_COOKIE_NAME)
-    
+
     if (!token) {
       // 备用方案：从localStorage获取
       token = localStorage.getItem(this.TOKEN_STORAGE_KEY)
     }
-    
+
     return token
   }
 
@@ -27,19 +27,22 @@ class AuthTokenManager {
    * 设置认证token
    * 同时存储到cookie和localStorage
    */
-  setToken(token: string, options?: {
-    expires?: Date
-    maxAge?: number
-    path?: string
-  }): void {
+  setToken(
+    token: string,
+    options?: {
+      expires?: Date
+      maxAge?: number
+      path?: string
+    }
+  ): void {
     // 存储到cookie
     setCookie(this.TOKEN_COOKIE_NAME, token, {
       path: '/',
       maxAge: 24 * 60 * 60, // 默认24小时
       sameSite: 'Lax',
-      ...options
+      ...options,
     })
-    
+
     // 备用存储到localStorage
     localStorage.setItem(this.TOKEN_STORAGE_KEY, token)
   }
@@ -50,7 +53,7 @@ class AuthTokenManager {
   clearToken(): void {
     // 清除cookie
     deleteCookie(this.TOKEN_COOKIE_NAME, '/')
-    
+
     // 清除localStorage
     localStorage.removeItem(this.TOKEN_STORAGE_KEY)
   }
@@ -78,8 +81,10 @@ export const authToken = new AuthTokenManager()
 // 导出类型和工具函数
 export type { AuthTokenManager }
 export const getAuthToken = () => authToken.getToken()
-export const setAuthToken = (token: string, options?: Parameters<AuthTokenManager['setToken']>[1]) => 
-  authToken.setToken(token, options)
+export const setAuthToken = (
+  token: string,
+  options?: Parameters<AuthTokenManager['setToken']>[1]
+) => authToken.setToken(token, options)
 export const clearAuthToken = () => authToken.clearToken()
 export const isAuthenticated = () => authToken.isAuthenticated()
 export const getAuthorizationHeader = () => authToken.getAuthorizationHeader()

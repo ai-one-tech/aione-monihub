@@ -62,4 +62,3 @@ export const getLogsParamsSchema = z.object({
 })
 
 export type GetLogsParams = z.infer<typeof getLogsParamsSchema>
-

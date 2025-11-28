@@ -1,8 +1,14 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import { formatDateTime } from '@/lib/datetime'
+import { Badge } from '@/components/ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/components/ui/separator'
 import { type InstanceReportRecord, type NetworkType } from '../data/api-schema'
 
 interface InstanceReportDetailDialogProps {
@@ -53,15 +59,15 @@ export function InstanceReportDetailDialog({
           <div className='space-y-6'>
             {/* 基础信息 */}
             <div>
-              <h3 className='text-sm font-semibold mb-3'>基础信息</h3>
+              <h3 className='mb-3 text-sm font-semibold'>基础信息</h3>
               <div className='grid grid-cols-2 gap-4 text-sm'>
                 <div>
                   <span className='text-muted-foreground'>记录ID:</span>
-                  <p className='font-mono mt-1'>{report.id}</p>
+                  <p className='mt-1 font-mono'>{report.id}</p>
                 </div>
                 <div>
                   <span className='text-muted-foreground'>实例ID:</span>
-                  <p className='font-mono mt-1'>{report.instance_id}</p>
+                  <p className='mt-1 font-mono'>{report.instance_id}</p>
                 </div>
                 <div>
                   <span className='text-muted-foreground'>Agent类型:</span>
@@ -81,9 +87,7 @@ export function InstanceReportDetailDialog({
                 </div>
                 <div>
                   <span className='text-muted-foreground'>接收时间:</span>
-                  <p className='mt-1'>
-                    {formatDateTime(report.received_at)}
-                  </p>
+                  <p className='mt-1'>{formatDateTime(report.received_at)}</p>
                 </div>
               </div>
             </div>
@@ -92,7 +96,7 @@ export function InstanceReportDetailDialog({
 
             {/* 系统信息 */}
             <div>
-              <h3 className='text-sm font-semibold mb-3'>系统信息</h3>
+              <h3 className='mb-3 text-sm font-semibold'>系统信息</h3>
               <div className='grid grid-cols-2 gap-4 text-sm'>
                 <div>
                   <span className='text-muted-foreground'>操作系统:</span>
@@ -113,7 +117,7 @@ export function InstanceReportDetailDialog({
 
             {/* 网络信息 */}
             <div>
-              <h3 className='text-sm font-semibold mb-3'>网络信息</h3>
+              <h3 className='mb-3 text-sm font-semibold'>网络信息</h3>
               <div className='grid grid-cols-2 gap-4 text-sm'>
                 <div>
                   <span className='text-muted-foreground'>内网IP:</span>
@@ -125,14 +129,16 @@ export function InstanceReportDetailDialog({
                 </div>
                 <div>
                   <span className='text-muted-foreground'>MAC地址:</span>
-                  <p className='mt-1 font-mono'>{report.mac_address || '- -'}</p>
+                  <p className='mt-1 font-mono'>
+                    {report.mac_address || '- -'}
+                  </p>
                 </div>
                 <div>
                   <span className='text-muted-foreground'>网络类型:</span>
                   <p className='mt-1'>
                     {Array.isArray(report.network_type)
                       ? (report.network_type as NetworkType[]).join(', ')
-                      : (report.network_type || '- -')}
+                      : report.network_type || '- -'}
                   </p>
                 </div>
               </div>
@@ -142,11 +148,13 @@ export function InstanceReportDetailDialog({
 
             {/* 硬件信息 */}
             <div>
-              <h3 className='text-sm font-semibold mb-3'>硬件信息</h3>
+              <h3 className='mb-3 text-sm font-semibold'>硬件信息</h3>
               <div className='space-y-4'>
                 {/* CPU */}
                 <div>
-                  <h4 className='text-xs font-medium text-muted-foreground mb-2'>CPU</h4>
+                  <h4 className='text-muted-foreground mb-2 text-xs font-medium'>
+                    CPU
+                  </h4>
                   <div className='grid grid-cols-3 gap-4 text-sm'>
                     <div>
                       <span className='text-muted-foreground'>型号:</span>
@@ -158,45 +166,63 @@ export function InstanceReportDetailDialog({
                     </div>
                     <div>
                       <span className='text-muted-foreground'>使用率:</span>
-                      <p className='mt-1 font-semibold'>{formatPercent(report.cpu_usage_percent)}</p>
+                      <p className='mt-1 font-semibold'>
+                        {formatPercent(report.cpu_usage_percent)}
+                      </p>
                     </div>
                   </div>
                 </div>
 
                 {/* 内存 */}
                 <div>
-                  <h4 className='text-xs font-medium text-muted-foreground mb-2'>内存</h4>
+                  <h4 className='text-muted-foreground mb-2 text-xs font-medium'>
+                    内存
+                  </h4>
                   <div className='grid grid-cols-3 gap-4 text-sm'>
                     <div>
                       <span className='text-muted-foreground'>总量:</span>
-                      <p className='mt-1'>{formatBytes(report.memory_total_mb, 'MB')}</p>
+                      <p className='mt-1'>
+                        {formatBytes(report.memory_total_mb, 'MB')}
+                      </p>
                     </div>
                     <div>
                       <span className='text-muted-foreground'>已用:</span>
-                      <p className='mt-1'>{formatBytes(report.memory_used_mb, 'MB')}</p>
+                      <p className='mt-1'>
+                        {formatBytes(report.memory_used_mb, 'MB')}
+                      </p>
                     </div>
                     <div>
                       <span className='text-muted-foreground'>使用率:</span>
-                      <p className='mt-1 font-semibold'>{formatPercent(report.memory_usage_percent)}</p>
+                      <p className='mt-1 font-semibold'>
+                        {formatPercent(report.memory_usage_percent)}
+                      </p>
                     </div>
                   </div>
                 </div>
 
                 {/* 磁盘 */}
                 <div>
-                  <h4 className='text-xs font-medium text-muted-foreground mb-2'>磁盘</h4>
+                  <h4 className='text-muted-foreground mb-2 text-xs font-medium'>
+                    磁盘
+                  </h4>
                   <div className='grid grid-cols-3 gap-4 text-sm'>
                     <div>
                       <span className='text-muted-foreground'>总量:</span>
-                      <p className='mt-1'>{formatBytes(report.disk_total_gb, 'GB')}</p>
+                      <p className='mt-1'>
+                        {formatBytes(report.disk_total_gb, 'GB')}
+                      </p>
                     </div>
                     <div>
                       <span className='text-muted-foreground'>已用:</span>
-                      <p className='mt-1'>{formatBytes(report.disk_used_gb, 'GB')}</p>
+                      <p className='mt-1'>
+                        {formatBytes(report.disk_used_gb, 'GB')}
+                      </p>
                     </div>
                     <div>
                       <span className='text-muted-foreground'>使用率:</span>
-                      <p className='mt-1 font-semibold'>{formatPercent(report.disk_usage_percent)}</p>
+                      <p className='mt-1 font-semibold'>
+                        {formatPercent(report.disk_usage_percent)}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -207,7 +233,7 @@ export function InstanceReportDetailDialog({
 
             {/* 运行时信息 */}
             <div>
-              <h3 className='text-sm font-semibold mb-3'>运行时信息</h3>
+              <h3 className='mb-3 text-sm font-semibold'>运行时信息</h3>
               <div className='grid grid-cols-3 gap-4 text-sm'>
                 <div>
                   <span className='text-muted-foreground'>进程ID:</span>
@@ -215,7 +241,9 @@ export function InstanceReportDetailDialog({
                 </div>
                 <div>
                   <span className='text-muted-foreground'>运行时长:</span>
-                  <p className='mt-1'>{formatSeconds(report.process_uptime_seconds)}</p>
+                  <p className='mt-1'>
+                    {formatSeconds(report.process_uptime_seconds)}
+                  </p>
                 </div>
                 <div>
                   <span className='text-muted-foreground'>线程数:</span>
@@ -229,8 +257,8 @@ export function InstanceReportDetailDialog({
               <>
                 <Separator />
                 <div>
-                  <h3 className='text-sm font-semibold mb-3'>自定义指标</h3>
-                  <pre className='text-xs bg-muted p-3 rounded-md overflow-auto'>
+                  <h3 className='mb-3 text-sm font-semibold'>自定义指标</h3>
+                  <pre className='bg-muted overflow-auto rounded-md p-3 text-xs'>
                     {JSON.stringify(report.custom_metrics, null, 2)}
                   </pre>
                 </div>

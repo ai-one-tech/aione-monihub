@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { useDebounce } from '@/hooks/use-debounce'
 import { instancesApi } from '../api/instances-api'
 import { type GetInstancesParams } from '../data/api-schema'
-import { useDebounce } from '@/hooks/use-debounce'
-import { toast } from 'sonner'
 
 /**
  * 实例列表查询 Hook
@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 export function useInstancesQuery(params: GetInstancesParams = {}) {
   // 对搜索参数进行防抖处理
   const debouncedSearch = useDebounce(params.search)
-  
+
   const debouncedParams = {
     ...params,
     search: debouncedSearch,

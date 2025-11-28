@@ -1,10 +1,15 @@
 import { type Row } from '@tanstack/react-table'
 import { Edit, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { type ApiRoleResponse } from '../data/api-schema'
-import { useSystemRolesContext } from './system-roles-provider'
 import { useRoleQuery } from '../hooks/use-roles-query'
+import { useSystemRolesContext } from './system-roles-provider'
 
 interface SystemRolesDataTableRowActionsProps<TData> {
   row: Row<TData>
@@ -14,7 +19,13 @@ export function SystemRolesDataTableRowActions<TData>({
   row,
 }: SystemRolesDataTableRowActionsProps<TData>) {
   const role = row.original as ApiRoleResponse
-  const { setIsSheetOpen, setSheetMode, setSelectedRoleId, setIsDeleteDialogOpen, setDeleteRoleId } = useSystemRolesContext()
+  const {
+    setIsSheetOpen,
+    setSheetMode,
+    setSelectedRoleId,
+    setIsDeleteDialogOpen,
+    setDeleteRoleId,
+  } = useSystemRolesContext()
   // 用于触发数据刷新
   const { refetch } = useRoleQuery(role.id)
 
@@ -36,11 +47,7 @@ export function SystemRolesDataTableRowActions<TData>({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
-              variant='ghost'
-              size='sm'
-              onClick={handleEdit}
-            >
+            <Button variant='ghost' size='sm' onClick={handleEdit}>
               <Edit className='h-4 w-4' />
             </Button>
           </TooltipTrigger>

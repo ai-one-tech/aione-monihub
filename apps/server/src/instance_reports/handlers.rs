@@ -1,19 +1,19 @@
+use crate::entities::{applications, instance_records, instances, logs};
 use crate::instance_reports::models::{
     InstanceRecordListQuery, InstanceRecordListResponse, InstanceRecordResponse,
     InstanceReportRequest, InstanceReportResponse, Pagination,
 };
+use crate::shared::enums::{LogSource, OnlineStatus, Status};
 use crate::shared::error::ApiError;
 use crate::shared::{generate_snowflake_id, get_trace_id_from_request};
-use crate::entities::{instance_records, instances, applications, logs};
-use crate::shared::enums::{Status, OnlineStatus, LogSource};
 use actix_web::{web, HttpRequest, HttpResponse, Result};
 use chrono::Utc;
+use rust_decimal::Decimal;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait,
-    QueryFilter, QueryOrder, QuerySelect, Set,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter,
+    QueryOrder, QuerySelect, Set,
 };
 use serde_json::json;
-use rust_decimal::Decimal;
 use std::str::FromStr;
 
 /// POST /api/open/instances/report
@@ -25,7 +25,9 @@ pub async fn report_instance_info(
 ) -> Result<HttpResponse, ApiError> {
     // 1. 验证 application_code 不能为空
     if request.application_code.trim().is_empty() {
-        return Err(ApiError::BadRequest("application_code cannot be empty".to_string()));
+        return Err(ApiError::BadRequest(
+            "application_code cannot be empty".to_string(),
+        ));
     }
 
     let trace_id = get_trace_id_from_request(&req);
@@ -36,13 +38,14 @@ pub async fn report_instance_info(
         .filter(applications::Column::DeletedAt.is_null())
         .one(&**db)
         .await?;
-    
+
     let application_id = match application {
         Some(app) => app.id,
         None => {
-            return Err(ApiError::NotFound(
-                format!("Application with code '{}' not found", request.application_code)
-            ));
+            return Err(ApiError::NotFound(format!(
+                "Application with code '{}' not found",
+                request.application_code
+            )));
         }
     };
 
@@ -57,7 +60,7 @@ pub async fn report_instance_info(
     let instance = if instance.is_none() {
         // 自动创建新实例，生成新的数据库主键 id
         let new_instance_id = generate_snowflake_id();
-        
+
         let new_instance = instances::ActiveModel {
             id: Set(new_instance_id),
             agent_instance_id: Set(Some(request.agent_instance_id.clone())),
@@ -97,11 +100,7 @@ pub async fn report_instance_info(
         new_instance.insert(&**db).await?
     } else {
         // 增加对实例状态的判断，如果是禁用，则不允许更新（避免移动，使用引用比较）
-        if instance
-            .as_ref()
-            .map(|i| i.status.clone())
-            != Some(Status::Active)
-        {
+        if instance.as_ref().map(|i| i.status.clone()) != Some(Status::Active) {
             return Err(ApiError::Forbidden("Instance is disabled".to_string()));
         }
         instance.unwrap()
@@ -109,7 +108,9 @@ pub async fn report_instance_info(
 
     // 5. 解析上报时间
     let report_timestamp = chrono::DateTime::parse_from_rfc3339(&request.report_timestamp)
-        .map_err(|_| ApiError::BadRequest("Invalid report_timestamp format, expected ISO 8601".to_string()))?
+        .map_err(|_| {
+            ApiError::BadRequest("Invalid report_timestamp format, expected ISO 8601".to_string())
+        })?
         .with_timezone(&Utc);
 
     // 6. 生成记录ID
@@ -118,10 +119,12 @@ pub async fn report_instance_info(
     // 7. 插入上报记录
     let cpu_usage_decimal = Decimal::from_str(&request.hardware_info.cpu_usage_percent.to_string())
         .map_err(|_| ApiError::BadRequest("Invalid cpu_usage_percent".to_string()))?;
-    let memory_usage_decimal = Decimal::from_str(&request.hardware_info.memory_usage_percent.to_string())
-        .map_err(|_| ApiError::BadRequest("Invalid memory_usage_percent".to_string()))?;
-    let disk_usage_decimal = Decimal::from_str(&request.hardware_info.disk_usage_percent.to_string())
-        .map_err(|_| ApiError::BadRequest("Invalid disk_usage_percent".to_string()))?;
+    let memory_usage_decimal =
+        Decimal::from_str(&request.hardware_info.memory_usage_percent.to_string())
+            .map_err(|_| ApiError::BadRequest("Invalid memory_usage_percent".to_string()))?;
+    let disk_usage_decimal =
+        Decimal::from_str(&request.hardware_info.disk_usage_percent.to_string())
+            .map_err(|_| ApiError::BadRequest("Invalid disk_usage_percent".to_string()))?;
 
     let record = instance_records::ActiveModel {
         id: Set(record_id.clone()),
@@ -158,7 +161,7 @@ pub async fn report_instance_info(
     // 在转换前先获取 report_count 和 first_report_at 的值
     let current_report_count = instance.report_count;
     let first_report_at_is_none = instance.first_report_at.is_none();
-    
+
     let config_value = instance.config.clone();
     let instance_id_db = instance.id.clone();
     let mut instance_update: instances::ActiveModel = instance.into();
@@ -187,20 +190,18 @@ pub async fn report_instance_info(
     instance_update.status = Set(Status::Active);
     instance_update.online_status = Set(OnlineStatus::Online);
     instance_update.offline_at = Set(None);
-    
+
     // 更新上报次数
-    instance_update.report_count = Set(Some(
-        match current_report_count {
-            Some(count) => count + 1,
-            None => 1,
-        }
-    ));
-    
+    instance_update.report_count = Set(Some(match current_report_count {
+        Some(count) => count + 1,
+        None => 1,
+    }));
+
     // 如果是首次上报，设置 first_report_at
     if first_report_at_is_none {
         instance_update.first_report_at = Set(Some(Utc::now().into()));
     }
-    
+
     instance_update.updated_by = Set("system-auto".to_string());
     instance_update.updated_at = Set(Utc::now().into());
     instance_update.update(&**db).await?;

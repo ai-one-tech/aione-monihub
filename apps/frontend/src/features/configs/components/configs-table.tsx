@@ -1,13 +1,35 @@
-import { useReactTable, getCoreRowModel, getPaginationRowModel, getSortedRowModel, getFilteredRowModel, flexRender } from '@tanstack/react-table'
-import { columns } from './configs-columns'
-import type { ConfigResponse } from '../api/configs-api'
-import { useTableUrlState, type NavigateFn } from '@/hooks/use-table-url-state'
-import { DataTableToolbar } from '@/components/data-table/toolbar'
-import { DataTablePagination } from '@/components/data-table/pagination'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  useReactTable,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  flexRender,
+} from '@tanstack/react-table'
 import { cn } from '@/lib/utils'
+import { useTableUrlState, type NavigateFn } from '@/hooks/use-table-url-state'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { DataTablePagination } from '@/components/data-table/pagination'
+import { DataTableToolbar } from '@/components/data-table/toolbar'
+import type { ConfigResponse } from '../api/configs-api'
+import { columns } from './configs-columns'
 
-export function ConfigsTable({ data, search, navigate }: { data: ConfigResponse[]; search: Record<string, unknown>; navigate: NavigateFn }) {
+export function ConfigsTable({
+  data,
+  search,
+  navigate,
+}: {
+  data: ConfigResponse[]
+  search: Record<string, unknown>
+  navigate: NavigateFn
+}) {
   const {
     columnFilters,
     onColumnFiltersChange,
@@ -36,18 +58,26 @@ export function ConfigsTable({ data, search, navigate }: { data: ConfigResponse[
   })
 
   return (
-    <div className='flex flex-col h-full min-h-0 max-sm:has-[div[role="toolbar"]]:mb-16'>
+    <div className='flex h-full min-h-0 flex-col max-sm:has-[div[role="toolbar"]]:mb-16'>
       <DataTableToolbar table={table} />
-      <div className='flex-1 min-h-0 overflow-auto rounded-md border mt-4'>
+      <div className='mt-4 min-h-0 flex-1 overflow-auto rounded-md border'>
         <Table>
           <TableHeader className='sticky top-0 z-10'>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className={cn(header.column.columnDef.meta?.className ?? '')}>
+                  <TableHead
+                    key={header.id}
+                    className={cn(
+                      header.column.columnDef.meta?.className ?? ''
+                    )}
+                  >
                     {header.isPlaceholder
                       ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -56,7 +86,10 @@ export function ConfigsTable({ data, search, navigate }: { data: ConfigResponse[
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() ? 'selected' : undefined}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() ? 'selected' : undefined}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>{cell.renderCell()}</TableCell>
                   ))}
@@ -64,7 +97,12 @@ export function ConfigsTable({ data, search, navigate }: { data: ConfigResponse[
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">暂无数据</TableCell>
+                <TableCell
+                  colSpan={columns.length}
+                  className='h-24 text-center'
+                >
+                  暂无数据
+                </TableCell>
               </TableRow>
             )}
           </TableBody>

@@ -29,7 +29,9 @@ export const permissionListResponseSchema = z.object({
   trace_id: z.string(),
 })
 
-export type PermissionListResponse = z.infer<typeof permissionListResponseSchema>
+export type PermissionListResponse = z.infer<
+  typeof permissionListResponseSchema
+>
 
 // 查询参数
 export const getPermissionsParamsSchema = z.object({
@@ -55,7 +57,9 @@ export const createPermissionRequestSchema = z.object({
   is_hidden: z.boolean().optional().nullable(),
 })
 
-export type CreatePermissionRequest = z.infer<typeof createPermissionRequestSchema>
+export type CreatePermissionRequest = z.infer<
+  typeof createPermissionRequestSchema
+>
 
 // 更新权限请求
 export const updatePermissionRequestSchema = z.object({
@@ -70,4 +74,6 @@ export const updatePermissionRequestSchema = z.object({
   is_hidden: z.boolean().optional().nullable(),
 })
 
-export type UpdatePermissionRequest = z.infer<typeof updatePermissionRequestSchema>
+export type UpdatePermissionRequest = z.infer<
+  typeof updatePermissionRequestSchema
+>

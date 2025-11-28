@@ -1,7 +1,7 @@
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
 use crate::shared::enums;
 use crate::shared::enums::LogType;
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Pagination {
@@ -38,7 +38,7 @@ pub struct LogListQuery {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Log {
     pub id: String,
-    pub log_level: enums::LogLevel, // 与数据库字段一致
+    pub log_level: enums::LogLevel,   // 与数据库字段一致
     pub log_source: enums::LogSource, // 与数据库字段一致
     pub user_id: String,
     pub action: String,

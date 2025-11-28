@@ -1,7 +1,7 @@
+use crate::shared::enums::UserStatus;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
-use crate::shared::enums::UserStatus;
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct User {
@@ -50,7 +50,7 @@ pub struct UserUpdateRequest {
     pub email: String,
     pub status: UserStatus,
     /// 角色名称列表（可选）。如果提供，将以名称匹配角色并更新用户角色。
-    pub roles: Option<Vec<String>>, 
+    pub roles: Option<Vec<String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]

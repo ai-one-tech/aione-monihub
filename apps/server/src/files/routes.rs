@@ -1,10 +1,7 @@
 use actix_web::web;
 
 // 引入处理器
-use super::handlers::{
-    init_file_upload, upload_file_chunk,
-    download_file, get_files
-};
+use super::handlers::{download_file, get_files, init_file_upload, upload_file_chunk};
 
 // 配置文件上传相关路由
 pub fn file_routes(cfg: &mut web::ServiceConfig) {
@@ -16,6 +13,6 @@ pub fn file_routes(cfg: &mut web::ServiceConfig) {
             // 上传文件块
             .route("/upload/chunk", web::post().to(upload_file_chunk))
             // 下载文件
-            .route("/download/{file_id}", web::get().to(download_file))
+            .route("/download/{file_id}", web::get().to(download_file)),
     );
 }

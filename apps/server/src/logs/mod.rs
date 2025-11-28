@@ -1,7 +1,7 @@
 pub mod handlers;
+pub mod middleware;
 pub mod models;
 pub mod routes;
-pub mod middleware;
 
 use crate::entities::{logs, Logs};
 use sea_orm::DatabaseConnection;

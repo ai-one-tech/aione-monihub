@@ -2,8 +2,8 @@ pub mod handlers;
 pub mod models;
 pub mod routes;
 
-use crate::entities::applications::{Entity as Applications};
 use crate::entities::applications;
+use crate::entities::applications::Entity as Applications;
 use sea_orm::{ColumnTrait, DatabaseConnection, QueryFilter};
 
 pub struct ApplicationsModule {
@@ -68,18 +68,13 @@ impl ApplicationsModule {
         app_data.update(&self.database).await
     }
 
-    pub async fn delete_application(
-        &self,
-        id: &str,
-    ) -> Result<(), sea_orm::DbErr> {
+    pub async fn delete_application(&self, id: &str) -> Result<(), sea_orm::DbErr> {
         use sea_orm::EntityTrait;
-        
+
         // 找到应用
         if let Some(_app) = self.find_application_by_id(id).await? {
             // 删除应用
-            Applications::delete_by_id(id)
-                .exec(&self.database)
-                .await?;
+            Applications::delete_by_id(id).exec(&self.database).await?;
             Ok(())
         } else {
             Err(sea_orm::DbErr::Custom("Application not found".into()))

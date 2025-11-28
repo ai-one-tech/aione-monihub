@@ -49,30 +49,28 @@ export const authApi = {
   /**
    * 用户登录
    */
-  login: (data: LoginRequest) => 
+  login: (data: LoginRequest) =>
     apiClient.post<LoginResponse>('/api/auth/login', data),
-  
+
   /**
    * 获取当前用户信息
    */
-  getCurrentUser: () => 
-    apiClient.get<CurrentUserResponse>('/api/auth/me'),
-  
+  getCurrentUser: () => apiClient.get<CurrentUserResponse>('/api/auth/me'),
+
   /**
    * 验证token有效性
    */
-  validateToken: () => 
-    apiClient.get('/api/auth/validate'),
-  
+  validateToken: () => apiClient.get('/api/auth/validate'),
+
   /**
    * 忘记密码
    */
-  forgotPassword: (data: ForgotPasswordRequest) => 
+  forgotPassword: (data: ForgotPasswordRequest) =>
     apiClient.post('/api/auth/forgot-password', data),
-  
+
   /**
    * 重置密码
    */
-  resetPassword: (data: ResetPasswordRequest) => 
+  resetPassword: (data: ResetPasswordRequest) =>
     apiClient.post('/api/auth/reset-password', data),
 }

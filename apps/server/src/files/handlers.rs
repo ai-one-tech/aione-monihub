@@ -1,9 +1,9 @@
 use actix_multipart::Multipart;
 use actix_web::{web, HttpRequest, HttpResponse, Result};
-use chrono::{Utc, TimeZone};
+use chrono::{TimeZone, Utc};
 use futures_util::StreamExt as _;
 use lazy_static::lazy_static;
-use sea_orm::{DatabaseConnection, EntityTrait, Order, QueryOrder, QueryFilter, ColumnTrait};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, Order, QueryFilter, QueryOrder};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::path::Path;
@@ -18,7 +18,10 @@ use crate::entities::files;
 use crate::shared::error::ApiError;
 
 // 引入模型
-use super::models::{FileChunkUploadResponse, FileInfoWithUrl, FileListResponseWithUrl, FileUploadCompleteRequest, FileUploadCompleteResponse, FileUploadRequest, FileUploadResponse, FileListQuery};
+use super::models::{
+    FileChunkUploadResponse, FileInfoWithUrl, FileListQuery, FileListResponseWithUrl,
+    FileUploadCompleteRequest, FileUploadCompleteResponse, FileUploadRequest, FileUploadResponse,
+};
 
 // 临时存储上传信息的结构（实际项目中应该使用数据库）
 lazy_static! {
@@ -571,26 +574,43 @@ pub async fn get_files(
     let task_id = query.task_id.clone();
     let instance_id = query.instance_id.clone();
     if task_id.is_empty() || instance_id.is_empty() {
-        return Err(ApiError::BadRequest("task_id and instance_id are required".to_string()));
+        return Err(ApiError::BadRequest(
+            "task_id and instance_id are required".to_string(),
+        ));
     }
 
     let mut select = files::Entity::find()
         .filter(files::Column::TaskId.eq(Some(task_id)))
         .filter(files::Column::InstanceId.eq(Some(instance_id)));
 
-    let order_by = query.order_by.clone().unwrap_or_else(|| "uploaded_at".to_string());
+    let order_by = query
+        .order_by
+        .clone()
+        .unwrap_or_else(|| "uploaded_at".to_string());
     let order = query.order.clone().unwrap_or_else(|| "asc".to_string());
 
     let asc = order.eq_ignore_ascii_case("asc");
     match order_by.as_str() {
         "file_name" => {
-            if asc { select = select.order_by(files::Column::FileName, Order::Asc); } else { select = select.order_by(files::Column::FileName, Order::Desc); }
+            if asc {
+                select = select.order_by(files::Column::FileName, Order::Asc);
+            } else {
+                select = select.order_by(files::Column::FileName, Order::Desc);
+            }
         }
         "file_size" => {
-            if asc { select = select.order_by(files::Column::FileSize, Order::Asc); } else { select = select.order_by(files::Column::FileSize, Order::Desc); }
+            if asc {
+                select = select.order_by(files::Column::FileSize, Order::Asc);
+            } else {
+                select = select.order_by(files::Column::FileSize, Order::Desc);
+            }
         }
         _ => {
-            if asc { select = select.order_by(files::Column::UploadedAt, Order::Asc); } else { select = select.order_by(files::Column::UploadedAt, Order::Desc); }
+            if asc {
+                select = select.order_by(files::Column::UploadedAt, Order::Asc);
+            } else {
+                select = select.order_by(files::Column::UploadedAt, Order::Desc);
+            }
         }
     }
 

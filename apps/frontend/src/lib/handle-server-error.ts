@@ -1,6 +1,6 @@
 import { AxiosError } from 'axios'
-import { ApiError } from '@/lib/api-client'
 import { toast } from 'sonner'
+import { ApiError } from '@/lib/api-client'
 
 // 创建一个全局变量来跟踪网络错误弹窗是否打开
 let isNetworkErrorDialogOpen = false

@@ -1,7 +1,7 @@
+use crate::shared::enums::Status;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
-use crate::shared::enums::Status;
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Application {

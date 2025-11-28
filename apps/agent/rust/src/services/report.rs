@@ -177,10 +177,7 @@ async fn build_report(state: &AppState) -> InstanceReportRequest {
 }
 
 async fn fetch_public_ip() -> Option<String> {
-    let services = [
-        "https://ifconfig.me/ip",
-        "https://icanhazip.com",
-    ];
+    let services = ["https://ifconfig.me/ip", "https://icanhazip.com"];
     for s in services.iter() {
         match http_util::get(s.to_string()).await {
             Ok(resp) => {
@@ -197,7 +194,11 @@ async fn fetch_public_ip() -> Option<String> {
                         }
                     }
                 } else {
-                    agent_logger::warn(&format!("获取公网IP失败 http={} - {}", resp.status().as_u16(), s));
+                    agent_logger::warn(&format!(
+                        "获取公网IP失败 http={} - {}",
+                        resp.status().as_u16(),
+                        s
+                    ));
                 }
             }
             Err(e) => {
@@ -210,18 +211,34 @@ async fn fetch_public_ip() -> Option<String> {
 
 fn is_valid_public_ipv4(s: &str) -> bool {
     let parts: Vec<&str> = s.split('.').collect();
-    if parts.len() != 4 { return false; }
+    if parts.len() != 4 {
+        return false;
+    }
     let mut octets = [0u8; 4];
     for (i, p) in parts.iter().enumerate() {
-        if let Ok(v) = p.parse::<u8>() { octets[i] = v; } else { return false; }
+        if let Ok(v) = p.parse::<u8>() {
+            octets[i] = v;
+        } else {
+            return false;
+        }
     }
     let a = octets[0];
     let b = octets[1];
-    if a == 10 { return false; }
-    if a == 127 { return false; }
-    if a == 192 && b == 168 { return false; }
-    if a == 172 && (16..=31).contains(&b) { return false; }
-    if a == 169 && b == 254 { return false; }
+    if a == 10 {
+        return false;
+    }
+    if a == 127 {
+        return false;
+    }
+    if a == 192 && b == 168 {
+        return false;
+    }
+    if a == 172 && (16..=31).contains(&b) {
+        return false;
+    }
+    if a == 169 && b == 254 {
+        return false;
+    }
     true
 }
 

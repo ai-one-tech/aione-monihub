@@ -5,8 +5,8 @@ pub mod routes;
 use crate::entities::{projects, Projects};
 use crate::shared::enums::Status;
 use crate::shared::generate_snowflake_id;
-use sea_orm::{ActiveValue, DatabaseConnection};
 use chrono::Utc;
+use sea_orm::{ActiveValue, DatabaseConnection};
 
 pub struct ProjectsModule {
     database: DatabaseConnection,
@@ -26,12 +26,12 @@ impl ProjectsModule {
         created_by: String,
     ) -> Result<projects::Model, sea_orm::DbErr> {
         use sea_orm::ActiveModelTrait;
-        
+
         // 生成 Snowflake ID
         let id = generate_snowflake_id();
-        
+
         let now = Utc::now().into();
-        
+
         let project_data = projects::ActiveModel {
             id: ActiveValue::Set(id),
             name: ActiveValue::Set(name),
@@ -50,7 +50,7 @@ impl ProjectsModule {
             created_at: ActiveValue::Set(now),
             updated_at: ActiveValue::Set(now),
         };
-        
+
         project_data.insert(&self.database).await
     }
 

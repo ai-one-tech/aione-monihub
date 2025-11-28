@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Cross2Icon } from '@radix-ui/react-icons'
-import { RefreshCcw } from 'lucide-react'
 import { type Table } from '@tanstack/react-table'
+import { RefreshCcw } from 'lucide-react'
+import { useDebouncedCallback } from '@/hooks/use-debounce'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useDebouncedCallback } from '@/hooks/use-debounce'
 import { DataTableFacetedFilter } from './faceted-filter'
 import { DataTableViewOptions } from './view-options'
 
@@ -49,7 +49,11 @@ export function DataTableToolbar<TData>({
       : (table.getState().globalFilter ?? '')
     setLocalValue(current)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchKey ? table.getColumn(searchKey)?.getFilterValue() : table.getState().globalFilter])
+  }, [
+    searchKey
+      ? table.getColumn(searchKey)?.getFilterValue()
+      : table.getState().globalFilter,
+  ])
 
   // 防抖更新：延迟应用过滤条件，期间继续输入则继续推迟
   const debouncedApply = useDebouncedCallback((value: string) => {
@@ -86,17 +90,17 @@ export function DataTableToolbar<TData>({
           {filters.map((filter) => {
             const column = table.getColumn(filter.columnId)
             if (!column) return null
-          return (
-            <DataTableFacetedFilter
-              key={filter.columnId}
-              column={column}
-              title={filter.title}
-              options={filter.options}
-              multiSelect={filter.multiSelect} // 传递多选属性
-              contentClassName={filter.contentClassName}
-            />
-          )
-        })}
+            return (
+              <DataTableFacetedFilter
+                key={filter.columnId}
+                column={column}
+                title={filter.title}
+                options={filter.options}
+                multiSelect={filter.multiSelect} // 传递多选属性
+                contentClassName={filter.contentClassName}
+              />
+            )
+          })}
         </div>
         {isFiltered && (
           <Button

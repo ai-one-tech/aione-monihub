@@ -10,9 +10,9 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import { cn } from '@/lib/utils'
 import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
-import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import {
   Table,
   TableBody,
@@ -23,8 +23,8 @@ import {
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
 import { type ApiPermissionResponse } from '../data/api-schema'
-import { SystemPermissionsDataTableBulkActions } from './system-permissions-data-table-bulk-actions'
 import { systemPermissionsColumns as columns } from './system-permissions-columns'
+import { SystemPermissionsDataTableBulkActions } from './system-permissions-data-table-bulk-actions'
 
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -41,7 +41,13 @@ type DataTableProps = {
   onRefresh?: () => void
 }
 
-export function SystemPermissionsTable({ data = [], totalPages, search, navigate, onRefresh }: DataTableProps) {
+export function SystemPermissionsTable({
+  data = [],
+  totalPages,
+  search,
+  navigate,
+  onRefresh,
+}: DataTableProps) {
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -57,14 +63,27 @@ export function SystemPermissionsTable({ data = [], totalPages, search, navigate
   } = useTableUrlState({
     search,
     navigate,
-    pagination: { defaultPage: DEFAULT_PAGE, defaultPageSize: DEFAULT_PAGE_SIZE },
+    pagination: {
+      defaultPage: DEFAULT_PAGE,
+      defaultPageSize: DEFAULT_PAGE_SIZE,
+    },
     globalFilter: { enabled: false },
     columnFilters: [
       // name per-column text filter
       { columnId: 'name', searchKey: 'name', type: 'string' },
       // { columnId: 'resource', searchKey: 'resource', type: 'array' },
-      { columnId: 'permission_type', searchKey: 'permission_type', type: 'array', arraySerialization: 'string' },
-      { columnId: 'action', searchKey: 'action', type: 'array', arraySerialization: 'string' },
+      {
+        columnId: 'permission_type',
+        searchKey: 'permission_type',
+        type: 'array',
+        arraySerialization: 'string',
+      },
+      {
+        columnId: 'action',
+        searchKey: 'action',
+        type: 'array',
+        arraySerialization: 'string',
+      },
     ],
   })
 
@@ -94,7 +113,7 @@ export function SystemPermissionsTable({ data = [], totalPages, search, navigate
   })
 
   return (
-    <div className='flex flex-col h-full min-h-0 max-sm:has-[div[role="toolbar"]]:mb-16'>
+    <div className='flex h-full min-h-0 flex-col max-sm:has-[div[role="toolbar"]]:mb-16'>
       <DataTableToolbar
         table={table}
         searchPlaceholder='搜索权限...'
@@ -126,7 +145,7 @@ export function SystemPermissionsTable({ data = [], totalPages, search, navigate
           },
         ]}
       />
-      <div className='flex-1 min-h-0 overflow-auto rounded-md border mt-4'>
+      <div className='mt-4 min-h-0 flex-1 overflow-auto rounded-md border'>
         <Table>
           <TableHeader className='sticky top-0 z-10'>
             {table.getHeaderGroups().map((headerGroup) => (

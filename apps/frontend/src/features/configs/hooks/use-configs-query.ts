@@ -1,7 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from '@tanstack/react-router'
-import { getConfigs, createConfig, updateConfig, deleteConfig, type ConfigListQuery, type ConfigCreateRequest, type ConfigUpdateRequest, type ConfigResponse } from '../api/configs-api'
 import { toast } from 'sonner'
+import {
+  getConfigs,
+  createConfig,
+  updateConfig,
+  deleteConfig,
+  type ConfigListQuery,
+  type ConfigCreateRequest,
+  type ConfigUpdateRequest,
+  type ConfigResponse,
+} from '../api/configs-api'
 
 export function useConfigsQuery() {
   const router = useRouter()
@@ -23,7 +32,8 @@ export function useConfigsQuery() {
 export function useCreateConfig() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (data: ConfigCreateRequest) => (await createConfig(data)).data,
+    mutationFn: async (data: ConfigCreateRequest) =>
+      (await createConfig(data)).data,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['configs'] })
     },
@@ -37,7 +47,10 @@ export function useCreateConfig() {
 export function useUpdateConfig() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (payload: { configId: string; data: ConfigUpdateRequest }) => (await updateConfig(payload.configId, payload.data)).data,
+    mutationFn: async (payload: {
+      configId: string
+      data: ConfigUpdateRequest
+    }) => (await updateConfig(payload.configId, payload.data)).data,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['configs'] })
     },

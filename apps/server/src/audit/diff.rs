@@ -24,7 +24,11 @@ fn push_change(
 }
 
 fn join_path(base: &str, key: &str) -> String {
-    if base.is_empty() { key.to_string() } else { format!("{}.{}", base, key) }
+    if base.is_empty() {
+        key.to_string()
+    } else {
+        format!("{}.{}", base, key)
+    }
 }
 
 fn diff_recursive(before: &Value, after: &Value, base: &str, changes: &mut Vec<ChangeEntry>) {
@@ -33,13 +37,21 @@ fn diff_recursive(before: &Value, after: &Value, base: &str, changes: &mut Vec<C
             // Removed keys
             for (k, bv) in bm.iter() {
                 if !am.contains_key(k) {
-                    push_change(changes, join_path(base, k), "removed", Some(bv.clone()), None);
+                    push_change(
+                        changes,
+                        join_path(base, k),
+                        "removed",
+                        Some(bv.clone()),
+                        None,
+                    );
                 }
             }
             // Added + changed
             for (k, av) in am.iter() {
                 match bm.get(k) {
-                    None => push_change(changes, join_path(base, k), "added", None, Some(av.clone())),
+                    None => {
+                        push_change(changes, join_path(base, k), "added", None, Some(av.clone()))
+                    }
                     Some(bv) => {
                         if bv != av {
                             // Dive into nested
@@ -52,12 +64,24 @@ fn diff_recursive(before: &Value, after: &Value, base: &str, changes: &mut Vec<C
         (Value::Array(ba), Value::Array(aa)) => {
             // For arrays, compare length and elements; record as changed when unequal
             if ba != aa {
-                push_change(changes, base.to_string(), "changed", Some(before.clone()), Some(after.clone()));
+                push_change(
+                    changes,
+                    base.to_string(),
+                    "changed",
+                    Some(before.clone()),
+                    Some(after.clone()),
+                );
             }
         }
         _ => {
             if before != after {
-                push_change(changes, base.to_string(), "changed", Some(before.clone()), Some(after.clone()));
+                push_change(
+                    changes,
+                    base.to_string(),
+                    "changed",
+                    Some(before.clone()),
+                    Some(after.clone()),
+                );
             }
         }
     }

@@ -9,8 +9,8 @@ use crate::entities::user_roles::{ActiveModel as UserRoleActiveModel, Entity as 
 use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
 use crate::users::models::{
-    RoleInfo, UserCreateRequest, UserListQuery, UserListResponse, UserResponse, UserRoleAssignRequest,
-    UserRoleListResponse, UserRoleResponse, UserUpdateRequest,
+    RoleInfo, UserCreateRequest, UserListQuery, UserListResponse, UserResponse,
+    UserRoleAssignRequest, UserRoleListResponse, UserRoleResponse, UserUpdateRequest,
 };
 use actix_web::{web, HttpRequest, HttpResponse, Result};
 use bcrypt::{hash, DEFAULT_COST};
@@ -85,8 +85,8 @@ pub async fn get_users(
                     .select_only()
                     .column(crate::entities::user_roles::Column::UserId)
                     .as_query()
-                    .clone() // 添加 .clone() 来解决类型不匹配问题
-            )
+                    .clone(), // 添加 .clone() 来解决类型不匹配问题
+            ),
         );
     }
 
@@ -98,11 +98,7 @@ pub async fn get_users(
     let total = paginator.num_items().await?;
     let total_pages = paginator.num_pages().await?;
 
-    let users: Vec<UserModel> = select
-        .offset(offset)
-        .limit(limit)
-        .all(&**db)
-        .await?;
+    let users: Vec<UserModel> = select.offset(offset).limit(limit).all(&**db).await?;
 
     // 转换为响应格式，并查询每个用户的角色
     let mut user_responses: Vec<UserResponse> = Vec::new();
@@ -200,7 +196,8 @@ pub async fn create_user(
     let current_user_id = get_user_id_from_request(&req)?;
 
     // 验证当前用户是否有创建用户的权限
-    let permission = get_user_permission_by_name(&user_id.to_string(), "user_management.create", &db).await?;
+    let permission =
+        get_user_permission_by_name(&user_id.to_string(), "user_management.create", &db).await?;
     if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限创建用户".to_string()));
     }
@@ -252,7 +249,8 @@ pub async fn create_user(
         &req,
         None,
         Some(after),
-    ).await;
+    )
+    .await;
 
     Ok(HttpResponse::Ok().json(response))
 }
@@ -350,7 +348,8 @@ pub async fn update_user(
     let current_user_id = get_user_id_from_request(&req)?;
 
     // 验证当前用户是否有更新用户的权限
-    let permission = get_user_permission_by_name(&user_id.to_string(), "user_management.update", &db).await?;
+    let permission =
+        get_user_permission_by_name(&user_id.to_string(), "user_management.update", &db).await?;
     if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限更新用户".to_string()));
     }
@@ -466,7 +465,8 @@ pub async fn update_user(
             &req,
             Some(before_json),
             Some(after_json),
-        ).await;
+        )
+        .await;
     }
 
     // 查询用户角色
@@ -520,7 +520,8 @@ pub async fn update_user(
         &req,
         Some(before),
         Some(after),
-    ).await;
+    )
+    .await;
 
     Ok(HttpResponse::Ok().json(response))
 }
@@ -553,7 +554,8 @@ pub async fn delete_user(
     let current_user_id = get_user_id_from_request(&req)?;
 
     // 验证当前用户是否有删除用户的权限
-    let permission = get_user_permission_by_name(&user_id.to_string(), "user_management.delete", &db).await?;
+    let permission =
+        get_user_permission_by_name(&user_id.to_string(), "user_management.delete", &db).await?;
     if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限删除用户".to_string()));
     }
@@ -597,7 +599,8 @@ pub async fn delete_user(
         &req,
         Some(before),
         None,
-    ).await;
+    )
+    .await;
 
     Ok(HttpResponse::Ok().json("用户删除成功"))
 }
@@ -630,7 +633,8 @@ pub async fn disable_user(
     let current_user_id = get_user_id_from_request(&req)?;
 
     // 验证当前用户是否有禁用用户的权限
-    let permission = get_user_permission_by_name(&user_id.to_string(), "user_management.disable", &db).await?;
+    let permission =
+        get_user_permission_by_name(&user_id.to_string(), "user_management.disable", &db).await?;
     if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限禁用用户".to_string()));
     }
@@ -689,7 +693,8 @@ pub async fn enable_user(
     let current_user_id = get_user_id_from_request(&req)?;
 
     // 验证当前用户是否有启用用户的权限
-    let permission = get_user_permission_by_name(&user_id.to_string(), "user_management.enable", &db).await?;
+    let permission =
+        get_user_permission_by_name(&user_id.to_string(), "user_management.enable", &db).await?;
     if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限启用用户".to_string()));
     }

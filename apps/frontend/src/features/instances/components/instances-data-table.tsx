@@ -10,9 +10,9 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import { cn } from '@/lib/utils'
 import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
-import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import {
   Table,
   TableBody,
@@ -22,7 +22,11 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import { type InstanceResponse, INSTANCE_STATUS_OPTIONS, OS_TYPE_OPTIONS } from '../data/api-schema'
+import {
+  type InstanceResponse,
+  INSTANCE_STATUS_OPTIONS,
+  OS_TYPE_OPTIONS,
+} from '../data/api-schema'
 import { instancesColumns as columns } from './instances-columns'
 
 declare module '@tanstack/react-table' {
@@ -40,7 +44,13 @@ type DataTableProps = {
   onRefresh?: () => void
 }
 
-export function InstancesTable({ data = [], totalPages, search, navigate, onRefresh }: DataTableProps) {
+export function InstancesTable({
+  data = [],
+  totalPages,
+  search,
+  navigate,
+  onRefresh,
+}: DataTableProps) {
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -56,7 +66,10 @@ export function InstancesTable({ data = [], totalPages, search, navigate, onRefr
   } = useTableUrlState({
     search,
     navigate,
-    pagination: { defaultPage: DEFAULT_PAGE, defaultPageSize: DEFAULT_PAGE_SIZE },
+    pagination: {
+      defaultPage: DEFAULT_PAGE,
+      defaultPageSize: DEFAULT_PAGE_SIZE,
+    },
     globalFilter: { enabled: false },
     columnFilters: [
       { columnId: 'hostname', searchKey: 'search', type: 'string' },
@@ -95,7 +108,7 @@ export function InstancesTable({ data = [], totalPages, search, navigate, onRefr
   }, [totalPages, ensurePageInRange])
 
   return (
-    <div className='flex flex-col h-full min-h-0 max-sm:has-[div[role="toolbar"]]:mb-16'>
+    <div className='flex h-full min-h-0 flex-col max-sm:has-[div[role="toolbar"]]:mb-16'>
       <DataTableToolbar
         table={table}
         searchPlaceholder='按主机名、应用、内网IP、公网IP搜索...'
@@ -104,11 +117,10 @@ export function InstancesTable({ data = [], totalPages, search, navigate, onRefr
           {
             columnId: 'status',
             title: '状态',
-            options: INSTANCE_STATUS_OPTIONS
-              .map(option => ({
-                label: option.label,
-                value: option.value,
-              })),
+            options: INSTANCE_STATUS_OPTIONS.map((option) => ({
+              label: option.label,
+              value: option.value,
+            })),
           },
           {
             columnId: 'online_status',
@@ -121,14 +133,14 @@ export function InstancesTable({ data = [], totalPages, search, navigate, onRefr
           {
             columnId: 'os_type',
             title: '操作系统',
-            options: OS_TYPE_OPTIONS.map(option => ({
+            options: OS_TYPE_OPTIONS.map((option) => ({
               label: option.label,
               value: option.value,
             })),
           },
         ]}
       />
-      <div className='flex-1 min-h-0 overflow-x-auto overflow-y-auto rounded-md border mt-4'>
+      <div className='mt-4 min-h-0 flex-1 overflow-x-auto overflow-y-auto rounded-md border'>
         <Table className='w-full min-w-max'>
           <TableHeader className='sticky top-0 z-20'>
             {table.getHeaderGroups().map((headerGroup) => (

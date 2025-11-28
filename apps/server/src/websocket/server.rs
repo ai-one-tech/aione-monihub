@@ -1,5 +1,5 @@
-use crate::websocket::models::{ClientMessage, Connect, Disconnect, WsMessage};
 use crate::shared::snowflake::generate_snowflake_id;
+use crate::websocket::models::{ClientMessage, Connect, Disconnect, WsMessage};
 use actix::prelude::*;
 use actix_web_actors::ws;
 use std::time::{Duration, Instant};

@@ -65,4 +65,6 @@ export const getOperationLogsParamsSchema = z.object({
   end_date: z.string().optional(),
 })
 
-export type GetOperationLogsParams = z.infer<typeof getOperationLogsParamsSchema>
+export type GetOperationLogsParams = z.infer<
+  typeof getOperationLogsParamsSchema
+>

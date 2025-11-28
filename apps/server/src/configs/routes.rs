@@ -16,12 +16,6 @@ pub fn config_routes(cfg: &mut web::ServiceConfig) {
             "/configs/code/{code}/environment/{environment}/version/{version}",
             web::get().to(handlers::get_config_by_code_env_and_version),
         )
-        .route(
-            "/configs/{id}",
-            web::delete().to(handlers::delete_config),
-        )
-        .route(
-            "/configs/{id}",
-            web::put().to(handlers::update_config),
-        );
+        .route("/configs/{id}", web::delete().to(handlers::delete_config))
+        .route("/configs/{id}", web::put().to(handlers::update_config));
 }

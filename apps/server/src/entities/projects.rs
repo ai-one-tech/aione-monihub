@@ -1,5 +1,5 @@
-use sea_orm::entity::prelude::*;
 use crate::shared::enums::Status;
+use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]

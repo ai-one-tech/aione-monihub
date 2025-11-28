@@ -6,12 +6,12 @@
 
 -- 添加 offline_at 字段（毫秒精度）
 ALTER TABLE "public"."instances"
-ADD COLUMN IF NOT EXISTS "offline_at" timestamptz(3);
+    ADD COLUMN IF NOT EXISTS "offline_at" timestamptz(3);
 
 -- 为 offline_at 添加索引，便于统计与查询
 CREATE INDEX IF NOT EXISTS "idx_instances_offline_at" ON "public"."instances" USING btree (
-  "offline_at" "pg_catalog"."timestamptz_ops" DESC NULLS LAST
-);
+    "offline_at" "pg_catalog"."timestamptz_ops" DESC NULLS LAST
+    );
 
 -- 可选：为 status 与 last_report_at 建立复合索引（提升巡检查询性能）
 -- 如需启用请取消注释

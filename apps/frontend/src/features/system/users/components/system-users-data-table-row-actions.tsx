@@ -1,7 +1,12 @@
 import { type Row } from '@tanstack/react-table'
 import { Edit, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { type ApiUserResponse } from '../data/api-schema'
 import { useSystemUsersContext } from './system-users-provider'
 
@@ -12,7 +17,12 @@ interface SystemUsersDataTableRowActionsProps {
 export function SystemUsersDataTableRowActions({
   row,
 }: SystemUsersDataTableRowActionsProps) {
-  const { setIsUserSheetOpen, setUserSheetMode, setIsDeleteDialogOpen, setSelectedUserId } = useSystemUsersContext()
+  const {
+    setIsUserSheetOpen,
+    setUserSheetMode,
+    setIsDeleteDialogOpen,
+    setSelectedUserId,
+  } = useSystemUsersContext()
   const user = row.original
 
   const handleEdit = () => {

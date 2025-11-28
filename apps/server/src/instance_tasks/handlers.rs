@@ -101,7 +101,8 @@ pub async fn create_task(
         &req,
         None,
         Some(after),
-    ).await;
+    )
+    .await;
     Ok(HttpResponse::Ok().json(response))
 }
 
@@ -232,7 +233,8 @@ pub async fn delete_task(
                 None,
                 Some(before),
                 None,
-            ).await;
+            )
+            .await;
 
             Ok(HttpResponse::Ok().json(json!({
                 "status": "success",
@@ -278,7 +280,8 @@ pub async fn cancel_task(
         None,
         None,
         Some(serde_json::json!({ "task_id": task_id, "status": "cancelled" })),
-    ).await;
+    )
+    .await;
 
     Ok(HttpResponse::Ok().json(json!({
         "status": "success",

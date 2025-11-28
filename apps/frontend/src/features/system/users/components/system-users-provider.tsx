@@ -13,12 +13,16 @@ interface SystemUsersContextType {
   setSelectedUserId: (id: string | null) => void
 }
 
-const SystemUsersContext = createContext<SystemUsersContextType | undefined>(undefined)
+const SystemUsersContext = createContext<SystemUsersContextType | undefined>(
+  undefined
+)
 
 export function useSystemUsersContext() {
   const context = useContext(SystemUsersContext)
   if (!context) {
-    throw new Error('useSystemUsersContext must be used within SystemUsersProvider')
+    throw new Error(
+      'useSystemUsersContext must be used within SystemUsersProvider'
+    )
   }
   return context
 }

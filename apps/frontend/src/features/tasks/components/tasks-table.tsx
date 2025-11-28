@@ -10,8 +10,8 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { useTableUrlState } from '@/hooks/use-table-url-state'
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
+import { useTableUrlState } from '@/hooks/use-table-url-state'
 import {
   Table,
   TableBody,
@@ -35,7 +35,12 @@ type DataTableProps = {
   navigate: NavigateFn
 }
 
-export function TasksTable({ data = [], totalPages, search, navigate }: DataTableProps) {
+export function TasksTable({
+  data = [],
+  totalPages,
+  search,
+  navigate,
+}: DataTableProps) {
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
   const [sorting, setSorting] = useState<SortingState>([])
@@ -58,7 +63,10 @@ export function TasksTable({ data = [], totalPages, search, navigate }: DataTabl
   } = useTableUrlState({
     search,
     navigate,
-    pagination: { defaultPage: DEFAULT_PAGE, defaultPageSize: DEFAULT_PAGE_SIZE },
+    pagination: {
+      defaultPage: DEFAULT_PAGE,
+      defaultPageSize: DEFAULT_PAGE_SIZE,
+    },
     globalFilter: { enabled: true, key: 'filter' },
     columnFilters: [
       { columnId: 'status', searchKey: 'status', type: 'array' },

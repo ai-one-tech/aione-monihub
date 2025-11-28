@@ -11,9 +11,6 @@ pub fn auth_routes(cfg: &mut web::ServiceConfig) {
             "/auth/reset-password",
             web::post().to(handlers::reset_password),
         )
-        .route(
-            "/auth/validate",
-            web::get().to(handlers::validate_token),
-        )
+        .route("/auth/validate", web::get().to(handlers::validate_token))
         .route("/auth/me", web::get().to(handlers::get_current_user));
 }

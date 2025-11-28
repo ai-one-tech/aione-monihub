@@ -1,4 +1,8 @@
 import { CheckCircle2, XCircle, Clock, AlertCircle, Copy } from 'lucide-react'
+import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -6,11 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
 import type { TaskRecord } from '../data/api-schema'
 
 interface ApplicationTaskResultDialogProps {
@@ -78,56 +78,54 @@ export function ApplicationTaskResultDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh]">
+      <DialogContent className='max-h-[90vh] max-w-3xl'>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className='flex items-center gap-2'>
             <Icon className={cn('h-5 w-5', status.color)} />
             <span>任务执行详情</span>
           </DialogTitle>
-          <DialogDescription>
-            实例: {result.instance_id}
-          </DialogDescription>
+          <DialogDescription>实例: {result.instance_id}</DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[calc(90vh-120px)] pr-4">
-          <div className="space-y-6">
+        <ScrollArea className='max-h-[calc(90vh-120px)] pr-4'>
+          <div className='space-y-6'>
             {/* Status */}
             <div>
-              <h3 className="text-sm font-medium mb-2">执行状态</h3>
+              <h3 className='mb-2 text-sm font-medium'>执行状态</h3>
               <Badge variant={status.variant}>{status.label}</Badge>
             </div>
 
             {/* Basic Info */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className='grid grid-cols-2 gap-4'>
               <div>
-                <h3 className="text-sm font-medium mb-2">实例ID</h3>
-                <div className="flex items-center gap-2">
-                  <code className="text-sm bg-muted px-2 py-1 rounded flex-1">
+                <h3 className='mb-2 text-sm font-medium'>实例ID</h3>
+                <div className='flex items-center gap-2'>
+                  <code className='bg-muted flex-1 rounded px-2 py-1 text-sm'>
                     {result.instance_id}
                   </code>
                   <Button
-                    variant="ghost"
-                    size="sm"
+                    variant='ghost'
+                    size='sm'
                     onClick={() => handleCopy(result.instance_id)}
                   >
-                    <Copy className="h-4 w-4" />
+                    <Copy className='h-4 w-4' />
                   </Button>
                 </div>
               </div>
 
               {result.task_id && (
                 <div>
-                  <h3 className="text-sm font-medium mb-2">任务ID</h3>
-                  <div className="flex items-center gap-2">
-                    <code className="text-sm bg-muted px-2 py-1 rounded flex-1 truncate">
+                  <h3 className='mb-2 text-sm font-medium'>任务ID</h3>
+                  <div className='flex items-center gap-2'>
+                    <code className='bg-muted flex-1 truncate rounded px-2 py-1 text-sm'>
                       {result.task_id}
                     </code>
                     <Button
-                      variant="ghost"
-                      size="sm"
+                      variant='ghost'
+                      size='sm'
                       onClick={() => handleCopy(result.task_id || '')}
                     >
-                      <Copy className="h-4 w-4" />
+                      <Copy className='h-4 w-4' />
                     </Button>
                   </div>
                 </div>
@@ -135,11 +133,11 @@ export function ApplicationTaskResultDialog({
             </div>
 
             {/* Time Info */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className='grid grid-cols-2 gap-4'>
               {result.dispatched_at && (
                 <div>
-                  <h3 className="text-sm font-medium mb-2">下发时间</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className='mb-2 text-sm font-medium'>下发时间</h3>
+                  <p className='text-muted-foreground text-sm'>
                     {new Date(result.dispatched_at).toLocaleString()}
                   </p>
                 </div>
@@ -147,8 +145,8 @@ export function ApplicationTaskResultDialog({
 
               {result.started_at && (
                 <div>
-                  <h3 className="text-sm font-medium mb-2">开始时间</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className='mb-2 text-sm font-medium'>开始时间</h3>
+                  <p className='text-muted-foreground text-sm'>
                     {new Date(result.started_at).toLocaleString()}
                   </p>
                 </div>
@@ -156,8 +154,8 @@ export function ApplicationTaskResultDialog({
 
               {result.completed_at && (
                 <div>
-                  <h3 className="text-sm font-medium mb-2">完成时间</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className='mb-2 text-sm font-medium'>完成时间</h3>
+                  <p className='text-muted-foreground text-sm'>
                     {new Date(result.completed_at).toLocaleString()}
                   </p>
                 </div>
@@ -165,8 +163,8 @@ export function ApplicationTaskResultDialog({
 
               {result.started_at && result.completed_at && (
                 <div>
-                  <h3 className="text-sm font-medium mb-2">执行时长</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className='mb-2 text-sm font-medium'>执行时长</h3>
+                  <p className='text-muted-foreground text-sm'>
                     {formatDuration(result.started_at, result.completed_at)}
                   </p>
                 </div>
@@ -176,18 +174,20 @@ export function ApplicationTaskResultDialog({
             {/* Result Data */}
             {result.result_data && (
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium">执行结果</h3>
+                <div className='mb-2 flex items-center justify-between'>
+                  <h3 className='text-sm font-medium'>执行结果</h3>
                   <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleCopy(JSON.stringify(result.result_data, null, 2))}
+                    variant='ghost'
+                    size='sm'
+                    onClick={() =>
+                      handleCopy(JSON.stringify(result.result_data, null, 2))
+                    }
                   >
-                    <Copy className="h-4 w-4 mr-2" />
+                    <Copy className='mr-2 h-4 w-4' />
                     复制
                   </Button>
                 </div>
-                <pre className="text-xs bg-muted p-4 rounded overflow-x-auto">
+                <pre className='bg-muted overflow-x-auto rounded p-4 text-xs'>
                   {JSON.stringify(result.result_data, null, 2)}
                 </pre>
               </div>
@@ -196,21 +196,21 @@ export function ApplicationTaskResultDialog({
             {/* Error Message */}
             {result.error_message && (
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-destructive" />
+                <div className='mb-2 flex items-center justify-between'>
+                  <h3 className='flex items-center gap-2 text-sm font-medium'>
+                    <AlertCircle className='text-destructive h-4 w-4' />
                     错误信息
                   </h3>
                   <Button
-                    variant="ghost"
-                    size="sm"
+                    variant='ghost'
+                    size='sm'
                     onClick={() => handleCopy(result.error_message || '')}
                   >
-                    <Copy className="h-4 w-4 mr-2" />
+                    <Copy className='mr-2 h-4 w-4' />
                     复制
                   </Button>
                 </div>
-                <div className="text-sm text-destructive bg-destructive/10 p-4 rounded whitespace-pre-wrap">
+                <div className='text-destructive bg-destructive/10 rounded p-4 text-sm whitespace-pre-wrap'>
                   {result.error_message}
                 </div>
               </div>
@@ -219,8 +219,8 @@ export function ApplicationTaskResultDialog({
             {/* Retry Info */}
             {result.retry_count !== undefined && result.retry_count > 0 && (
               <div>
-                <h3 className="text-sm font-medium mb-2">重试信息</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className='mb-2 text-sm font-medium'>重试信息</h3>
+                <p className='text-muted-foreground text-sm'>
                   已重试 {result.retry_count} 次
                 </p>
               </div>
@@ -229,14 +229,12 @@ export function ApplicationTaskResultDialog({
         </ScrollArea>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-2 pt-4 border-t">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <div className='flex items-center justify-end gap-2 border-t pt-4'>
+          <Button variant='outline' onClick={() => onOpenChange(false)}>
             关闭
           </Button>
           {result.status === 'failed' && onRetry && (
-            <Button onClick={handleRetry}>
-              重试任务
-            </Button>
+            <Button onClick={handleRetry}>重试任务</Button>
           )}
         </div>
       </DialogContent>

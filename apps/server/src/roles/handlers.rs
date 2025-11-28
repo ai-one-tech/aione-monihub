@@ -3,7 +3,7 @@ use crate::entities::role_permissions::{
     ActiveModel as RolePermissionActiveModel, Entity as RolePermissions,
 };
 use crate::entities::roles::{ActiveModel, Column, Entity as Roles};
-use crate::entities::{Permissions};
+use crate::entities::Permissions;
 use crate::permissions::handlers::get_role_permissions_list;
 use crate::roles::models::{
     RoleCreateRequest, RoleListResponse, RolePermissionListResponse, RolePermissionResponse,
@@ -13,7 +13,10 @@ use crate::shared::error::ApiError;
 use crate::shared::generate_snowflake_id;
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::Utc;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter,
+    QueryOrder, QuerySelect, Set,
+};
 
 /// 获取角色列表
 #[utoipa::path(
@@ -56,7 +59,12 @@ pub async fn get_roles(
     let total_pages = paginator.num_pages().await?;
 
     // 获取分页数据
-    let roles = query_builder.order_by_desc(Column::CreatedAt).offset(offset).limit(limit).all(&**db).await?;
+    let roles = query_builder
+        .order_by_desc(Column::CreatedAt)
+        .offset(offset)
+        .limit(limit)
+        .all(&**db)
+        .await?;
 
     // 转换为响应格式
     let mut role_responses = Vec::new();
@@ -222,7 +230,8 @@ pub async fn create_role(
         &req,
         None,
         Some(after),
-    ).await;
+    )
+    .await;
 
     Ok(HttpResponse::Ok().json(response))
 }
@@ -428,7 +437,8 @@ pub async fn update_role(
         &req,
         Some(before),
         Some(after),
-    ).await;
+    )
+    .await;
 
     Ok(HttpResponse::Ok().json(response))
 }
@@ -499,7 +509,8 @@ pub async fn delete_role(
         &req,
         Some(before),
         None,
-    ).await;
+    )
+    .await;
 
     Ok(HttpResponse::Ok().json("角色删除成功"))
 }

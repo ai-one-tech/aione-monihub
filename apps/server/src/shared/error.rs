@@ -1,8 +1,8 @@
 use actix_web::{HttpResponse, ResponseError};
-use derive_more::Display;
-use serde::Serialize;
-use rand::{distributions::Alphanumeric, Rng};
 use chrono::Utc;
+use derive_more::Display;
+use rand::{distributions::Alphanumeric, Rng};
+use serde::Serialize;
 use std::backtrace::Backtrace;
 
 // 过滤backtrace，只保留项目相关的堆栈帧
@@ -21,16 +21,16 @@ fn filter_backtrace(backtrace: &Backtrace) -> String {
         })
         .filter(|line| {
             // 排除第三方库
-            !line.contains("actix") &&
-            !line.contains("tokio") &&
-            !line.contains("sea_orm") &&
-            !line.contains("sqlx") &&
-            !line.contains(".cargo/registry") &&
-            !line.contains("rustc/") &&
-            !line.contains("/rustlib/")
+            !line.contains("actix")
+                && !line.contains("tokio")
+                && !line.contains("sea_orm")
+                && !line.contains("sqlx")
+                && !line.contains(".cargo/registry")
+                && !line.contains("rustc/")
+                && !line.contains("/rustlib/")
         })
         .collect();
-    
+
     if lines.is_empty() {
         "(无项目相关堆栈信息)".to_string()
     } else {
@@ -102,7 +102,9 @@ impl ResponseError for ApiError {
                     trace_id,
                     details: None,
                 };
-                HttpResponse::InternalServerError().insert_header(("x-trace-id", body.trace_id.clone())).json(body)
+                HttpResponse::InternalServerError()
+                    .insert_header(("x-trace-id", body.trace_id.clone()))
+                    .json(body)
             }
             ApiError::BadRequest(msg) => {
                 let trace_id: String = format!(
@@ -121,7 +123,9 @@ impl ResponseError for ApiError {
                     trace_id,
                     details: None,
                 };
-                HttpResponse::BadRequest().insert_header(("x-trace-id", body.trace_id.clone())).json(body)
+                HttpResponse::BadRequest()
+                    .insert_header(("x-trace-id", body.trace_id.clone()))
+                    .json(body)
             }
             ApiError::Unauthorized(msg) => {
                 let trace_id: String = format!(
@@ -140,7 +144,9 @@ impl ResponseError for ApiError {
                     trace_id,
                     details: None,
                 };
-                HttpResponse::Unauthorized().insert_header(("x-trace-id", body.trace_id.clone())).json(body)
+                HttpResponse::Unauthorized()
+                    .insert_header(("x-trace-id", body.trace_id.clone()))
+                    .json(body)
             }
             ApiError::Forbidden(msg) => {
                 let trace_id: String = format!(
@@ -159,7 +165,9 @@ impl ResponseError for ApiError {
                     trace_id,
                     details: None,
                 };
-                HttpResponse::Forbidden().insert_header(("x-trace-id", body.trace_id.clone())).json(body)
+                HttpResponse::Forbidden()
+                    .insert_header(("x-trace-id", body.trace_id.clone()))
+                    .json(body)
             }
             ApiError::NotFound(msg) => {
                 let trace_id: String = format!(
@@ -178,7 +186,9 @@ impl ResponseError for ApiError {
                     trace_id,
                     details: None,
                 };
-                HttpResponse::NotFound().insert_header(("x-trace-id", body.trace_id.clone())).json(body)
+                HttpResponse::NotFound()
+                    .insert_header(("x-trace-id", body.trace_id.clone()))
+                    .json(body)
             }
             ApiError::DatabaseError(msg) => {
                 let trace_id: String = format!(
@@ -205,7 +215,9 @@ impl ResponseError for ApiError {
                     trace_id,
                     details: None,
                 };
-                HttpResponse::InternalServerError().insert_header(("x-trace-id", body.trace_id.clone())).json(body)
+                HttpResponse::InternalServerError()
+                    .insert_header(("x-trace-id", body.trace_id.clone()))
+                    .json(body)
             }
             ApiError::ValidationError(msg) => {
                 let trace_id: String = format!(
@@ -224,7 +236,9 @@ impl ResponseError for ApiError {
                     trace_id,
                     details: None,
                 };
-                HttpResponse::BadRequest().insert_header(("x-trace-id", body.trace_id.clone())).json(body)
+                HttpResponse::BadRequest()
+                    .insert_header(("x-trace-id", body.trace_id.clone()))
+                    .json(body)
             }
         }
     }
@@ -236,7 +250,11 @@ impl From<sea_orm::DbErr> for ApiError {
         // 打印详细的数据库错误信息
         let backtrace = Backtrace::capture();
         let filtered_bt = filter_backtrace(&backtrace);
-        log::error!("Database error occurred: {}\n项目调用链:\n{}", error, filtered_bt);
+        log::error!(
+            "Database error occurred: {}\n项目调用链:\n{}",
+            error,
+            filtered_bt
+        );
         ApiError::DatabaseError(error.to_string())
     }
 }
@@ -244,7 +262,13 @@ impl From<sea_orm::DbErr> for ApiError {
 #[track_caller]
 pub fn db_error_here_with_context<E: std::fmt::Display>(error: E, context: &str) -> ApiError {
     let loc = std::panic::Location::caller();
-    ApiError::DatabaseError(format!("{} | at {}:{} | {}", error, loc.file(), loc.line(), context))
+    ApiError::DatabaseError(format!(
+        "{} | at {}:{} | {}",
+        error,
+        loc.file(),
+        loc.line(),
+        context
+    ))
 }
 
 // Implement From<serde_json::Error> for our custom error type

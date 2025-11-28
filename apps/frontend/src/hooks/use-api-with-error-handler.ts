@@ -1,8 +1,8 @@
 import { useCallback, useState, useRef, useEffect } from 'react'
-import { useNetworkError } from '@/context/network-error-context'
 import { AxiosError } from 'axios'
-import { ApiError } from '@/lib/api-client'
 import { toast } from 'sonner'
+import { ApiError } from '@/lib/api-client'
+import { useNetworkError } from '@/context/network-error-context'
 
 interface ApiCallOptions {
   disableNetworkErrorHandling?: boolean
@@ -10,7 +10,10 @@ interface ApiCallOptions {
 }
 
 interface UseApiWithErrorHandlerReturn<T> {
-  callApi: (apiCall: () => Promise<T>, options?: ApiCallOptions) => Promise<T | null>
+  callApi: (
+    apiCall: () => Promise<T>,
+    options?: ApiCallOptions
+  ) => Promise<T | null>
   loading: boolean
   data: T | null
   error: Error | null
@@ -43,14 +46,14 @@ export function useApiWithErrorHandler<T>(): UseApiWithErrorHandlerReturn<T> {
 
       setLoading(true)
       setError(null)
-      
+
       try {
         const result = await apiCall()
         // 组件已卸载，不更新状态
         if (!isMountedRef.current) {
           return result
         }
-        
+
         setData(result)
         return result
       } catch (err: any) {
@@ -58,21 +61,27 @@ export function useApiWithErrorHandler<T>(): UseApiWithErrorHandlerReturn<T> {
         if (!isMountedRef.current) {
           throw err
         }
-        
+
         setError(err)
-        
+
         // 仅在500错误时显示全局错误弹窗，其余错误使用toast
-        if (!options.disableNetworkErrorHandling && shouldShowErrorDialog(err)) {
+        if (
+          !options.disableNetworkErrorHandling &&
+          shouldShowErrorDialog(err)
+        ) {
           showError(err, async () => {
             // 重试API调用
-            return callApi(apiCall, { ...options, disableNetworkErrorHandling: true })
+            return callApi(apiCall, {
+              ...options,
+              disableNetworkErrorHandling: true,
+            })
           })
         }
         // 只有在网络错误弹窗未显示时才显示toast
         else if (!isDialogOpen) {
           toast.error(err.message || '请求失败')
         }
-        
+
         throw err
       } finally {
         // 组件已卸载，不更新状态

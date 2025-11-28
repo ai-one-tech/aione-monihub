@@ -3,6 +3,7 @@
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { X } from 'lucide-react'
 import { showSubmittedData } from '@/lib/show-submitted-data'
 import { Button } from '@/components/ui/button'
 import {
@@ -24,7 +25,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
 import { SelectDropdown } from '@/components/select-dropdown'
-import { X } from 'lucide-react'
 import { type User } from '../data/schema'
 
 const formSchema = z
@@ -346,7 +346,11 @@ export function UsersActionDialog({
           >
             取消
           </Button>
-          <Button type='submit' form='user-form' className='bg-blue-600 hover:bg-blue-700'>
+          <Button
+            type='submit'
+            form='user-form'
+            className='bg-blue-600 hover:bg-blue-700'
+          >
             {isEdit ? '保存' : '创建'}
           </Button>
         </DialogFooter>

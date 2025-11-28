@@ -1,7 +1,7 @@
+use crate::shared::enums::{PermissionAction, PermissionType};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use crate::shared::enums::{PermissionAction, PermissionType};
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Role {

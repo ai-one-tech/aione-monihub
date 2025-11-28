@@ -13,12 +13,16 @@ interface SystemPermissionsContextType {
   setSelectedPermissionId: (id: string | null) => void
 }
 
-const SystemPermissionsContext = createContext<SystemPermissionsContextType | undefined>(undefined)
+const SystemPermissionsContext = createContext<
+  SystemPermissionsContextType | undefined
+>(undefined)
 
 export function useSystemPermissions() {
   const context = useContext(SystemPermissionsContext)
   if (context === undefined) {
-    throw new Error('useSystemPermissions must be used within a SystemPermissionsProvider')
+    throw new Error(
+      'useSystemPermissions must be used within a SystemPermissionsProvider'
+    )
   }
   return context
 }
@@ -27,11 +31,16 @@ interface SystemPermissionsProviderProps {
   children: ReactNode
 }
 
-export function SystemPermissionsProvider({ children }: SystemPermissionsProviderProps) {
+export function SystemPermissionsProvider({
+  children,
+}: SystemPermissionsProviderProps) {
   const [isPermissionSheetOpen, setIsPermissionSheetOpen] = useState(false)
-  const [permissionSheetMode, setPermissionSheetMode] = useState<PermissionSheetMode>('create')
+  const [permissionSheetMode, setPermissionSheetMode] =
+    useState<PermissionSheetMode>('create')
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [selectedPermissionId, setSelectedPermissionId] = useState<string | null>(null)
+  const [selectedPermissionId, setSelectedPermissionId] = useState<
+    string | null
+  >(null)
 
   const value: SystemPermissionsContextType = {
     isPermissionSheetOpen,

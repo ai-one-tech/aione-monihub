@@ -8,13 +8,13 @@ use crate::models::TaskDispatchItem;
 use crate::services::AppState;
 use crate::utils::http_util;
 use anyhow::Result;
+use log::info;
 use reqwest::Client;
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
 use walkdir::WalkDir;
 use zip::write::FileOptions;
-use log::info;
 
 
 pub async fn execute(
@@ -52,14 +52,18 @@ pub async fn execute(
     Err(anyhow::anyhow!("unsupported operation"))
 }
 
-async fn upload_file(state: &AppState, remote_url: &str, target_path: Option<String>) -> Result<serde_json::Value> {
+async fn upload_file(
+    state: &AppState,
+    remote_url: &str,
+    target_path: Option<String>,
+) -> Result<serde_json::Value> {
     let client = Client::new();
-    
+
     // 如果指定了目标路径，直接保存到本地（下载模式）
     if let Some(path) = target_path {
         info!("Downloading file from {} to {}", remote_url, path);
         let mut path_buf = PathBuf::from(&path);
-        
+
         // 如果路径以分隔符结尾，或者是已存在的目录，则追加文件名
         if path.ends_with('/') || path.ends_with('\\') || path_buf.is_dir() {
             let filename = remote_url
@@ -76,10 +80,13 @@ async fn upload_file(state: &AppState, remote_url: &str, target_path: Option<Str
 
         // 使用 .part 临时文件，避免下载中断导致文件损坏
         let part_path = PathBuf::from(format!("{}.part", path_buf.to_string_lossy()));
-        
+
         let mut response = client.get(remote_url).send().await?;
         if !response.status().is_success() {
-            return Err(anyhow::anyhow!("Download failed with status: {}", response.status()));
+            return Err(anyhow::anyhow!(
+                "Download failed with status: {}",
+                response.status()
+            ));
         }
 
         let mut file = fs::File::create(&part_path)?;
@@ -89,14 +96,17 @@ async fn upload_file(state: &AppState, remote_url: &str, target_path: Option<Str
             file.write_all(&chunk)?;
             downloaded += chunk.len() as u64;
         }
-        
+
         fs::rename(&part_path, &path_buf)?;
-        
-        info!("Download completed: {} bytes saved to {:?}", downloaded, path_buf);
+
+        info!(
+            "Download completed: {} bytes saved to {:?}",
+            downloaded, path_buf
+        );
 
         return Ok(serde_json::json!({
             "status": "success",
-            "saved_path": path_buf.to_string_lossy(), 
+            "saved_path": path_buf.to_string_lossy(),
             "size": downloaded
         }));
     }
@@ -167,14 +177,19 @@ async fn upload_file(state: &AppState, remote_url: &str, target_path: Option<Str
     Ok(serde_json::json!({"upload_id": upload_id}))
 }
 
-async fn download_file(state: &AppState, item: &TaskDispatchItem, path: &str) -> Result<serde_json::Value> {
+async fn download_file(
+    state: &AppState,
+    item: &TaskDispatchItem,
+    path: &str,
+) -> Result<serde_json::Value> {
     let src = PathBuf::from(path);
     if !src.exists() {
         return Err(anyhow::anyhow!("File or directory not found: {}", path));
     }
 
     let is_directory = src.is_dir();
-    let original_name = src.file_name()
+    let original_name = src
+        .file_name()
         .map(|n| n.to_string_lossy().to_string())
         .unwrap_or_else(|| "file".to_string());
 
@@ -185,21 +200,27 @@ async fn download_file(state: &AppState, item: &TaskDispatchItem, path: &str) ->
     if is_directory {
         is_zip = true;
         final_name = format!("{}.zip", original_name);
-        target_file = std::env::temp_dir().join("monihub").join("archives").join(&final_name);
+        target_file = std::env::temp_dir()
+            .join("monihub")
+            .join("archives")
+            .join(&final_name);
         fs::create_dir_all(target_file.parent().unwrap())?;
-        
+
         zip_directory(&src, &target_file)?;
     } else {
         let file_size = fs::metadata(&src)?.len();
         let is_compressed_file = is_compressed_extension(&original_name);
-        
+
         let max_size = 10 * 1024 * 1024;
         if file_size > max_size && !is_compressed_file {
             is_zip = true;
             final_name = format!("{}.zip", original_name);
-            target_file = std::env::temp_dir().join("monihub").join("archives").join(&final_name);
+            target_file = std::env::temp_dir()
+                .join("monihub")
+                .join("archives")
+                .join(&final_name);
             fs::create_dir_all(target_file.parent().unwrap())?;
-            
+
             zip_single_file(&src, &target_file)?;
         } else {
             is_zip = false;
@@ -214,13 +235,13 @@ async fn download_file(state: &AppState, item: &TaskDispatchItem, path: &str) ->
     let total_chunks = (file_size + chunk_size - 1) / chunk_size;
 
     let init_url = format!("{}/api/files/upload/init", state.cfg.server_url);
-    
+
     let file_extension = if is_zip {
         Some("zip".to_string())
     } else {
         original_name.rsplit('.').next().map(|s| s.to_string())
     };
-    
+
     // 参考 Java 实现,从 task 中获取 task_id 和 instance_id
     let init_body = serde_json::json!({
         "file_name": final_name,
@@ -237,9 +258,10 @@ async fn download_file(state: &AppState, item: &TaskDispatchItem, path: &str) ->
 
     let init_res = http_util::post(init_url, &init_body).await?;
     let meta = init_res.json::<serde_json::Value>().await?;
-    
+
     // 提取 upload_id (必需字段)
-    let upload_id = meta.get("upload_id")
+    let upload_id = meta
+        .get("upload_id")
         .and_then(|v| v.as_str())
         .ok_or_else(|| {
             anyhow::anyhow!(
@@ -248,26 +270,26 @@ async fn download_file(state: &AppState, item: &TaskDispatchItem, path: &str) ->
             )
         })?
         .to_string();
-    
+
     // 提取可选字段 (参考 Java FileManagerHandler 实现)
-    let init_download_path = meta.get("download_path")
+    let init_download_path = meta
+        .get("download_path")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
-    
-    let init_is_directory = meta.get("is_directory")
-        .and_then(|v| v.as_bool());
-    
-    let init_compressed = meta.get("compressed")
-        .and_then(|v| v.as_bool());
-    
-    let init_final_name = meta.get("final_name")
+
+    let init_is_directory = meta.get("is_directory").and_then(|v| v.as_bool());
+
+    let init_compressed = meta.get("compressed").and_then(|v| v.as_bool());
+
+    let init_final_name = meta
+        .get("final_name")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
-    
-    let init_size = meta.get("size")
-        .and_then(|v| v.as_u64());
-    
-    let init_server_file_path = meta.get("server_file_path")
+
+    let init_size = meta.get("size").and_then(|v| v.as_u64());
+
+    let init_server_file_path = meta
+        .get("server_file_path")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
 
@@ -275,11 +297,14 @@ async fn download_file(state: &AppState, item: &TaskDispatchItem, path: &str) ->
         "{}/api/files/upload/resume?upload_id={}",
         state.cfg.server_url, upload_id
     );
-    
+
     let mut uploaded_chunks: std::collections::HashSet<u64> = std::collections::HashSet::new();
     if let Ok(resume_res) = http_util::get_client().get(&resume_url).send().await {
         if let Ok(resume_data) = resume_res.json::<serde_json::Value>().await {
-            if let Some(arr) = resume_data.get("completed_chunks").and_then(|v| v.as_array()) {
+            if let Some(arr) = resume_data
+                .get("completed_chunks")
+                .and_then(|v| v.as_array())
+            {
                 for chunk_idx in arr {
                     if let Some(n) = chunk_idx.as_u64() {
                         uploaded_chunks.insert(n);
@@ -291,7 +316,7 @@ async fn download_file(state: &AppState, item: &TaskDispatchItem, path: &str) ->
 
     let file_bytes = fs::read(&target_file)?;
     let chunk_url = format!("{}/api/files/upload/chunk", state.cfg.server_url);
-    
+
     let max_retries = 3;
     let min_chunk_size: u64 = 1 * 1024 * 1024;
     let mut current_chunk_size = chunk_size;
@@ -308,21 +333,26 @@ async fn download_file(state: &AppState, item: &TaskDispatchItem, path: &str) ->
 
         let end = std::cmp::min(offset + current_chunk_size, file_size);
         let chunk_data = &file_bytes[(offset as usize)..(end as usize)];
-        
+
         let mut retry_count = 0;
         let mut upload_success = false;
         let mut consecutive_failures = 0;
 
         while retry_count <= max_retries && !upload_success {
-            let part = reqwest::multipart::Part::bytes(chunk_data.to_vec())
-                .file_name(final_name.clone());
+            let part =
+                reqwest::multipart::Part::bytes(chunk_data.to_vec()).file_name(final_name.clone());
             let form = reqwest::multipart::Form::new()
                 .text("upload_id", upload_id.clone())
                 .text("chunk_index", chunk_index.to_string())
                 .text("chunk_size", (end - offset).to_string())
                 .part("chunk", part);
 
-            match http_util::get_client().post(&chunk_url).multipart(form).send().await {
+            match http_util::get_client()
+                .post(&chunk_url)
+                .multipart(form)
+                .send()
+                .await
+            {
                 Ok(res) => {
                     let status = res.status();
                     if status.is_success() {
@@ -332,10 +362,14 @@ async fn download_file(state: &AppState, item: &TaskDispatchItem, path: &str) ->
                     } else if status.as_u16() == 413 {
                         consecutive_failures += 1;
                         if current_chunk_size > min_chunk_size && consecutive_failures > 1 {
-                            let new_chunk_size = std::cmp::max(min_chunk_size, current_chunk_size / 2);
+                            let new_chunk_size =
+                                std::cmp::max(min_chunk_size, current_chunk_size / 2);
                             if new_chunk_size < current_chunk_size {
                                 current_chunk_size = new_chunk_size;
-                                info!("Reducing chunk size to {} due to 413 error", current_chunk_size);
+                                info!(
+                                    "Reducing chunk size to {} due to 413 error",
+                                    current_chunk_size
+                                );
                                 continue;
                             }
                         }
@@ -349,15 +383,23 @@ async fn download_file(state: &AppState, item: &TaskDispatchItem, path: &str) ->
                     consecutive_failures += 1;
                     retry_count += 1;
                     if retry_count <= max_retries {
-                        info!("Chunk {} upload failed (attempt {}): {}", chunk_index, retry_count, e);
-                        tokio::time::sleep(tokio::time::Duration::from_secs(retry_count as u64)).await;
+                        info!(
+                            "Chunk {} upload failed (attempt {}): {}",
+                            chunk_index, retry_count, e
+                        );
+                        tokio::time::sleep(tokio::time::Duration::from_secs(retry_count as u64))
+                            .await;
                     }
                 }
             }
         }
 
         if !upload_success {
-            return Err(anyhow::anyhow!("Failed to upload chunk {} after {} retries", chunk_index, max_retries));
+            return Err(anyhow::anyhow!(
+                "Failed to upload chunk {} after {} retries",
+                chunk_index,
+                max_retries
+            ));
         }
 
         offset = end;
@@ -395,17 +437,18 @@ fn zip_single_file(src: &PathBuf, dest: &PathBuf) -> Result<()> {
     let options = FileOptions::default()
         .compression_method(zip::CompressionMethod::Deflated)
         .unix_permissions(0o755);
-    
-    let file_name = src.file_name()
+
+    let file_name = src
+        .file_name()
         .ok_or_else(|| anyhow::anyhow!("Invalid file name"))?
         .to_string_lossy()
         .to_string();
-    
+
     zip_writer.start_file(file_name, options)?;
     let content = fs::read(src)?;
     zip_writer.write_all(&content)?;
     zip_writer.finish()?;
-    
+
     Ok(())
 }
 
@@ -415,15 +458,16 @@ fn zip_directory(src: &PathBuf, dest: &PathBuf) -> Result<()> {
     let options = FileOptions::default()
         .compression_method(zip::CompressionMethod::Deflated)
         .unix_permissions(0o755);
-    
+
     let walkdir = WalkDir::new(src);
     let base_path = src;
-    
+
     for entry in walkdir.into_iter().filter_map(|e| e.ok()) {
         let path = entry.path();
-        let name = path.strip_prefix(base_path)
+        let name = path
+            .strip_prefix(base_path)
             .map_err(|e| anyhow::anyhow!("Strip prefix error: {}", e))?;
-        
+
         if path.is_file() {
             let relative_path = name.to_string_lossy().to_string();
             zip_writer.start_file(relative_path, options)?;
@@ -434,7 +478,7 @@ fn zip_directory(src: &PathBuf, dest: &PathBuf) -> Result<()> {
             zip_writer.add_directory(relative_path, options)?;
         }
     }
-    
+
     zip_writer.finish()?;
     Ok(())
 }

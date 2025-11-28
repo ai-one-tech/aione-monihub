@@ -77,8 +77,14 @@ function DialogContent({
         )}
         {...props}
       >
-        <div className={cn('bg-background min-w-[400px] min-h-[200px] max-w-[calc(100%-2rem)] max-h-[calc(100%-2rem)] overflow-y-auto rounded-lg border p-4 shadow-lg duration-200 relative p-4')}>        
-          <div className={cn('w-full h-full')} ref={contentRef}>{children}</div>
+        <div
+          className={cn(
+            'bg-background relative max-h-[calc(100%-2rem)] min-h-[200px] max-w-[calc(100%-2rem)] min-w-[400px] overflow-y-auto rounded-lg border p-4 shadow-lg duration-200'
+          )}
+        >
+          <div className={cn('h-full w-full')} ref={contentRef}>
+            {children}
+          </div>
           {showCloseButton && (
             <DialogPrimitive.Close
               data-slot='dialog-close'
@@ -90,15 +96,15 @@ function DialogContent({
           )}
           {showCopyButton && (
             <Button
-              type="button"
+              type='button'
               onClick={handleCopy}
-              variant="ghost"
-              size="icon"
-              className="absolute end-4 bottom-4"
-              aria-label="拷贝内容"
-              title="拷贝内容"
+              variant='ghost'
+              size='icon'
+              className='absolute end-4 bottom-4'
+              aria-label='拷贝内容'
+              title='拷贝内容'
             >
-              <Copy className="size-5" />
+              <Copy className='size-5' />
             </Button>
           )}
         </div>

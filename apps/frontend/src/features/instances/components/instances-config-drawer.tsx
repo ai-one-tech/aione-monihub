@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -13,7 +14,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Switch } from '@/components/ui/switch'
 import {
   Sheet,
   SheetContent,
@@ -22,19 +22,23 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { useInstancesProvider } from './instances-provider'
-import { useInstanceQuery, useUpdateInstanceConfig } from '../hooks/use-instances-query'
+import { Switch } from '@/components/ui/switch'
 import { instanceConfigSchema, type InstanceConfig } from '../data/api-schema'
-import { toast } from 'sonner'
+import {
+  useInstanceQuery,
+  useUpdateInstanceConfig,
+} from '../hooks/use-instances-query'
+import { useInstancesProvider } from './instances-provider'
 
 export function InstancesConfigDrawer() {
-  const {
-    configDrawerOpen,
-    setConfigDrawerOpen,
-    selectedInstanceId,
-  } = useInstancesProvider()
+  const { configDrawerOpen, setConfigDrawerOpen, selectedInstanceId } =
+    useInstancesProvider()
 
-  const { data: instanceDetail, isLoading: isLoadingInstance, refetch } = useInstanceQuery(selectedInstanceId || '')
+  const {
+    data: instanceDetail,
+    isLoading: isLoadingInstance,
+    refetch,
+  } = useInstanceQuery(selectedInstanceId || '')
   const updateConfig = useUpdateInstanceConfig()
 
   const form = useForm<InstanceConfig>({
@@ -64,7 +68,10 @@ export function InstancesConfigDrawer() {
   const handleSubmit = async (values: InstanceConfig) => {
     if (!selectedInstanceId) return
     try {
-      await updateConfig.mutateAsync({ instanceId: selectedInstanceId, config: values })
+      await updateConfig.mutateAsync({
+        instanceId: selectedInstanceId,
+        config: values,
+      })
       setConfigDrawerOpen(false)
     } catch (e: any) {
       let message = '更新配置失败'
@@ -82,16 +89,22 @@ export function InstancesConfigDrawer() {
         </SheetHeader>
 
         {isLoadingInstance ? (
-          <div className='flex-1 flex items-center justify-center'>
-            <div className='text-sm text-muted-foreground'>加载实例配置中...</div>
+          <div className='flex flex-1 items-center justify-center'>
+            <div className='text-muted-foreground text-sm'>
+              加载实例配置中...
+            </div>
           </div>
         ) : (
           <div className='flex-1 overflow-y-auto px-6 py-4'>
             <Form {...form}>
-              <form id='instance-config-form' className='space-y-6' onSubmit={form.handleSubmit(handleSubmit)}>
+              <form
+                id='instance-config-form'
+                className='space-y-6'
+                onSubmit={form.handleSubmit(handleSubmit)}
+              >
                 {/* Debug 分组 */}
                 <div>
-                  <h3 className='text-sm font-semibold mb-4'>调试</h3>
+                  <h3 className='mb-4 text-sm font-semibold'>调试</h3>
                   <FormField
                     control={form.control}
                     name='debug'
@@ -99,7 +112,10 @@ export function InstancesConfigDrawer() {
                       <FormItem className='flex items-center justify-between'>
                         <FormLabel>启用调试模式</FormLabel>
                         <FormControl>
-                          <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+                          <Switch
+                            checked={!!field.value}
+                            onCheckedChange={field.onChange}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -108,8 +124,8 @@ export function InstancesConfigDrawer() {
                 </div>
 
                 {/* Report 分组 */}
-                <div className='pt-4 border-t'>
-                  <h3 className='text-sm font-semibold mb-4'>上报配置</h3>
+                <div className='border-t pt-4'>
+                  <h3 className='mb-4 text-sm font-semibold'>上报配置</h3>
                   <FormField
                     control={form.control}
                     name='report.enabled'
@@ -117,7 +133,10 @@ export function InstancesConfigDrawer() {
                       <FormItem className='flex items-center justify-between'>
                         <FormLabel>启用上报</FormLabel>
                         <FormControl>
-                          <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+                          <Switch
+                            checked={!!field.value}
+                            onCheckedChange={field.onChange}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -130,7 +149,13 @@ export function InstancesConfigDrawer() {
                       <FormItem className='mt-4'>
                         <FormLabel>上报间隔（秒）</FormLabel>
                         <FormControl>
-                          <Input type='number' value={field.value} onChange={(e) => field.onChange(parseInt(e.target.value || '0'))} />
+                          <Input
+                            type='number'
+                            value={field.value}
+                            onChange={(e) =>
+                              field.onChange(parseInt(e.target.value || '0'))
+                            }
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -143,7 +168,13 @@ export function InstancesConfigDrawer() {
                       <FormItem className='mt-4'>
                         <FormLabel>最大日志数</FormLabel>
                         <FormControl>
-                          <Input type='number' value={field.value} onChange={(e) => field.onChange(parseInt(e.target.value || '0'))} />
+                          <Input
+                            type='number'
+                            value={field.value}
+                            onChange={(e) =>
+                              field.onChange(parseInt(e.target.value || '0'))
+                            }
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -152,8 +183,8 @@ export function InstancesConfigDrawer() {
                 </div>
 
                 {/* Task 分组 */}
-                <div className='pt-4 border-t'>
-                  <h3 className='text-sm font-semibold mb-4'>任务配置</h3>
+                <div className='border-t pt-4'>
+                  <h3 className='mb-4 text-sm font-semibold'>任务配置</h3>
                   <FormField
                     control={form.control}
                     name='task.enabled'
@@ -161,7 +192,10 @@ export function InstancesConfigDrawer() {
                       <FormItem className='flex items-center justify-between'>
                         <FormLabel>启用任务功能</FormLabel>
                         <FormControl>
-                          <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+                          <Switch
+                            checked={!!field.value}
+                            onCheckedChange={field.onChange}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -174,7 +208,13 @@ export function InstancesConfigDrawer() {
                       <FormItem className='mt-4'>
                         <FormLabel>长轮询超时（秒）</FormLabel>
                         <FormControl>
-                          <Input type='number' value={field.value} onChange={(e) => field.onChange(parseInt(e.target.value || '0'))} />
+                          <Input
+                            type='number'
+                            value={field.value}
+                            onChange={(e) =>
+                              field.onChange(parseInt(e.target.value || '0'))
+                            }
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -183,8 +223,8 @@ export function InstancesConfigDrawer() {
                 </div>
 
                 {/* HTTP 分组 */}
-                <div className='pt-4 border-t'>
-                  <h3 className='text-sm font-semibold mb-4'>HTTP配置</h3>
+                <div className='border-t pt-4'>
+                  <h3 className='mb-4 text-sm font-semibold'>HTTP配置</h3>
                   <FormField
                     control={form.control}
                     name='http.proxy_enabled'
@@ -192,7 +232,10 @@ export function InstancesConfigDrawer() {
                       <FormItem className='flex items-center justify-between'>
                         <FormLabel>启用代理</FormLabel>
                         <FormControl>
-                          <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+                          <Switch
+                            checked={!!field.value}
+                            onCheckedChange={field.onChange}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -209,7 +252,10 @@ export function InstancesConfigDrawer() {
                           <FormItem>
                             <FormLabel>代理地址</FormLabel>
                             <FormControl>
-                              <Input placeholder='host 或 http(s) 地址' {...field} />
+                              <Input
+                                placeholder='host 或 http(s) 地址'
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -222,7 +268,17 @@ export function InstancesConfigDrawer() {
                           <FormItem>
                             <FormLabel>代理端口</FormLabel>
                             <FormControl>
-                              <Input type='number' value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)} />
+                              <Input
+                                type='number'
+                                value={field.value ?? ''}
+                                onChange={(e) =>
+                                  field.onChange(
+                                    e.target.value
+                                      ? parseInt(e.target.value)
+                                      : undefined
+                                  )
+                                }
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -248,7 +304,11 @@ export function InstancesConfigDrawer() {
                           <FormItem>
                             <FormLabel>代理密码</FormLabel>
                             <FormControl>
-                              <Input type='password' placeholder='可选' {...field} />
+                              <Input
+                                type='password'
+                                placeholder='可选'
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -262,9 +322,17 @@ export function InstancesConfigDrawer() {
           </div>
         )}
         <SheetFooter>
-          <div className='flex justify-end space-x-3 w-full'>
-            <Button type='button' variant='outline' onClick={handleClose}>取消</Button>
-            <Button type='submit' form='instance-config-form' disabled={updateConfig.isPending}>保存</Button>
+          <div className='flex w-full justify-end space-x-3'>
+            <Button type='button' variant='outline' onClick={handleClose}>
+              取消
+            </Button>
+            <Button
+              type='submit'
+              form='instance-config-form'
+              disabled={updateConfig.isPending}
+            >
+              保存
+            </Button>
           </div>
         </SheetFooter>
       </SheetContent>

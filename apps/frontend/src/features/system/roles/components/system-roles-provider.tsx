@@ -10,7 +10,7 @@ interface SystemRolesContextType {
   setSheetMode: (mode: SheetMode) => void
   selectedRoleId: string | null
   setSelectedRoleId: (id: string | null) => void
-  
+
   // 删除对话框状态
   isDeleteDialogOpen: boolean
   setIsDeleteDialogOpen: (open: boolean) => void
@@ -18,12 +18,16 @@ interface SystemRolesContextType {
   setDeleteRoleId: (id: string | null) => void
 }
 
-const SystemRolesContext = createContext<SystemRolesContextType | undefined>(undefined)
+const SystemRolesContext = createContext<SystemRolesContextType | undefined>(
+  undefined
+)
 
 export function useSystemRolesContext() {
   const context = useContext(SystemRolesContext)
   if (!context) {
-    throw new Error('useSystemRolesContext must be used within a SystemRolesProvider')
+    throw new Error(
+      'useSystemRolesContext must be used within a SystemRolesProvider'
+    )
   }
   return context
 }
@@ -37,7 +41,7 @@ export function SystemRolesProvider({ children }: SystemRolesProviderProps) {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [sheetMode, setSheetMode] = useState<SheetMode>('create')
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null)
-  
+
   // 删除对话框状态
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [deleteRoleId, setDeleteRoleId] = useState<string | null>(null)
@@ -50,7 +54,7 @@ export function SystemRolesProvider({ children }: SystemRolesProviderProps) {
     setSheetMode,
     selectedRoleId,
     setSelectedRoleId,
-    
+
     // 删除对话框状态
     isDeleteDialogOpen,
     setIsDeleteDialogOpen,

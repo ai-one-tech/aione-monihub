@@ -1,7 +1,7 @@
+use crate::shared::enums::{ConfigType, Environment};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
-use crate::shared::enums::{Environment, ConfigType};
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Config {

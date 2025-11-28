@@ -4,18 +4,21 @@
 
 UPDATE "public"."instances"
 SET "network_type" = CASE
-    WHEN "network_type" IS NULL THEN NULL
+                         WHEN "network_type" IS NULL THEN NULL
     -- wired 优先
-    WHEN lower("network_type") LIKE '%wired%' OR lower(btrim("network_type")) = 'wired' THEN 'wired'
+                         WHEN lower("network_type") LIKE '%wired%' OR lower(btrim("network_type")) = 'wired'
+                             THEN 'wired'
     -- wifi 次优先（兼容 wi-fi 写法）
-    WHEN lower("network_type") LIKE '%wifi%' OR lower(btrim("network_type")) = 'wifi' OR lower(btrim("network_type")) = 'wi-fi' THEN 'wifi'
+                         WHEN lower("network_type") LIKE '%wifi%' OR lower(btrim("network_type")) = 'wifi' OR
+                              lower(btrim("network_type")) = 'wi-fi' THEN 'wifi'
     -- cellular 再次优先（兼容 mobile 写法）
-    WHEN lower("network_type") LIKE '%cellular%' OR lower("network_type") LIKE '%mobile%'
-         OR lower(btrim("network_type")) = 'cellular' OR lower(btrim("network_type")) = 'mobile' THEN 'cellular'
+                         WHEN lower("network_type") LIKE '%cellular%' OR lower("network_type") LIKE '%mobile%'
+                             OR lower(btrim("network_type")) = 'cellular' OR lower(btrim("network_type")) = 'mobile'
+                             THEN 'cellular'
     -- 其他值或空字符串归一化为 unknown
-    WHEN lower(btrim("network_type")) IN ('unknown', '') THEN 'unknown'
-    ELSE 'unknown'
-END
+                         WHEN lower(btrim("network_type")) IN ('unknown', '') THEN 'unknown'
+                         ELSE 'unknown'
+    END
 WHERE "network_type" IS NOT NULL;
 
 -- 可选：如需后续为该列建立枚举索引或检查约束，可在此添加约束或索引

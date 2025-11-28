@@ -1,12 +1,21 @@
 use crate::entities::logs::{Column, Entity as Logs};
-use crate::entities::{applications::{Entity as Applications, Column as ApplicationsColumn}, instances::{Entity as Instances, Column as InstancesColumn}, users::{Entity as Users, Column as UsersColumn}};
+use crate::entities::{
+    applications::{Column as ApplicationsColumn, Entity as Applications},
+    instances::{Column as InstancesColumn, Entity as Instances},
+    users::{Column as UsersColumn, Entity as Users},
+};
+use crate::logs::models::{
+    LogListQuery, LogListResponse as ModelLogListResponse, LogResponse as ModelLogResponse,
+    Pagination as ModelPagination,
+};
 use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
 use actix_web::{web, HttpResponse};
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, PaginatorTrait, Order};
 use sea_orm::sea_query::Expr;
 use sea_orm::Condition;
-use crate::logs::models::{LogListQuery, LogListResponse as ModelLogListResponse, LogResponse as ModelLogResponse, Pagination as ModelPagination};
+use sea_orm::{
+    ColumnTrait, DatabaseConnection, EntityTrait, Order, PaginatorTrait, QueryFilter, QueryOrder,
+};
 
 pub async fn get_logs(
     query: web::Query<LogListQuery>,
@@ -96,29 +105,41 @@ pub async fn get_logs(
     query_builder = query_builder.order_by(Column::Timestamp, Order::Desc);
     let paginator = query_builder.paginate(&**db, limit as u64);
 
-    let total = paginator.num_items().await.map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
-    let logs = paginator.fetch_page((page - 1) as u64).await.map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
+    let total = paginator
+        .num_items()
+        .await
+        .map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
+    let logs = paginator
+        .fetch_page((page - 1) as u64)
+        .await
+        .map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
 
     // 计算偏移量（分页）
     let _offset = (page - 1) * limit;
 
     // 预取名称映射，避免 N+1 查询
-    use std::collections::HashSet;
     use std::collections::HashMap;
+    use std::collections::HashSet;
     let mut app_ids: HashSet<String> = HashSet::new();
     let mut inst_ids: HashSet<String> = HashSet::new();
     let mut user_ids: HashSet<String> = HashSet::new();
 
     for log in &logs {
         if let Some(app_id) = log.application_id.as_ref() {
-            if !app_id.is_empty() { app_ids.insert(app_id.clone()); }
+            if !app_id.is_empty() {
+                app_ids.insert(app_id.clone());
+            }
         }
         if let Some(inst_id) = log.instance_id.as_ref() {
-            if !inst_id.is_empty() { inst_ids.insert(inst_id.clone()); }
+            if !inst_id.is_empty() {
+                inst_ids.insert(inst_id.clone());
+            }
         }
         if let Some(ctx) = log.context.as_ref() {
             if let Some(uid) = ctx.get("user_id").and_then(|v| v.as_str()) {
-                if !uid.is_empty() { user_ids.insert(uid.to_string()); }
+                if !uid.is_empty() {
+                    user_ids.insert(uid.to_string());
+                }
             }
         }
     }
@@ -130,7 +151,9 @@ pub async fn get_logs(
             .await
             .map(|list| list.into_iter().map(|m| (m.id, m.name)).collect())
             .unwrap_or_default()
-    } else { HashMap::new() };
+    } else {
+        HashMap::new()
+    };
 
     let inst_name_map: HashMap<String, String> = if !inst_ids.is_empty() {
         Instances::find()
@@ -139,7 +162,9 @@ pub async fn get_logs(
             .await
             .map(|list| list.into_iter().map(|m| (m.id, m.hostname)).collect())
             .unwrap_or_default()
-    } else { HashMap::new() };
+    } else {
+        HashMap::new()
+    };
 
     let user_name_map: HashMap<String, String> = if !user_ids.is_empty() {
         Users::find()
@@ -148,7 +173,9 @@ pub async fn get_logs(
             .await
             .map(|list| list.into_iter().map(|m| (m.id, m.username)).collect())
             .unwrap_or_default()
-    } else { HashMap::new() };
+    } else {
+        HashMap::new()
+    };
 
     // 转换为响应格式
     let log_responses: Vec<ModelLogResponse> = logs
@@ -157,47 +184,77 @@ pub async fn get_logs(
             let application_id = log.application_id.clone().unwrap_or_default();
             let instance_id = log.instance_id.clone().unwrap_or_default();
             let ctx = log.context.clone();
-            let user_id_in_ctx = ctx.as_ref().and_then(|c| c.get("user_id")).and_then(|v| v.as_str()).map(|s| s.to_string());
-            let application_name = if application_id.is_empty() { None } else { app_name_map.get(&application_id).cloned() };
-            let instance_hostname = if instance_id.is_empty() { None } else { inst_name_map.get(&instance_id).cloned() };
-            let user_name = user_id_in_ctx.as_ref().and_then(|uid| user_name_map.get(uid)).cloned();
+            let user_id_in_ctx = ctx
+                .as_ref()
+                .and_then(|c| c.get("user_id"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let application_name = if application_id.is_empty() {
+                None
+            } else {
+                app_name_map.get(&application_id).cloned()
+            };
+            let instance_hostname = if instance_id.is_empty() {
+                None
+            } else {
+                inst_name_map.get(&instance_id).cloned()
+            };
+            let user_name = user_id_in_ctx
+                .as_ref()
+                .and_then(|uid| user_name_map.get(uid))
+                .cloned();
 
             ModelLogResponse {
-            id: log.id,
-            log_level: log.log_level,
-            application_id,
-            instance_id,
-            application_name,
-            instance_hostname,
-            user_name,
-            message: log.message,
-            log_type: log.log_type,
-            ip_address: ctx
-                .as_ref()
-                .and_then(|c| c.get("ip"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string(),
-            user_agent: ctx
-                .as_ref()
-                .and_then(|c| c.get("user_agent"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string(),
-            log_source: log.log_source.clone(),
-            timestamp: log.timestamp.to_string(),
-            created_at: log.created_at.to_string(),
-            updated_at: log.created_at.to_string(), // 使用created_at因为没有updated_at字段
-            context: ctx.clone(), // 使用created_at因为没有updated_at字段
-            method: ctx.as_ref().and_then(|c| c.get("method")).and_then(|v| v.as_str()).map(|s| s.to_string()),
-            path: ctx.as_ref().and_then(|c| c.get("path")).and_then(|v| v.as_str()).map(|s| s.to_string()),
-            status: ctx.as_ref().and_then(|c| c.get("status")).and_then(|v| v.as_i64()).map(|n| n as i32),
-            request_headers: ctx.as_ref().and_then(|c| c.get("request_headers")).cloned(),
-            request_body: ctx.as_ref().and_then(|c| c.get("request_body")).cloned(),
-            response_body: ctx.as_ref().and_then(|c| c.get("response_body")).cloned(),
-            duration_ms: ctx.as_ref().and_then(|c| c.get("duration_ms")).and_then(|v| v.as_i64()),
-            trace_id: log.trace_id.clone(),
-        }
+                id: log.id,
+                log_level: log.log_level,
+                application_id,
+                instance_id,
+                application_name,
+                instance_hostname,
+                user_name,
+                message: log.message,
+                log_type: log.log_type,
+                ip_address: ctx
+                    .as_ref()
+                    .and_then(|c| c.get("ip"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
+                user_agent: ctx
+                    .as_ref()
+                    .and_then(|c| c.get("user_agent"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
+                log_source: log.log_source.clone(),
+                timestamp: log.timestamp.to_string(),
+                created_at: log.created_at.to_string(),
+                updated_at: log.created_at.to_string(), // 使用created_at因为没有updated_at字段
+                context: ctx.clone(),                   // 使用created_at因为没有updated_at字段
+                method: ctx
+                    .as_ref()
+                    .and_then(|c| c.get("method"))
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string()),
+                path: ctx
+                    .as_ref()
+                    .and_then(|c| c.get("path"))
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string()),
+                status: ctx
+                    .as_ref()
+                    .and_then(|c| c.get("status"))
+                    .and_then(|v| v.as_i64())
+                    .map(|n| n as i32),
+                request_headers: ctx.as_ref().and_then(|c| c.get("request_headers")).cloned(),
+                request_body: ctx.as_ref().and_then(|c| c.get("request_body")).cloned(),
+                response_body: ctx.as_ref().and_then(|c| c.get("response_body")).cloned(),
+                duration_ms: ctx
+                    .as_ref()
+                    .and_then(|c| c.get("duration_ms"))
+                    .and_then(|v| v.as_i64()),
+                trace_id: log.trace_id.clone(),
+            }
         })
         .collect();
 
@@ -290,7 +347,8 @@ pub async fn export_logs(
     // 转换为CSV格式（添加UTF-8 BOM以避免Excel中文乱码）
     let mut csv_data = String::new();
     csv_data.push_str("\u{FEFF}");
-    csv_data.push_str("ID,LogLevel,UserID,Action,IPAddress,UserAgent,Timestamp,CreatedAt,UpdatedAt\n");
+    csv_data
+        .push_str("ID,LogLevel,UserID,Action,IPAddress,UserAgent,Timestamp,CreatedAt,UpdatedAt\n");
 
     for log in logs {
         // 转义CSV中的特殊字符
@@ -315,7 +373,10 @@ pub async fn export_logs(
     // 设置响应头，指示这是一个CSV文件下载，并声明编码为UTF-8
     let response = HttpResponse::Ok()
         .content_type("text/csv; charset=utf-8")
-        .insert_header(("Content-Disposition", "attachment; filename=\"logs_export.csv\""))
+        .insert_header((
+            "Content-Disposition",
+            "attachment; filename=\"logs_export.csv\"",
+        ))
         .body(csv_data);
 
     Ok(response)

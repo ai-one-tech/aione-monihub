@@ -81,7 +81,7 @@ pub async fn get_permissions(
                     .map(|s| s.trim().to_string())
                     .filter(|s| !s.is_empty())
                     .collect();
-                
+
                 if !types.is_empty() {
                     query_builder = query_builder.filter(Column::PermissionType.is_in(types));
                 }
@@ -102,7 +102,7 @@ pub async fn get_permissions(
                     .map(|s| s.trim().to_string())
                     .filter(|s| !s.is_empty())
                     .collect();
-                
+
                 if !actions.is_empty() {
                     query_builder = query_builder.filter(Column::PermissionAction.is_in(actions));
                 }
@@ -254,7 +254,8 @@ pub async fn create_permission(
         &req,
         None,
         Some(after),
-    ).await;
+    )
+    .await;
 
     Ok(HttpResponse::Ok().json(response))
 }
@@ -430,7 +431,8 @@ pub async fn update_permission(
         &req,
         Some(before),
         Some(after),
-    ).await;
+    )
+    .await;
 
     Ok(HttpResponse::Ok().json(response))
 }
@@ -501,7 +503,8 @@ pub async fn delete_permission(
         &req,
         Some(before),
         None,
-    ).await;
+    )
+    .await;
 
     Ok(HttpResponse::Ok().json("权限删除成功"))
 }
@@ -694,11 +697,7 @@ pub async fn get_user_permissions_by_type(
     let result = permissions
         .into_iter()
         .filter(|p| user_permissions.contains(&p.id))
-        .filter(|p| {
-            permission_type_list
-                .clone()
-                .contains(&p.permission_type)
-        })
+        .filter(|p| permission_type_list.clone().contains(&p.permission_type))
         .collect();
 
     Ok(result)

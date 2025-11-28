@@ -1,7 +1,7 @@
 use reqwest::{Error, Response};
 use serde::Serialize;
 
-pub fn get_client() -> reqwest::Client{
+pub fn get_client() -> reqwest::Client {
     let client = reqwest::Client::new();
     // let client = match reqwest::Proxy::all("http://127.0.0.1:9000") {
     //     Ok(p) => reqwest::Client::builder()

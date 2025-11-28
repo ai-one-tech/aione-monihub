@@ -14,13 +14,17 @@ function AlertDialog({
 function AlertDialogTrigger({
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Trigger>) {
-  return <AlertDialogPrimitive.Trigger data-slot='alert-dialog-trigger' {...props} />
+  return (
+    <AlertDialogPrimitive.Trigger data-slot='alert-dialog-trigger' {...props} />
+  )
 }
 
 function AlertDialogPortal({
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Portal>) {
-  return <AlertDialogPrimitive.Portal data-slot='alert-dialog-portal' {...props} />
+  return (
+    <AlertDialogPrimitive.Portal data-slot='alert-dialog-portal' {...props} />
+  )
 }
 
 function AlertDialogOverlay({
@@ -54,7 +58,7 @@ function AlertDialogContent({
         )}
         {...props}
       >
-        <div className="bg-background w-full max-w-lg gap-4 border p-6 shadow-lg duration-200 sm:rounded-lg">
+        <div className='bg-background w-full max-w-lg gap-4 border p-6 shadow-lg duration-200 sm:rounded-lg'>
           {props.children}
         </div>
       </AlertDialogPrimitive.Content>
@@ -83,7 +87,7 @@ function AlertDialogFooter({
     <div
       data-slot='alert-dialog-footer'
       className={cn(
-        'flex flex-col-reverse mt-3 gap-2 sm:flex-row sm:justify-end',
+        'mt-3 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end',
         className
       )}
       {...props}

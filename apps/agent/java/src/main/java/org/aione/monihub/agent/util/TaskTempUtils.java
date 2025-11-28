@@ -1,7 +1,5 @@
 package org.aione.monihub.agent.util;
 
-import org.aione.monihub.agent.config.AgentConfig;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;

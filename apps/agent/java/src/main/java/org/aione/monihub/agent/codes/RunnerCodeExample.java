@@ -2,7 +2,6 @@ package org.aione.monihub.agent.codes;
 
 import org.aione.monihub.agent.config.AgentConfig;
 import org.aione.monihub.agent.model.TaskDispatchItem;
-import org.aione.monihub.agent.util.SpringContextUtils;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -15,8 +15,11 @@ function getCookieConfig() {
     secure: isHttps,
     sameSite: 'Lax', // 使用Lax以支持跨站点导航
     // localhost不设置domain，其他域名设置为当前域名
-    domain: hostname === 'localhost' || hostname === '127.0.0.1' ? undefined : hostname,
-    isDevelopment
+    domain:
+      hostname === 'localhost' || hostname === '127.0.0.1'
+        ? undefined
+        : hostname,
+    isDevelopment,
   }
 }
 
@@ -121,7 +124,7 @@ export function debugCookies(): void {
   console.log('所有cookies:', document.cookie)
 
   if (document.cookie) {
-    const cookies = document.cookie.split(';').map(cookie => {
+    const cookies = document.cookie.split(';').map((cookie) => {
       const [name, value] = cookie.trim().split('=')
       return { name, value: decodeURIComponent(value || '') }
     })
@@ -140,7 +143,11 @@ export function checkCookie(name: string): boolean {
   const exists = !!value
 
   if (import.meta.env.MODE === 'development') {
-    console.log(`Cookie检查 [${name}]:`, exists ? '✅ 存在' : '❌ 不存在', value ? `值: ${value.substring(0, 20)}...` : '')
+    console.log(
+      `Cookie检查 [${name}]:`,
+      exists ? '✅ 存在' : '❌ 不存在',
+      value ? `值: ${value.substring(0, 20)}...` : ''
+    )
   }
 
   return exists

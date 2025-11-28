@@ -115,7 +115,7 @@ impl Config {
         if config_path.is_empty() {
             config_path = "./config.yaml";
         }
-        
+
         // 1. 从配置文件加载
         if Path::new(config_path).exists() {
             match Self::from_file(config_path) {
@@ -179,7 +179,7 @@ impl Config {
             config.debug = debug_val;
         }
 
-        if config.application_code.is_empty(){
+        if config.application_code.is_empty() {
             agent_logger::error("请设置 application_code");
             return Err(anyhow::anyhow!("请设置 application_code"));
         }
@@ -244,7 +244,7 @@ impl Config {
                     fs::write(&f, serde_json::to_string_pretty(&obj)?)?;
                     Ok(id)
                 }
-            }
+            };
         }
         let id = Uuid::new_v4().to_string();
         let obj = serde_json::json!({ "agent_instance_id": id });

@@ -1,5 +1,5 @@
+use crate::shared::enums::{AgentType, OnlineStatus, OsType, Status};
 use sea_orm::entity::prelude::*;
-use crate::shared::enums::{Status, AgentType, OsType, OnlineStatus};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]

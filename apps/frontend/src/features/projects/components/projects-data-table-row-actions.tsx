@@ -1,7 +1,12 @@
 import { type Row } from '@tanstack/react-table'
 import { Eye, Edit, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { type ProjectResponse } from '../data/api-schema'
 import { useProjectsContext } from './projects-provider'
 
@@ -12,7 +17,13 @@ interface ProjectsDataTableRowActionsProps {
 export function ProjectsDataTableRowActions({
   row,
 }: ProjectsDataTableRowActionsProps) {
-  const { setIsSheetOpen, setSheetMode, setSelectedProjectId, setIsDeleteDialogOpen, setDeletingProjectId } = useProjectsContext()
+  const {
+    setIsSheetOpen,
+    setSheetMode,
+    setSelectedProjectId,
+    setIsDeleteDialogOpen,
+    setDeletingProjectId,
+  } = useProjectsContext()
   const project = row.original
 
   const handleView = () => {

@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -13,7 +14,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -29,23 +29,27 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { useInstancesProvider } from './instances-provider'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  type CreateInstanceRequest,
+  createInstanceRequestSchema,
+  INSTANCE_STATUS_OPTIONS,
+  INSTANCE_ENVIRONMENT_OPTIONS,
+  OS_TYPE_OPTIONS,
+} from '../data/api-schema'
 import { useInstanceQuery } from '../hooks/use-instances-query'
-import { type CreateInstanceRequest, createInstanceRequestSchema, INSTANCE_STATUS_OPTIONS, INSTANCE_ENVIRONMENT_OPTIONS, OS_TYPE_OPTIONS } from '../data/api-schema'
-import { toast } from 'sonner'
+import { useInstancesProvider } from './instances-provider'
 
 export function InstancesEditSheet() {
-  const {
-    isSheetOpen,
-    setIsSheetOpen,
-    sheetMode,
-    selectedInstanceId,
-  } = useInstancesProvider()
+  const { isSheetOpen, setIsSheetOpen, sheetMode, selectedInstanceId } =
+    useInstancesProvider()
 
-  const { data: instanceDetail, isLoading: isLoadingInstance } = useInstanceQuery(selectedInstanceId || '')
+  const { data: instanceDetail, isLoading: isLoadingInstance } =
+    useInstanceQuery(selectedInstanceId || '')
 
   // 移除创建和编辑模式，只保留查看模式
-  const isViewMode = sheetMode === 'view' || sheetMode === 'create' || sheetMode === 'edit'
+  const isViewMode =
+    sheetMode === 'view' || sheetMode === 'create' || sheetMode === 'edit'
 
   const form = useForm<CreateInstanceRequest>({
     resolver: zodResolver(createInstanceRequestSchema),
@@ -102,15 +106,15 @@ export function InstancesEditSheet() {
       <Sheet open={isSheetOpen} onOpenChange={handleClose}>
         <SheetContent side='right' className='sm:max-w-xl'>
           <SheetHeader className='px-6 pt-6'>
-          <SheetTitle>{getSheetTitle()}</SheetTitle>
-          <SheetDescription>
-            {getSheetDescription()}
-          </SheetDescription>
+            <SheetTitle>{getSheetTitle()}</SheetTitle>
+            <SheetDescription>{getSheetDescription()}</SheetDescription>
           </SheetHeader>
 
-          {(isLoadingInstance) ? (
-            <div className='flex-1 flex items-center justify-center'>
-              <div className='text-sm text-muted-foreground'>加载实例信息中...</div>
+          {isLoadingInstance ? (
+            <div className='flex flex-1 items-center justify-center'>
+              <div className='text-muted-foreground text-sm'>
+                加载实例信息中...
+              </div>
             </div>
           ) : (
             <div className='flex-1 overflow-y-auto px-6 py-4'>
@@ -124,7 +128,11 @@ export function InstancesEditSheet() {
                       <FormItem>
                         <FormLabel>实例名称 *</FormLabel>
                         <FormControl>
-                          <Input placeholder='请输入实例名称' {...field} disabled={isViewMode} />
+                          <Input
+                            placeholder='请输入实例名称'
+                            {...field}
+                            disabled={isViewMode}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -137,7 +145,11 @@ export function InstancesEditSheet() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>环境类型 *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} disabled={isViewMode}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={isViewMode}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder='请选择环境类型' />
@@ -145,7 +157,10 @@ export function InstancesEditSheet() {
                           </FormControl>
                           <SelectContent>
                             {INSTANCE_ENVIRONMENT_OPTIONS.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
+                              <SelectItem
+                                key={option.value}
+                                value={option.value}
+                              >
                                 {option.label}
                               </SelectItem>
                             ))}
@@ -163,7 +178,11 @@ export function InstancesEditSheet() {
                       <FormItem>
                         <FormLabel>应用ID *</FormLabel>
                         <FormControl>
-                          <Input placeholder='请输入应用ID' {...field} disabled={isViewMode} />
+                          <Input
+                            placeholder='请输入应用ID'
+                            {...field}
+                            disabled={isViewMode}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -176,7 +195,11 @@ export function InstancesEditSheet() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>实例状态 *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} disabled={isViewMode}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={isViewMode}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder='请选择实例状态' />
@@ -184,7 +207,10 @@ export function InstancesEditSheet() {
                           </FormControl>
                           <SelectContent>
                             {INSTANCE_STATUS_OPTIONS.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
+                              <SelectItem
+                                key={option.value}
+                                value={option.value}
+                              >
                                 {option.label}
                               </SelectItem>
                             ))}
@@ -196,9 +222,9 @@ export function InstancesEditSheet() {
                   />
 
                   {/* 网络信息字段 */}
-                  <div className='mt-6 pt-4 border-t'>
-                    <h3 className='text-sm font-semibold mb-4'>网络信息</h3>
-                    
+                  <div className='mt-6 border-t pt-4'>
+                    <h3 className='mb-4 text-sm font-semibold'>网络信息</h3>
+
                     <FormField
                       control={form.control}
                       name='public_ip'
@@ -206,7 +232,11 @@ export function InstancesEditSheet() {
                         <FormItem>
                           <FormLabel>公网IP</FormLabel>
                           <FormControl>
-                            <Input placeholder='请输入公网IP地址' {...field} disabled={isViewMode} />
+                            <Input
+                              placeholder='请输入公网IP地址'
+                              {...field}
+                              disabled={isViewMode}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -220,7 +250,11 @@ export function InstancesEditSheet() {
                         <FormItem className='mt-4'>
                           <FormLabel>MAC地址</FormLabel>
                           <FormControl>
-                            <Input placeholder='请输入MAC地址' {...field} disabled={isViewMode} />
+                            <Input
+                              placeholder='请输入MAC地址'
+                              {...field}
+                              disabled={isViewMode}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -234,7 +268,19 @@ export function InstancesEditSheet() {
                         <FormItem className='mt-4'>
                           <FormLabel>通信端口</FormLabel>
                           <FormControl>
-                            <Input type='number' placeholder='请输入端口号' {...field} disabled={isViewMode} onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)} />
+                            <Input
+                              type='number'
+                              placeholder='请输入端口号'
+                              {...field}
+                              disabled={isViewMode}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value
+                                    ? parseInt(e.target.value)
+                                    : undefined
+                                )
+                              }
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -243,16 +289,20 @@ export function InstancesEditSheet() {
                   </div>
 
                   {/* 系统信息字段 */}
-                  <div className='mt-6 pt-4 border-t'>
-                    <h3 className='text-sm font-semibold mb-4'>系统信息</h3>
-                    
+                  <div className='mt-6 border-t pt-4'>
+                    <h3 className='mb-4 text-sm font-semibold'>系统信息</h3>
+
                     <FormField
                       control={form.control}
                       name='os_type'
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>操作系统</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || ''} disabled={isViewMode}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value || ''}
+                            disabled={isViewMode}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder='请选择操作系统' />
@@ -260,7 +310,10 @@ export function InstancesEditSheet() {
                             </FormControl>
                             <SelectContent>
                               {OS_TYPE_OPTIONS.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>
+                                <SelectItem
+                                  key={option.value}
+                                  value={option.value}
+                                >
                                   {option.label}
                                 </SelectItem>
                               ))}
@@ -278,7 +331,11 @@ export function InstancesEditSheet() {
                         <FormItem className='mt-4'>
                           <FormLabel>操作系统版本</FormLabel>
                           <FormControl>
-                            <Input placeholder='请输入操作系统版本' {...field} disabled={isViewMode} />
+                            <Input
+                              placeholder='请输入操作系统版本'
+                              {...field}
+                              disabled={isViewMode}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -292,9 +349,9 @@ export function InstancesEditSheet() {
                         <FormItem className='mt-4'>
                           <FormLabel>程序运行路径</FormLabel>
                           <FormControl>
-                            <Textarea 
-                              placeholder='请输入程序运行路径' 
-                              {...field} 
+                            <Textarea
+                              placeholder='请输入程序运行路径'
+                              {...field}
                               disabled={isViewMode}
                               rows={3}
                               className='resize-none'
@@ -311,7 +368,7 @@ export function InstancesEditSheet() {
           )}
 
           <SheetFooter>
-            <div className='flex justify-end space-x-3 w-full'>
+            <div className='flex w-full justify-end space-x-3'>
               <Button type='button' variant='outline' onClick={handleClose}>
                 关闭
               </Button>

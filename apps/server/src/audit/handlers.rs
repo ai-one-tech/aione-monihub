@@ -1,14 +1,16 @@
 use actix_web::{web, HttpResponse};
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Order};
-use sea_orm::PaginatorTrait;
 use sea_orm::sea_query::Expr;
 use sea_orm::Condition;
+use sea_orm::PaginatorTrait;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, Order, QueryFilter, QueryOrder};
 
 use crate::entities::{logs::Column as LogCol, Logs};
 use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
 
-use crate::audit::models::{AuditLogListQuery, AuditLogItem, AuditLogListResponse, Pagination, AuditLogDetail, ChangeEntry};
+use crate::audit::models::{
+    AuditLogDetail, AuditLogItem, AuditLogListQuery, AuditLogListResponse, ChangeEntry, Pagination,
+};
 
 pub async fn get_audit_logs(
     query: web::Query<AuditLogListQuery>,
@@ -19,11 +21,26 @@ pub async fn get_audit_logs(
 
     let mut qb = Logs::find().filter(LogCol::LogSource.eq(crate::shared::enums::LogSource::Audit));
 
-    if let Some(user) = &query.user { let expr = Expr::cust(format!("(context ->> 'user_id') = '{}'", user)); qb = qb.filter(Condition::all().add(expr)); }
-    if let Some(ip) = &query.ip { let expr = Expr::cust(format!("(context ->> 'ip') = '{}'", ip)); qb = qb.filter(Condition::all().add(expr)); }
-    if let Some(trace_id) = &query.trace_id { let expr = Expr::cust(format!("(context ->> 'trace_id') = '{}'", trace_id)); qb = qb.filter(Condition::all().add(expr)); }
-    if let Some(table) = &query.table { let expr = Expr::cust(format!("(context ->> 'table') = '{}'", table)); qb = qb.filter(Condition::all().add(expr)); }
-    if let Some(operation) = &query.operation { let expr = Expr::cust(format!("(context ->> 'operation') = '{}'", operation)); qb = qb.filter(Condition::all().add(expr)); }
+    if let Some(user) = &query.user {
+        let expr = Expr::cust(format!("(context ->> 'user_id') = '{}'", user));
+        qb = qb.filter(Condition::all().add(expr));
+    }
+    if let Some(ip) = &query.ip {
+        let expr = Expr::cust(format!("(context ->> 'ip') = '{}'", ip));
+        qb = qb.filter(Condition::all().add(expr));
+    }
+    if let Some(trace_id) = &query.trace_id {
+        let expr = Expr::cust(format!("(context ->> 'trace_id') = '{}'", trace_id));
+        qb = qb.filter(Condition::all().add(expr));
+    }
+    if let Some(table) = &query.table {
+        let expr = Expr::cust(format!("(context ->> 'table') = '{}'", table));
+        qb = qb.filter(Condition::all().add(expr));
+    }
+    if let Some(operation) = &query.operation {
+        let expr = Expr::cust(format!("(context ->> 'operation') = '{}'", operation));
+        qb = qb.filter(Condition::all().add(expr));
+    }
 
     if let Some(start_date) = &query.start_date {
         if let Ok(start_time) = chrono::DateTime::parse_from_rfc3339(start_date) {
@@ -38,31 +55,66 @@ pub async fn get_audit_logs(
 
     qb = qb.order_by(LogCol::Timestamp, Order::Desc);
     let paginator = qb.paginate(&**db, limit as u64);
-    let total = paginator.num_items().await.map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
-    let logs = paginator.fetch_page((page - 1) as u64).await.map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
+    let total = paginator
+        .num_items()
+        .await
+        .map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
+    let logs = paginator
+        .fetch_page((page - 1) as u64)
+        .await
+        .map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
 
-    let items: Vec<AuditLogItem> = logs.into_iter().map(|log| {
-        let ctx = log.context.unwrap_or_default();
-        let user = ctx.get("user_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
-        let ip = ctx.get("ip").and_then(|v| v.as_str()).unwrap_or("").to_string();
-        let table = ctx.get("table").and_then(|v| v.as_str()).unwrap_or("").to_string();
-        let operation = ctx.get("operation").and_then(|v| v.as_str()).unwrap_or("").to_string();
-        let trace_id = ctx.get("trace_id").and_then(|v| v.as_str()).map(|s| s.to_string());
-        AuditLogItem {
-            id: log.id,
-            user,
-            timestamp: log.timestamp.to_string(),
-            ip,
-            trace_id,
-            table,
-            operation,
-        }
-    }).collect();
+    let items: Vec<AuditLogItem> = logs
+        .into_iter()
+        .map(|log| {
+            let ctx = log.context.unwrap_or_default();
+            let user = ctx
+                .get("user_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let ip = ctx
+                .get("ip")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let table = ctx
+                .get("table")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let operation = ctx
+                .get("operation")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let trace_id = ctx
+                .get("trace_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            AuditLogItem {
+                id: log.id,
+                user,
+                timestamp: log.timestamp.to_string(),
+                ip,
+                trace_id,
+                table,
+                operation,
+            }
+        })
+        .collect();
 
     let response = AuditLogListResponse {
         data: items,
-        pagination: Pagination { page, limit, total: total as u32 },
-        timestamp: std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs(),
+        pagination: Pagination {
+            page,
+            limit,
+            total: total as u32,
+        },
+        timestamp: std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs(),
         trace_id: generate_snowflake_id(),
     };
 
@@ -74,28 +126,64 @@ pub async fn get_audit_log_detail(
     db: web::Data<DatabaseConnection>,
 ) -> Result<HttpResponse, ApiError> {
     let id = path.into_inner();
-    let log = Logs::find_by_id(&id).one(&**db).await.map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
-    let log = match log { Some(l) => l, None => return Err(ApiError::NotFound("审计日志不存在".to_string())) };
+    let log = Logs::find_by_id(&id)
+        .one(&**db)
+        .await
+        .map_err(|e: sea_orm::DbErr| ApiError::DatabaseError(e.to_string()))?;
+    let log = match log {
+        Some(l) => l,
+        None => return Err(ApiError::NotFound("审计日志不存在".to_string())),
+    };
     if log.log_source != crate::shared::enums::LogSource::Audit {
         return Err(ApiError::BadRequest("非审计日志".to_string()));
     }
     let ctx = log.context.unwrap_or_default();
-    let user = ctx.get("user_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let ip = ctx.get("ip").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let table = ctx.get("table").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let operation = ctx.get("operation").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let trace_id = ctx.get("trace_id").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let user = ctx
+        .get("user_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let ip = ctx
+        .get("ip")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let table = ctx
+        .get("table")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let operation = ctx
+        .get("operation")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let trace_id = ctx
+        .get("trace_id")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let before = ctx.get("before").cloned();
     let after = ctx.get("after").cloned();
-    let diff = ctx.get("diff").and_then(|v| v.as_array().cloned()).unwrap_or_default();
+    let diff = ctx
+        .get("diff")
+        .and_then(|v| v.as_array().cloned())
+        .unwrap_or_default();
 
-    let diff_entries: Vec<ChangeEntry> = diff.into_iter().filter_map(|entry| {
-        let path = entry.get("path")?.as_str()?.to_string();
-        let t = entry.get("type")?.as_str()?.to_string();
-        let before = entry.get("before").cloned();
-        let after = entry.get("after").cloned();
-        Some(ChangeEntry { path, r#type: t, before, after })
-    }).collect();
+    let diff_entries: Vec<ChangeEntry> = diff
+        .into_iter()
+        .filter_map(|entry| {
+            let path = entry.get("path")?.as_str()?.to_string();
+            let t = entry.get("type")?.as_str()?.to_string();
+            let before = entry.get("before").cloned();
+            let after = entry.get("after").cloned();
+            Some(ChangeEntry {
+                path,
+                r#type: t,
+                before,
+                after,
+            })
+        })
+        .collect();
 
     let detail = AuditLogDetail {
         id: log.id,
@@ -113,9 +201,9 @@ pub async fn get_audit_log_detail(
     Ok(HttpResponse::Ok().json(detail))
 }
 
-use crate::entities::logs::{ActiveModel as LogActiveModel};
-use sea_orm::{ActiveModelTrait, Set};
+use crate::entities::logs::ActiveModel as LogActiveModel;
 use chrono::Utc;
+use sea_orm::{ActiveModelTrait, Set};
 
 pub async fn record_audit_log(
     db: &DatabaseConnection,
@@ -145,15 +233,25 @@ pub async fn record_audit_log(
         (Some(b), Some(a)) => crate::audit::diff::diff_values(b, a),
         _ => Vec::new(),
     };
-    let diff_json = serde_json::Value::Array(diff.into_iter().map(|c| serde_json::json!({
-        "path": c.path,
-        "type": c.r#type,
-        "before": c.before,
-        "after": c.after,
-    })).collect());
+    let diff_json = serde_json::Value::Array(
+        diff.into_iter()
+            .map(|c| {
+                serde_json::json!({
+                    "path": c.path,
+                    "type": c.r#type,
+                    "before": c.before,
+                    "after": c.after,
+                })
+            })
+            .collect(),
+    );
 
-    if let Some(b) = before.as_ref() { context["before"] = b.clone(); }
-    if let Some(a) = after.as_ref() { context["after"] = a.clone(); }
+    if let Some(b) = before.as_ref() {
+        context["before"] = b.clone();
+    }
+    if let Some(a) = after.as_ref() {
+        context["after"] = a.clone();
+    }
     context["diff"] = diff_json;
 
     let active = LogActiveModel {

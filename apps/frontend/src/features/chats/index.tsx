@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Fragment } from 'react/jsx-runtime'
-import { formatHumanDate, formatHumanTime } from '@/lib/datetime'
 import {
   ArrowLeft,
   MoreVertical,
@@ -14,6 +13,7 @@ import {
   Video,
   MessagesSquare,
 } from 'lucide-react'
+import { formatHumanDate, formatHumanTime } from '@/lib/datetime'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'

@@ -9,8 +9,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  useDeleteApplication,
+  useApplicationQuery,
+} from '../hooks/use-applications-query'
 import { useApplicationsProvider } from './applications-provider'
-import { useDeleteApplication, useApplicationQuery } from '../hooks/use-applications-query'
 
 export function ApplicationsDialogs() {
   const {
@@ -20,7 +23,9 @@ export function ApplicationsDialogs() {
     setDeletingApplicationId,
   } = useApplicationsProvider()
 
-  const { data: deletingApplication } = useApplicationQuery(deletingApplicationId || '')
+  const { data: deletingApplication } = useApplicationQuery(
+    deletingApplicationId || ''
+  )
   const deleteApplicationMutation = useDeleteApplication()
 
   const handleDeleteConfirm = async () => {
@@ -43,11 +48,14 @@ export function ApplicationsDialogs() {
   return (
     <>
       {/* 删除确认对话框 */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className='flex items-center gap-2'>
-              <AlertTriangle className='h-5 w-5 text-destructive' />
+              <AlertTriangle className='text-destructive h-5 w-5' />
               确认删除应用
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -59,9 +67,7 @@ export function ApplicationsDialogs() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancel}>
-              取消
-            </AlertDialogCancel>
+            <AlertDialogCancel onClick={handleCancel}>取消</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               className='bg-destructive text-destructive-foreground hover:bg-destructive/90'

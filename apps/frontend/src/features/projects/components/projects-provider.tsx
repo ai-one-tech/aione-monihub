@@ -1,4 +1,9 @@
-import React, { createContext, useContext, useState, type ReactNode } from 'react'
+import React, {
+  createContext,
+  useContext,
+  useState,
+  type ReactNode,
+} from 'react'
 
 type SheetMode = 'create' | 'edit' | 'view'
 
@@ -10,7 +15,7 @@ interface ProjectsContextType {
   setSheetMode: (mode: SheetMode) => void
   selectedProjectId: string | null
   setSelectedProjectId: (id: string | null) => void
-  
+
   // 删除确认对话框状态
   isDeleteDialogOpen: boolean
   setIsDeleteDialogOpen: (open: boolean) => void
@@ -18,17 +23,23 @@ interface ProjectsContextType {
   setDeletingProjectId: (id: string | null) => void
 }
 
-const ProjectsContext = createContext<ProjectsContextType | undefined>(undefined)
+const ProjectsContext = createContext<ProjectsContextType | undefined>(
+  undefined
+)
 
 export function ProjectsProvider({ children }: { children: ReactNode }) {
   // Sheet 状态
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [sheetMode, setSheetMode] = useState<SheetMode>('create')
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
-  
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
+    null
+  )
+
   // 删除确认状态
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null)
+  const [deletingProjectId, setDeletingProjectId] = useState<string | null>(
+    null
+  )
 
   const value: ProjectsContextType = {
     // Sheet 状态
@@ -38,7 +49,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     setSheetMode,
     selectedProjectId,
     setSelectedProjectId,
-    
+
     // 删除确认状态
     isDeleteDialogOpen,
     setIsDeleteDialogOpen,

@@ -58,7 +58,9 @@ export type InstanceListResponse = z.infer<typeof instanceListResponseSchema>
 
 // 实例详情响应
 export const instanceDetailResponseSchema = instanceResponseSchema
-export type InstanceDetailResponse = z.infer<typeof instanceDetailResponseSchema>
+export type InstanceDetailResponse = z.infer<
+  typeof instanceDetailResponseSchema
+>
 
 // ===================================================================
 // 实例配置模型（用于前端表单）
@@ -164,7 +166,12 @@ export const OS_TYPE_OPTIONS = [
 // ===================================================================
 
 // 网络类型枚举选项与模式（保持前后端兼容）
-export const NETWORK_TYPE_OPTIONS = ['wired', 'wifi', 'cellular', 'unknown'] as const
+export const NETWORK_TYPE_OPTIONS = [
+  'wired',
+  'wifi',
+  'cellular',
+  'unknown',
+] as const
 export const networkTypeSchema = z.enum(NETWORK_TYPE_OPTIONS)
 export type NetworkType = z.infer<typeof networkTypeSchema>
 
@@ -210,7 +217,9 @@ export const instanceReportListResponseSchema = z.object({
   trace_id: z.string(),
 })
 
-export type InstanceReportListResponse = z.infer<typeof instanceReportListResponseSchema>
+export type InstanceReportListResponse = z.infer<
+  typeof instanceReportListResponseSchema
+>
 
 // 获取实例上报记录参数
 export const getInstanceReportsParamsSchema = z.object({
@@ -220,4 +229,6 @@ export const getInstanceReportsParamsSchema = z.object({
   end_time: z.string().optional(),
 })
 
-export type GetInstanceReportsParams = z.infer<typeof getInstanceReportsParamsSchema>
+export type GetInstanceReportsParams = z.infer<
+  typeof getInstanceReportsParamsSchema
+>

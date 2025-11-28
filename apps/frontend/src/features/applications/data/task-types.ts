@@ -1,11 +1,5 @@
 import { z } from 'zod'
-import {
-  Terminal,
-  RefreshCw,
-  FileText,
-  Settings,
-  Upload,
-} from 'lucide-react'
+import { Terminal, RefreshCw, FileText, Settings, Upload } from 'lucide-react'
 
 /**
  * 任务类型定义
@@ -18,7 +12,7 @@ export const TASK_TYPES = {
   FILE_TRANSFER: 'file_transfer',
 } as const
 
-export type TaskType = typeof TASK_TYPES[keyof typeof TASK_TYPES]
+export type TaskType = (typeof TASK_TYPES)[keyof typeof TASK_TYPES]
 
 /**
  * 任务类型选项
@@ -35,11 +29,31 @@ export const TASK_TYPE_OPTIONS = [
  * 任务类型配置（为向后兼容性）
  */
 export const TASK_TYPE_CONFIGS = {
-  [TASK_TYPES.EXECUTE_COMMAND]: { value: TASK_TYPES.EXECUTE_COMMAND, label: '执行命令', icon: Terminal },
-  [TASK_TYPES.RESTART_SERVICE]: { value: TASK_TYPES.RESTART_SERVICE, label: '重启服务', icon: RefreshCw },
-  [TASK_TYPES.COLLECT_LOGS]: { value: TASK_TYPES.COLLECT_LOGS, label: '采集日志', icon: FileText },
-  [TASK_TYPES.UPDATE_CONFIG]: { value: TASK_TYPES.UPDATE_CONFIG, label: '更新配置', icon: Settings },
-  [TASK_TYPES.FILE_TRANSFER]: { value: TASK_TYPES.FILE_TRANSFER, label: '文件传输', icon: Upload },
+  [TASK_TYPES.EXECUTE_COMMAND]: {
+    value: TASK_TYPES.EXECUTE_COMMAND,
+    label: '执行命令',
+    icon: Terminal,
+  },
+  [TASK_TYPES.RESTART_SERVICE]: {
+    value: TASK_TYPES.RESTART_SERVICE,
+    label: '重启服务',
+    icon: RefreshCw,
+  },
+  [TASK_TYPES.COLLECT_LOGS]: {
+    value: TASK_TYPES.COLLECT_LOGS,
+    label: '采集日志',
+    icon: FileText,
+  },
+  [TASK_TYPES.UPDATE_CONFIG]: {
+    value: TASK_TYPES.UPDATE_CONFIG,
+    label: '更新配置',
+    icon: Settings,
+  },
+  [TASK_TYPES.FILE_TRANSFER]: {
+    value: TASK_TYPES.FILE_TRANSFER,
+    label: '文件传输',
+    icon: Upload,
+  },
 } as const
 
 /**
@@ -100,7 +114,7 @@ export type FileTransferParams = z.infer<typeof fileTransferSchema>
 /**
  * 任务参数联合类型
  */
-export type TaskParams = 
+export type TaskParams =
   | ExecuteCommandParams
   | RestartServiceParams
   | CollectLogsParams

@@ -1,11 +1,21 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { useQuery } from '@tanstack/react-query'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { CodeEditor } from '@/components/code-editor'
-import { useQuery } from '@tanstack/react-query'
 import { operationsLogsApi } from '../../operations/api/operations-api'
 
-type Props = { id: string | null; open: boolean; onOpenChange: (open: boolean) => void }
+type Props = {
+  id: string | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
 
 export function OperationLogDetailDialog({ id, open, onOpenChange }: Props) {
   const { data } = useQuery({
@@ -28,7 +38,7 @@ export function OperationLogDetailDialog({ id, open, onOpenChange }: Props) {
             {data?.table} · {data?.operation} · {data?.timestamp}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className='pr-4 w-[1000px] max-h-[70vh]'>
+        <ScrollArea className='max-h-[70vh] w-[1000px] pr-4'>
           <div className='space-y-6 pr-4'>
             <div className='grid grid-cols-2 gap-4 text-sm'>
               <div>
@@ -49,27 +59,37 @@ export function OperationLogDetailDialog({ id, open, onOpenChange }: Props) {
 
             <div className='grid grid-cols-2 gap-4'>
               <div>
-                <h3 className='text-sm font-semibold mb-2'>操作前数据</h3>
-                <CodeEditor language='json' value={beforeStr} onChange={() => {}} minHeight={300} />
+                <h3 className='mb-2 text-sm font-semibold'>操作前数据</h3>
+                <CodeEditor
+                  language='json'
+                  value={beforeStr}
+                  onChange={() => {}}
+                  minHeight={300}
+                />
               </div>
               <div>
-                <h3 className='text-sm font-semibold mb-2'>操作后数据</h3>
-                <CodeEditor language='json' value={afterStr} onChange={() => {}} minHeight={300} />
+                <h3 className='mb-2 text-sm font-semibold'>操作后数据</h3>
+                <CodeEditor
+                  language='json'
+                  value={afterStr}
+                  onChange={() => {}}
+                  minHeight={300}
+                />
               </div>
             </div>
 
             <Separator />
 
             <div>
-              <h3 className='text-sm font-semibold mb-2'>差异对比</h3>
+              <h3 className='mb-2 text-sm font-semibold'>差异对比</h3>
               <div className='rounded-md border'>
                 <table className='w-full text-sm'>
                   <thead>
                     <tr className='bg-muted'>
-                      <th className='text-start p-2'>字段路径</th>
-                      <th className='text-start p-2'>类型</th>
-                      <th className='text-start p-2'>变更前</th>
-                      <th className='text-start p-2'>变更后</th>
+                      <th className='p-2 text-start'>字段路径</th>
+                      <th className='p-2 text-start'>类型</th>
+                      <th className='p-2 text-start'>变更前</th>
+                      <th className='p-2 text-start'>变更后</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -78,10 +98,14 @@ export function OperationLogDetailDialog({ id, open, onOpenChange }: Props) {
                         <td className='p-2 font-mono'>{d.path}</td>
                         <td className='p-2'>{d.type}</td>
                         <td className='p-2 font-mono'>
-                          <pre className='max-h-32 overflow-auto'>{d.before ? JSON.stringify(d.before, null, 2) : ''}</pre>
+                          <pre className='max-h-32 overflow-auto'>
+                            {d.before ? JSON.stringify(d.before, null, 2) : ''}
+                          </pre>
                         </td>
                         <td className='p-2 font-mono'>
-                          <pre className='max-h-32 overflow-auto'>{d.after ? JSON.stringify(d.after, null, 2) : ''}</pre>
+                          <pre className='max-h-32 overflow-auto'>
+                            {d.after ? JSON.stringify(d.after, null, 2) : ''}
+                          </pre>
                         </td>
                       </tr>
                     ))}

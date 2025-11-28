@@ -2,14 +2,9 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, Calendar, Clock } from 'lucide-react'
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-} from '@/components/ui/sheet'
+import { toast } from 'sonner'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Form,
   FormControl,
@@ -19,8 +14,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -28,22 +21,36 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter,
+} from '@/components/ui/sheet'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  createProjectRequestSchema,
+  type CreateProjectRequest,
+  PROJECT_STATUS_LABELS,
+  PROJECT_STATUS_OPTIONS,
+} from '../data/api-schema'
+import {
+  useCreateProjectMutation,
+  useUpdateProjectMutation,
+  useProjectQuery,
+} from '../hooks/use-projects-query'
 import { useProjectsContext } from './projects-provider'
-import { useCreateProjectMutation, useUpdateProjectMutation, useProjectQuery } from '../hooks/use-projects-query'
-import { createProjectRequestSchema, type CreateProjectRequest, PROJECT_STATUS_LABELS, PROJECT_STATUS_OPTIONS } from '../data/api-schema'
-import { toast } from 'sonner'
 
 export function ProjectsEditSheet() {
-  const {
-    isSheetOpen,
-    setIsSheetOpen,
-    sheetMode,
-    selectedProjectId,
-  } = useProjectsContext()
+  const { isSheetOpen, setIsSheetOpen, sheetMode, selectedProjectId } =
+    useProjectsContext()
 
-  const { data: projectDetail, isLoading: isLoadingProject } = useProjectQuery(selectedProjectId || '')
+  const { data: projectDetail, isLoading: isLoadingProject } = useProjectQuery(
+    selectedProjectId || ''
+  )
   const createProjectMutation = useCreateProjectMutation()
   const updateProjectMutation = useUpdateProjectMutation()
 
@@ -123,7 +130,8 @@ export function ProjectsEditSheet() {
     return '查看项目详细信息'
   }
 
-  const isLoading = createProjectMutation.isPending || updateProjectMutation.isPending
+  const isLoading =
+    createProjectMutation.isPending || updateProjectMutation.isPending
 
   return (
     <>
@@ -131,115 +139,126 @@ export function ProjectsEditSheet() {
       <Sheet open={isSheetOpen} onOpenChange={handleClose}>
         <SheetContent side='right'>
           <SheetHeader className='px-6 pt-6'>
-          <SheetTitle>{getSheetTitle()}</SheetTitle>
-          <SheetDescription>
-            {getSheetDescription()}
-          </SheetDescription>
+            <SheetTitle>{getSheetTitle()}</SheetTitle>
+            <SheetDescription>{getSheetDescription()}</SheetDescription>
           </SheetHeader>
 
-          {((isEditMode || isViewMode) && isLoadingProject) ? (
-            <div className='flex-1 flex items-center justify-center'>
-              <div className='text-sm text-muted-foreground'>加载项目信息中...</div>
+          {(isEditMode || isViewMode) && isLoadingProject ? (
+            <div className='flex flex-1 items-center justify-center'>
+              <div className='text-muted-foreground text-sm'>
+                加载项目信息中...
+              </div>
             </div>
           ) : (
-          <div className='flex-1 overflow-y-auto px-6 py-4'>
-            <Form {...form}>
-              <form id='project-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
-                <FormField
-                  control={form.control}
-                  name='name'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>项目名称 *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder='请输入项目名称' 
-                          {...field} 
-                          disabled={isViewMode}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name='code'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>项目代码 *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder='请输入项目代码' 
-                          {...field} 
-                          disabled={isViewMode}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name='status'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>项目状态 *</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                        disabled={isViewMode}
-                      >
+            <div className='flex-1 overflow-y-auto px-6 py-4'>
+              <Form {...form}>
+                <form
+                  id='project-form'
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className='space-y-8'
+                >
+                  <FormField
+                    control={form.control}
+                    name='name'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>项目名称 *</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder='请选择项目状态' />
-                          </SelectTrigger>
+                          <Input
+                            placeholder='请输入项目名称'
+                            {...field}
+                            disabled={isViewMode}
+                          />
                         </FormControl>
-                        <SelectContent>
-                          {PROJECT_STATUS_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name='description'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>项目描述 *</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder='请输入项目描述'
-                          className='min-h-[100px]'
-                          {...field}
+                  <FormField
+                    control={form.control}
+                    name='code'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>项目代码 *</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder='请输入项目代码'
+                            {...field}
+                            disabled={isViewMode}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name='status'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>项目状态 *</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
                           disabled={isViewMode}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </form>
-            </Form>
-          </div>
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder='请选择项目状态' />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {PROJECT_STATUS_OPTIONS.map((option) => (
+                              <SelectItem
+                                key={option.value}
+                                value={option.value}
+                              >
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name='description'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>项目描述 *</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder='请输入项目描述'
+                            className='min-h-[100px]'
+                            {...field}
+                            disabled={isViewMode}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </form>
+              </Form>
+            </div>
           )}
 
           <SheetFooter>
-            <div className='flex justify-end space-x-3 w-full'>
+            <div className='flex w-full justify-end space-x-3'>
               <Button type='button' variant='outline' onClick={handleClose}>
                 取消
               </Button>
               {!isViewMode && (
-                <Button type='submit' form='project-form' disabled={isLoading || !form.formState.isValid}>
+                <Button
+                  type='submit'
+                  form='project-form'
+                  disabled={isLoading || !form.formState.isValid}
+                >
                   {isLoading ? '保存中...' : '保存'}
                 </Button>
               )}

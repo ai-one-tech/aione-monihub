@@ -9,9 +9,9 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import { cn } from '@/lib/utils'
 import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
-import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import {
   Table,
   TableBody,
@@ -21,7 +21,10 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import { type ProjectResponse, PROJECT_STATUS_OPTIONS } from '../data/api-schema'
+import {
+  type ProjectResponse,
+  PROJECT_STATUS_OPTIONS,
+} from '../data/api-schema'
 import { projectsColumns as columns } from './projects-columns'
 
 declare module '@tanstack/react-table' {
@@ -39,7 +42,13 @@ type DataTableProps = {
   onRefresh?: () => void
 }
 
-export function ProjectsTable({ data = [], totalPages, search, navigate, onRefresh }: DataTableProps) {
+export function ProjectsTable({
+  data = [],
+  totalPages,
+  search,
+  navigate,
+  onRefresh,
+}: DataTableProps) {
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -55,13 +64,16 @@ export function ProjectsTable({ data = [], totalPages, search, navigate, onRefre
   } = useTableUrlState({
     search,
     navigate,
-    pagination: { defaultPage: DEFAULT_PAGE, defaultPageSize: DEFAULT_PAGE_SIZE },
+    pagination: {
+      defaultPage: DEFAULT_PAGE,
+      defaultPageSize: DEFAULT_PAGE_SIZE,
+    },
     globalFilter: { enabled: false },
     columnFilters: [
       { columnId: 'name', searchKey: 'search', type: 'string' },
-      { 
-        columnId: 'status', 
-        searchKey: 'status', 
+      {
+        columnId: 'status',
+        searchKey: 'status',
         type: 'string', // 改回字符串类型，因为现在是单选
       },
     ],
@@ -97,7 +109,7 @@ export function ProjectsTable({ data = [], totalPages, search, navigate, onRefre
   }, [totalPages, ensurePageInRange])
 
   return (
-    <div className='flex flex-col h-full min-h-0 max-sm:has-[div[role="toolbar"]]:mb-16'>
+    <div className='flex h-full min-h-0 flex-col max-sm:has-[div[role="toolbar"]]:mb-16'>
       <DataTableToolbar
         table={table}
         searchPlaceholder='搜索项目...'
@@ -106,16 +118,15 @@ export function ProjectsTable({ data = [], totalPages, search, navigate, onRefre
           {
             columnId: 'status',
             title: '状态',
-            options: PROJECT_STATUS_OPTIONS
-              .map(option => ({
-                label: option.label,
-                value: option.value,
-              })),
+            options: PROJECT_STATUS_OPTIONS.map((option) => ({
+              label: option.label,
+              value: option.value,
+            })),
             multiSelect: false, // 明确设置为单选模式
           },
         ]}
       />
-      <div className='flex-1 min-h-0 overflow-auto rounded-md border mt-4'>
+      <div className='mt-4 min-h-0 flex-1 overflow-auto rounded-md border'>
         <Table>
           <TableHeader className='sticky top-0 z-10'>
             {table.getHeaderGroups().map((headerGroup) => (

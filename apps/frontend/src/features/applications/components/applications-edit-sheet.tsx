@@ -1,14 +1,21 @@
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { CheckIcon, CaretSortIcon } from '@radix-ui/react-icons'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Loader } from 'lucide-react'
+import { X } from 'lucide-react'
+import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
+import { useDebounce } from '@/hooks/use-debounce'
+import { Button } from '@/components/ui/button'
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-} from '@/components/ui/sheet'
+  Command,
+  CommandInput,
+  CommandEmpty,
+  CommandGroup,
+  CommandList,
+  CommandItem,
+} from '@/components/ui/command'
 import {
   Form,
   FormControl,
@@ -18,8 +25,12 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Button } from '@/components/ui/button'
+// 移除未使用的 Badge 与 Separator
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import {
   Select,
   SelectContent,
@@ -27,33 +38,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-// 移除未使用的 Badge 与 Separator
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Command, CommandInput, CommandEmpty, CommandGroup, CommandList, CommandItem } from '@/components/ui/command'
-import { CheckIcon, CaretSortIcon } from '@radix-ui/react-icons'
-import { Loader } from 'lucide-react'
-import { useApplicationsProvider } from './applications-provider'
-import { useCreateApplication, useUpdateApplication, useApplicationQuery } from '../hooks/use-applications-query'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter,
+} from '@/components/ui/sheet'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  useProjectsQuery,
+  useProjectQuery,
+} from '@/features/projects/hooks/use-projects-query'
 import {
   createApplicationRequestSchema,
   type CreateApplicationRequest,
   APPLICATION_STATUS_OPTIONS,
 } from '../data/api-schema'
-import { toast } from 'sonner'
-import { useDebounce } from '@/hooks/use-debounce'
-import { useProjectsQuery, useProjectQuery } from '@/features/projects/hooks/use-projects-query'
-import { cn } from '@/lib/utils'
-import { X } from 'lucide-react'
+import {
+  useCreateApplication,
+  useUpdateApplication,
+  useApplicationQuery,
+} from '../hooks/use-applications-query'
+import { useApplicationsProvider } from './applications-provider'
 
 export function ApplicationsEditSheet() {
-  const {
-    isSheetOpen,
-    setIsSheetOpen,
-    sheetMode,
-    selectedApplicationId,
-  } = useApplicationsProvider()
+  const { isSheetOpen, setIsSheetOpen, sheetMode, selectedApplicationId } =
+    useApplicationsProvider()
 
-  const { data: applicationDetail, isLoading: isLoadingApplication } = useApplicationQuery(selectedApplicationId || '')
+  const { data: applicationDetail, isLoading: isLoadingApplication } =
+    useApplicationQuery(selectedApplicationId || '')
   const createApplicationMutation = useCreateApplication()
   const updateApplicationMutation = useUpdateApplication()
 
@@ -80,13 +95,32 @@ export function ApplicationsEditSheet() {
   const debouncedProjectSearch = useDebounce(projectSearch)
   const selectedProjectId = form.watch('project_id')
   const { data: selectedProject } = useProjectQuery(selectedProjectId || '')
-  const { data: projectsList, isLoading: isLoadingProjects, isFetching: isFetchingProjects } = useProjectsQuery({ page: 1, limit: 100, search: debouncedProjectSearch })
+  const {
+    data: projectsList,
+    isLoading: isLoadingProjects,
+    isFetching: isFetchingProjects,
+  } = useProjectsQuery({ page: 1, limit: 100, search: debouncedProjectSearch })
 
   const TECH_STACK_OPTIONS = [
-    'java','springboot','golang','gin','rust','axtive','javascript','vue','react','flutter','uniapp','nativereact','python','fastapi',
+    'java',
+    'springboot',
+    'golang',
+    'gin',
+    'rust',
+    'axtive',
+    'javascript',
+    'vue',
+    'react',
+    'flutter',
+    'uniapp',
+    'nativereact',
+    'python',
+    'fastapi',
   ]
 
-  const [techStacks, setTechStacks] = useState<{ name: string; version: string }[]>([])
+  const [techStacks, setTechStacks] = useState<
+    { name: string; version: string }[]
+  >([])
 
   // 将后端返回的状态值归一化为表单允许的字面量类型
   const normalizeStatus = (s: unknown): CreateApplicationRequest['status'] => {
@@ -107,19 +141,17 @@ export function ApplicationsEditSheet() {
           status: normalizeStatus(applicationDetail.status),
           tech_stacks: applicationDetail.tech_stacks ?? [],
         }
-        const needReset = (
+        const needReset =
           current.project_id !== target.project_id ||
           current.name !== target.name ||
           current.code !== target.code ||
           current.description !== target.description ||
           current.status !== target.status
-        )
         if (needReset) {
           form.reset(target)
         }
         setTechStacks(applicationDetail.tech_stacks ?? [])
       })
-
     } else if (isCreateMode) {
       // 新建模式统一微任务重置并加守卫
       Promise.resolve().then(() => {
@@ -132,13 +164,12 @@ export function ApplicationsEditSheet() {
           status: 'active',
           tech_stacks: [],
         }
-        const needReset = (
+        const needReset =
           current.project_id !== defaults.project_id ||
           current.name !== defaults.name ||
           current.code !== defaults.code ||
           current.description !== defaults.description ||
           current.status !== defaults.status
-        )
         if (needReset) {
           form.reset(defaults)
         }
@@ -154,7 +185,10 @@ export function ApplicationsEditSheet() {
         await createApplicationMutation.mutateAsync(payload)
         toast.success('应用创建成功')
       } else if (isEditMode && selectedApplicationId) {
-        await updateApplicationMutation.mutateAsync({ applicationId: selectedApplicationId, data: payload })
+        await updateApplicationMutation.mutateAsync({
+          applicationId: selectedApplicationId,
+          data: payload,
+        })
         toast.success('应用更新成功')
       }
 
@@ -165,7 +199,8 @@ export function ApplicationsEditSheet() {
     }
   }
 
-  const isLoading = createApplicationMutation.isPending || updateApplicationMutation.isPending
+  const isLoading =
+    createApplicationMutation.isPending || updateApplicationMutation.isPending
 
   const handleClose = () => {
     setIsSheetOpen(false)
@@ -189,20 +224,24 @@ export function ApplicationsEditSheet() {
       <Sheet open={isSheetOpen} onOpenChange={handleClose}>
         <SheetContent side='right'>
           <SheetHeader className='px-6 pt-6'>
-          <SheetTitle>{getSheetTitle()}</SheetTitle>
-          <SheetDescription>
-            {getSheetDescription()}
-          </SheetDescription>
+            <SheetTitle>{getSheetTitle()}</SheetTitle>
+            <SheetDescription>{getSheetDescription()}</SheetDescription>
           </SheetHeader>
 
-          {((isEditMode || isViewMode) && isLoadingApplication) ? (
-            <div className='flex-1 flex items-center justify-center'>
-              <div className='text-sm text-muted-foreground'>加载应用信息中...</div>
+          {(isEditMode || isViewMode) && isLoadingApplication ? (
+            <div className='flex flex-1 items-center justify-center'>
+              <div className='text-muted-foreground text-sm'>
+                加载应用信息中...
+              </div>
             </div>
           ) : (
             <div className='flex-1 overflow-y-auto px-6 py-4'>
-          <Form {...form}>
-            <form id='application-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
+              <Form {...form}>
+                <form
+                  id='application-form'
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className='space-y-8'
+                >
                   <FormField
                     control={form.control}
                     name='project_id'
@@ -223,18 +262,21 @@ export function ApplicationsEditSheet() {
                                 variant='outline'
                                 role='combobox'
                                 disabled={isViewMode}
-                                className={cn('justify-between', !field.value && 'text-muted-foreground')}
+                                className={cn(
+                                  'justify-between',
+                                  !field.value && 'text-muted-foreground'
+                                )}
                               >
                                 {field.value
-                                  ? (selectedProject
+                                  ? selectedProject
                                     ? `${selectedProject.name} (${selectedProject.code})`
-                                    : field.value)
+                                    : field.value
                                   : '请选择项目'}
                                 <CaretSortIcon className='ms-2 h-4 w-4 shrink-0 opacity-50' />
                               </Button>
                             </FormControl>
                           </PopoverTrigger>
-                          <PopoverContent className='w-[320px] p-0 z-[100]'>
+                          <PopoverContent className='z-[100] w-[320px] p-0'>
                             <Command>
                               <CommandInput
                                 placeholder='搜索项目...'
@@ -244,7 +286,8 @@ export function ApplicationsEditSheet() {
                               <CommandEmpty>未找到项目</CommandEmpty>
                               <CommandGroup>
                                 <CommandList>
-                                  {(isLoadingProjects || isFetchingProjects) && (
+                                  {(isLoadingProjects ||
+                                    isFetchingProjects) && (
                                     <CommandItem disabled value='loading'>
                                       <span className='flex items-center gap-2 py-1.5'>
                                         <Loader className='h-4 w-4 animate-spin' />
@@ -258,7 +301,11 @@ export function ApplicationsEditSheet() {
                                       value={project.name}
                                       onSelect={() => {
                                         if (!isViewMode) {
-                                          form.setValue('project_id', project.id, { shouldValidate: true })
+                                          form.setValue(
+                                            'project_id',
+                                            project.id,
+                                            { shouldValidate: true }
+                                          )
                                           setProjectPopoverOpen(false)
                                         }
                                       }}
@@ -266,7 +313,9 @@ export function ApplicationsEditSheet() {
                                       <CheckIcon
                                         className={cn(
                                           'size-4',
-                                          field.value === project.id ? 'opacity-100' : 'opacity-0'
+                                          field.value === project.id
+                                            ? 'opacity-100'
+                                            : 'opacity-0'
                                         )}
                                       />
                                       {project.name}（{project.code}）
@@ -289,7 +338,11 @@ export function ApplicationsEditSheet() {
                       <FormItem>
                         <FormLabel>应用名称 *</FormLabel>
                         <FormControl>
-                          <Input placeholder='请输入应用名称' {...field} disabled={isViewMode} />
+                          <Input
+                            placeholder='请输入应用名称'
+                            {...field}
+                            disabled={isViewMode}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -303,7 +356,11 @@ export function ApplicationsEditSheet() {
                       <FormItem>
                         <FormLabel>应用代码 *</FormLabel>
                         <FormControl>
-                          <Input placeholder='请输入应用代码' {...field} disabled={isViewMode} />
+                          <Input
+                            placeholder='请输入应用代码'
+                            {...field}
+                            disabled={isViewMode}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -316,7 +373,10 @@ export function ApplicationsEditSheet() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>应用状态 * </FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger disabled={isViewMode}>
                               <SelectValue placeholder='请选择应用状态' />
@@ -324,7 +384,10 @@ export function ApplicationsEditSheet() {
                           </FormControl>
                           <SelectContent>
                             {APPLICATION_STATUS_OPTIONS.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
+                              <SelectItem
+                                key={option.value}
+                                value={option.value}
+                              >
                                 {option.label}
                               </SelectItem>
                             ))}
@@ -362,17 +425,22 @@ export function ApplicationsEditSheet() {
                           <Select
                             value={item.name}
                             onValueChange={(val) => {
-                              const next = [...techStacks];
+                              const next = [...techStacks]
                               next[idx] = { ...next[idx], name: val }
                               setTechStacks(next)
                             }}
                           >
-                            <SelectTrigger className='w-[200px]' disabled={isViewMode}>
+                            <SelectTrigger
+                              className='w-[200px]'
+                              disabled={isViewMode}
+                            >
                               <SelectValue placeholder='选择技术栈' />
                             </SelectTrigger>
                             <SelectContent>
-                              {TECH_STACK_OPTIONS.map(opt => (
-                                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                              {TECH_STACK_OPTIONS.map((opt) => (
+                                <SelectItem key={opt} value={opt}>
+                                  {opt}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -380,25 +448,46 @@ export function ApplicationsEditSheet() {
                             placeholder='版本号，例如 1.0.0'
                             value={item.version}
                             onChange={(e) => {
-                              const next = [...techStacks];
-                              next[idx] = { ...next[idx], version: e.target.value }
+                              const next = [...techStacks]
+                              next[idx] = {
+                                ...next[idx],
+                                version: e.target.value,
+                              }
                               setTechStacks(next)
                             }}
                             disabled={isViewMode}
                             className='w-[180px]'
                           />
                           {!isViewMode && (
-                            <Button type='button' variant='ghost' size='icon' onClick={() => {
-                              const next = techStacks.filter((_, i) => i !== idx)
-                              setTechStacks(next)
-                            }}>
+                            <Button
+                              type='button'
+                              variant='ghost'
+                              size='icon'
+                              onClick={() => {
+                                const next = techStacks.filter(
+                                  (_, i) => i !== idx
+                                )
+                                setTechStacks(next)
+                              }}
+                            >
                               <X className='size-4' />
                             </Button>
                           )}
                         </div>
                       ))}
                       {!isViewMode && (
-                        <Button type='button' variant='outline' onClick={() => setTechStacks([...techStacks, { name: '', version: '' }])}>新增技术栈</Button>
+                        <Button
+                          type='button'
+                          variant='outline'
+                          onClick={() =>
+                            setTechStacks([
+                              ...techStacks,
+                              { name: '', version: '' },
+                            ])
+                          }
+                        >
+                          新增技术栈
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -408,12 +497,16 @@ export function ApplicationsEditSheet() {
           )}
 
           <SheetFooter>
-            <div className='flex justify-end space-x-3 w-full'>
+            <div className='flex w-full justify-end space-x-3'>
               <Button type='button' variant='outline' onClick={handleClose}>
                 取消
               </Button>
               {!isViewMode && (
-                <Button type='submit' form='application-form' disabled={isLoading || !form.formState.isValid}>
+                <Button
+                  type='submit'
+                  form='application-form'
+                  disabled={isLoading || !form.formState.isValid}
+                >
                   {isLoading ? '保存中...' : '保存'}
                 </Button>
               )}

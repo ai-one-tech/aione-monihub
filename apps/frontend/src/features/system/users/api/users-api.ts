@@ -1,5 +1,11 @@
-import { type GetUsersParams, type UserListResponse, type UserDetailResponse, type UpdateUserRequest, type CreateUserRequest } from '../data/api-schema'
 import { apiClient } from '@/lib/api-client'
+import {
+  type GetUsersParams,
+  type UserListResponse,
+  type UserDetailResponse,
+  type UpdateUserRequest,
+  type CreateUserRequest,
+} from '../data/api-schema'
 
 class UsersApi {
   /**
@@ -36,15 +42,24 @@ class UsersApi {
    * 创建用户
    */
   async createUser(userData: CreateUserRequest): Promise<UserDetailResponse> {
-    const response = await apiClient.post<UserDetailResponse>('/api/users', userData)
+    const response = await apiClient.post<UserDetailResponse>(
+      '/api/users',
+      userData
+    )
     return response.data
   }
 
   /**
    * 更新用户
    */
-  async updateUser(userId: string, userData: UpdateUserRequest): Promise<UserDetailResponse> {
-    const response = await apiClient.put<UserDetailResponse>(`/api/users/${userId}`, userData)
+  async updateUser(
+    userId: string,
+    userData: UpdateUserRequest
+  ): Promise<UserDetailResponse> {
+    const response = await apiClient.put<UserDetailResponse>(
+      `/api/users/${userId}`,
+      userData
+    )
     return response.data
   }
 
@@ -60,7 +75,9 @@ class UsersApi {
    * 获取用户详情
    */
   async getUserById(userId: string): Promise<UserDetailResponse> {
-    const response = await apiClient.get<UserDetailResponse>(`/api/users/${userId}`)
+    const response = await apiClient.get<UserDetailResponse>(
+      `/api/users/${userId}`
+    )
     return response.data
   }
 }

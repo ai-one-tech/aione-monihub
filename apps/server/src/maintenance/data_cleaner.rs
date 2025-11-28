@@ -13,10 +13,10 @@ pub fn start_data_cleaner(db: DatabaseConnection) {
         let now = Utc::now();
         let next_run = now.date_naive().and_hms_opt(0, 0, 0).unwrap() + Duration::days(1);
         let duration_until_next_run = (next_run - now.naive_utc()).to_std().unwrap();
-        
+
         // 先等待到下一个0点
         tokio::time::sleep(duration_until_next_run).await;
-        
+
         // 然后每天执行一次
         let mut interval = tokio::time::interval(std::time::Duration::from_secs(24 * 60 * 60));
         loop {
@@ -42,16 +42,16 @@ pub fn start_data_cleaner(db: DatabaseConnection) {
 /// 保留7天内的数据，删除更早的数据
 async fn run_data_cleanup(db: &DatabaseConnection) -> Result<u64, sea_orm::DbErr> {
     let start = Instant::now();
-    
+
     // 计算7天前的时间点
     let cutoff = Utc::now() - Duration::days(7);
-    
+
     // 删除instance_records表中7天前的数据
     let res = instance_records::Entity::delete_many()
         .filter(instance_records::Column::CreatedAt.lt(cutoff))
         .exec(db)
         .await?;
-    
+
     let elapsed_ms = start.elapsed().as_millis();
     info!(
         target: "data_cleaner",
@@ -60,7 +60,7 @@ async fn run_data_cleanup(db: &DatabaseConnection) -> Result<u64, sea_orm::DbErr
         elapsed_ms,
         cutoff.to_rfc3339(),
     );
-    
+
     Ok(res.rows_affected)
 }
 
@@ -87,4 +87,3 @@ async fn run_logs_cleanup(db: &DatabaseConnection) -> Result<u64, sea_orm::DbErr
 
     Ok(res.rows_affected)
 }
-

@@ -8,6 +8,7 @@ use reqwest::Method;
 use serde_json::Value;
 use std::time::Duration;
 
+
 pub async fn execute(state: &AppState, item: &TaskDispatchItem, timeout_sec: u64) -> Result<Value> {
     let method = item
         .task_content
@@ -98,7 +99,11 @@ pub async fn execute(state: &AppState, item: &TaskDispatchItem, timeout_sec: u64
             }
         }
         "form" => {
-            if let Some(f) = item.task_content.get("form_fields").and_then(|v| v.as_object()) {
+            if let Some(f) = item
+                .task_content
+                .get("form_fields")
+                .and_then(|v| v.as_object())
+            {
                 let mut form = vec![];
                 for (k, v) in f {
                     form.push((k.clone(), v.as_str().unwrap_or(&v.to_string()).to_string()));

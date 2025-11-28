@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button'
 import { useSystemUsersContext } from './system-users-provider'
 
 export function SystemUsersPrimaryButtons() {
-  const { setIsUserSheetOpen, setUserSheetMode, setSelectedUserId } = useSystemUsersContext()
+  const { setIsUserSheetOpen, setUserSheetMode, setSelectedUserId } =
+    useSystemUsersContext()
 
   const handleCreateUser = () => {
     setUserSheetMode('create')

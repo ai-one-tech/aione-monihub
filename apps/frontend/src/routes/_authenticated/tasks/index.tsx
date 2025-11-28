@@ -1,6 +1,6 @@
 import z from 'zod'
-import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import { createFileRoute } from '@tanstack/react-router'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import { Tasks } from '@/features/tasks'
 import { priorities, statuses } from '@/features/tasks/data/data'
 

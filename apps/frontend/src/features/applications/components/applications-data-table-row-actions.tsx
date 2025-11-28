@@ -1,10 +1,15 @@
+import { getRouteApi } from '@tanstack/react-router'
 import { type Row } from '@tanstack/react-table'
 import { Eye, Edit, Trash2, Link2, Server } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { type ApplicationResponse } from '../data/api-schema'
 import { useApplicationsProvider } from './applications-provider'
-import { getRouteApi } from '@tanstack/react-router'
 
 interface ApplicationsDataTableRowActionsProps {
   row: Row<ApplicationResponse>

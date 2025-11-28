@@ -50,7 +50,8 @@ export function DataTableSingleFilter<TData, TValue>({
                 variant='secondary'
                 className='rounded-sm px-1 font-normal'
               >
-                {options.find(option => option.value === selectedValue)?.label || selectedValue}
+                {options.find((option) => option.value === selectedValue)
+                  ?.label || selectedValue}
               </Badge>
             </>
           )}

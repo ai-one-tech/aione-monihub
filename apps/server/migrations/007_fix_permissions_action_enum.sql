@@ -5,20 +5,20 @@
 
 -- 允许空值
 ALTER TABLE public.permissions
-  ALTER COLUMN permission_action DROP NOT NULL;
+    ALTER COLUMN permission_action DROP NOT NULL;
 
 -- 将非操作类型的动作置空
 UPDATE public.permissions
-  SET permission_action = NULL
+SET permission_action = NULL
 WHERE permission_type IN ('menu', 'page');
 
 -- 统一大小写为小写
 UPDATE public.permissions
-  SET permission_action = LOWER(permission_action)
+SET permission_action = LOWER(permission_action)
 WHERE permission_action IS NOT NULL;
 
 -- 将不在枚举允许范围内的值置空，避免 ORM 解析错误
 UPDATE public.permissions
-  SET permission_action = NULL
+SET permission_action = NULL
 WHERE permission_action IS NOT NULL
-  AND permission_action NOT IN ('create','read','update','delete','execute');
+  AND permission_action NOT IN ('create', 'read', 'update', 'delete', 'execute');

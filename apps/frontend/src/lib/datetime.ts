@@ -10,7 +10,10 @@ function toDate(input: Input): Date | null {
   return isNaN(d.getTime()) ? null : d
 }
 
-export function formatDateTime(input: Input, pattern = 'yyyy-MM-dd HH:mm:ss'): string {
+export function formatDateTime(
+  input: Input,
+  pattern = 'yyyy-MM-dd HH:mm:ss'
+): string {
   const d = toDate(input)
   return d ? format(d, pattern, { locale: zhCN }) : '-'
 }

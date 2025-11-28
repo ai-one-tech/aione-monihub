@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -24,12 +27,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { useSystemUsersContext } from './system-users-provider'
-import { departments } from '../data/data'
 import { useRolesQuery } from '@/features/system/roles/hooks/use-roles-query'
+import { departments } from '../data/data'
+import { useSystemUsersContext } from './system-users-provider'
 
 const editUserSchema = z.object({
   username: z.string().min(1, '用户名不能为空'),
@@ -45,9 +45,10 @@ const editUserSchema = z.object({
 type EditUserFormData = z.infer<typeof editUserSchema>
 
 export function SystemUsersEditDialog() {
-  const { isEditDialogOpen, setIsEditDialogOpen, selectedUserId } = useSystemUsersContext()
+  const { isEditDialogOpen, setIsEditDialogOpen, selectedUserId } =
+    useSystemUsersContext()
   const [isLoading, setIsLoading] = useState(false)
-  
+
   // 获取角色列表
   const { data: rolesData, isLoading: rolesLoading } = useRolesQuery({})
 
@@ -89,10 +90,10 @@ export function SystemUsersEditDialog() {
     try {
       // TODO: 实现更新用户的API调用
       console.log('更新用户:', { id: selectedUserId, ...data })
-      
+
       // 模拟API调用
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
       setIsEditDialogOpen(false)
     } catch (error) {
       console.error('更新用户失败:', error)
@@ -106,9 +107,7 @@ export function SystemUsersEditDialog() {
       <DialogContent className='sm:max-w-[425px]'>
         <DialogHeader>
           <DialogTitle>编辑用户</DialogTitle>
-          <DialogDescription>
-            修改用户信息
-          </DialogDescription>
+          <DialogDescription>修改用户信息</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
@@ -194,7 +193,7 @@ export function SystemUsersEditDialog() {
                       </FormControl>
                       <SelectContent>
                         {rolesLoading ? (
-                          <SelectItem value="" disabled>
+                          <SelectItem value='' disabled>
                             加载中...
                           </SelectItem>
                         ) : (

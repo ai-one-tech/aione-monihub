@@ -5,9 +5,9 @@ use crate::permissions::handlers::get_user_permission_by_name;
 use crate::projects::models::{
     Pagination, ProjectCreateRequest, ProjectListQuery, ProjectListResponse, ProjectResponse,
 };
-use crate::shared::{enums, request_context};
 use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
+use crate::shared::{enums, request_context};
 use actix_web::{web, HttpRequest, HttpResponse, Result};
 use chrono::Utc;
 use sea_orm::{
@@ -184,7 +184,8 @@ pub async fn create_project(
         &req,
         None,
         Some(after),
-    ).await;
+    )
+    .await;
 
     Ok(HttpResponse::Ok().json(response))
 }
@@ -325,7 +326,8 @@ pub async fn update_project(
         &req,
         Some(before),
         Some(after),
-    ).await;
+    )
+    .await;
 
     Ok(HttpResponse::Ok().json(response))
 }
@@ -411,7 +413,8 @@ pub async fn delete_project(
         Some(&trace_id),
         Some(before),
         None,
-    ).await;
+    )
+    .await;
 
     Ok(HttpResponse::Ok().json("项目删除成功"))
 }

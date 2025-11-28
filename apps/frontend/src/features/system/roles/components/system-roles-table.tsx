@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   flexRender,
   getCoreRowModel,
@@ -10,10 +11,9 @@ import {
   type SortingState,
   type VisibilityState,
 } from '@tanstack/react-table'
-import { useState } from 'react'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import { cn } from '@/lib/utils'
 import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
-import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import {
   Table,
   TableBody,
@@ -23,8 +23,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import { systemRolesColumns } from './system-roles-columns'
 import { type ApiRoleResponse } from '../data/api-schema'
+import { systemRolesColumns } from './system-roles-columns'
 
 interface SystemRolesTableProps {
   data: ApiRoleResponse[]
@@ -34,7 +34,13 @@ interface SystemRolesTableProps {
   onRefresh?: () => void
 }
 
-export function SystemRolesTable({ data, totalPages, search, navigate, onRefresh }: SystemRolesTableProps) {
+export function SystemRolesTable({
+  data,
+  totalPages,
+  search,
+  navigate,
+  onRefresh,
+}: SystemRolesTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState({})
@@ -47,7 +53,10 @@ export function SystemRolesTable({ data, totalPages, search, navigate, onRefresh
   } = useTableUrlState({
     search,
     navigate,
-    pagination: { defaultPage: DEFAULT_PAGE, defaultPageSize: DEFAULT_PAGE_SIZE },
+    pagination: {
+      defaultPage: DEFAULT_PAGE,
+      defaultPageSize: DEFAULT_PAGE_SIZE,
+    },
     globalFilter: { enabled: false },
     columnFilters: [
       { columnId: 'name', searchKey: 'name', type: 'string' },
@@ -82,7 +91,7 @@ export function SystemRolesTable({ data, totalPages, search, navigate, onRefresh
   })
 
   return (
-    <div className='flex flex-col h-full min-h-0'>
+    <div className='flex h-full min-h-0 flex-col'>
       <DataTableToolbar
         table={table}
         searchKey='name'
@@ -101,7 +110,7 @@ export function SystemRolesTable({ data, totalPages, search, navigate, onRefresh
           },
         ]}
       />
-      <div className='flex-1 min-h-0 overflow-auto rounded-md border mt-4'>
+      <div className='mt-4 min-h-0 flex-1 overflow-auto rounded-md border'>
         <Table>
           <TableHeader className='sticky top-0 z-10'>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -119,9 +128,9 @@ export function SystemRolesTable({ data, totalPages, search, navigate, onRefresh
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </TableHead>
                   )
                 })}

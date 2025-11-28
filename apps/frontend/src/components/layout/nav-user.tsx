@@ -1,13 +1,7 @@
 import { Link } from '@tanstack/react-router'
-import {
-  BadgeCheck,
-  Bell,
-  ChevronsUpDown,
-  LogOut,
-  User,
-} from 'lucide-react'
-import useDialogState from '@/hooks/use-dialog-state'
+import { BadgeCheck, Bell, ChevronsUpDown, LogOut, User } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
+import useDialogState from '@/hooks/use-dialog-state'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -41,8 +35,10 @@ export function NavUser({ user: propUser }: NavUserProps) {
   const { user: authUser } = auth
 
   // 使用真实的用户数据，如果没有则使用默认值
-  const displayName = authUser?.email ? authUser.email.split('@')[0] : (propUser?.name || '用户')
-  const displayEmail = authUser?.email || (propUser?.email || 'user@example.com')
+  const displayName = authUser?.email
+    ? authUser.email.split('@')[0]
+    : propUser?.name || '用户'
+  const displayEmail = authUser?.email || propUser?.email || 'user@example.com'
   const avatarUrl = propUser?.avatar || '/avatars/01.png'
   const avatarFallback = displayName.slice(0, 2).toUpperCase()
 
@@ -58,7 +54,9 @@ export function NavUser({ user: propUser }: NavUserProps) {
               >
                 <Avatar className='h-8 w-8 rounded-lg'>
                   <AvatarImage src={avatarUrl} alt={displayName} />
-                  <AvatarFallback className='rounded-lg'>{avatarFallback}</AvatarFallback>
+                  <AvatarFallback className='rounded-lg'>
+                    {avatarFallback}
+                  </AvatarFallback>
                 </Avatar>
                 <div className='grid flex-1 text-start text-sm leading-tight'>
                   <span className='truncate font-semibold'>{displayName}</span>
@@ -77,10 +75,14 @@ export function NavUser({ user: propUser }: NavUserProps) {
                 <div className='flex items-center gap-2 px-1 py-1.5 text-start text-sm'>
                   <Avatar className='h-8 w-8 rounded-lg'>
                     <AvatarImage src={avatarUrl} alt={displayName} />
-                    <AvatarFallback className='rounded-lg'>{avatarFallback}</AvatarFallback>
+                    <AvatarFallback className='rounded-lg'>
+                      {avatarFallback}
+                    </AvatarFallback>
                   </Avatar>
                   <div className='grid flex-1 text-start text-sm leading-tight'>
-                    <span className='truncate font-semibold'>{displayName}</span>
+                    <span className='truncate font-semibold'>
+                      {displayName}
+                    </span>
                     <span className='truncate text-xs'>{displayEmail}</span>
                   </div>
                 </div>

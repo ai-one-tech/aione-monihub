@@ -1,5 +1,5 @@
-import { authToken } from './auth-token'
 import { env } from '@/config/env'
+import { authToken } from './auth-token'
 import { generateSnowflakeId } from './snowflake'
 
 /**
@@ -56,15 +56,18 @@ class ApiClient {
       timeout: config.timeout || 30000,
       headers: {
         'Content-Type': 'application/json',
-        ...config.headers
-      }
+        ...config.headers,
+      },
     }
   }
 
   /**
    * 请求拦截器 - 自动添加认证头
    */
-  private addAuthHeader(headers: Record<string, string>, skipAuth?: boolean): Record<string, string> {
+  private addAuthHeader(
+    headers: Record<string, string>,
+    skipAuth?: boolean
+  ): Record<string, string> {
     if (!skipAuth) {
       const authHeader = authToken.getAuthorizationHeader()
       if (authHeader) {
@@ -86,9 +89,15 @@ class ApiClient {
         const errorData = await response.clone().json()
         if (errorData && typeof errorData === 'object') {
           // 新格式优先取 message 字段；兼容旧格式的 error 字段
-          if (typeof errorData.message === 'string' && errorData.message.length > 0) {
+          if (
+            typeof errorData.message === 'string' &&
+            errorData.message.length > 0
+          ) {
             errorMessage = errorData.message
-          } else if (typeof errorData.error === 'string' && errorData.error.length > 0) {
+          } else if (
+            typeof errorData.error === 'string' &&
+            errorData.error.length > 0
+          ) {
             errorMessage = errorData.error
           }
         }
@@ -121,14 +130,17 @@ class ApiClient {
       data,
       status: response.status,
       statusText: response.statusText,
-      headers: response.headers
+      headers: response.headers,
     }
   }
 
   /**
    * 创建带超时的fetch请求
    */
-  private async fetchWithTimeout(url: string, options: RequestOptions): Promise<Response> {
+  private async fetchWithTimeout(
+    url: string,
+    options: RequestOptions
+  ): Promise<Response> {
     const { timeout = this.config.timeout, ...fetchOptions } = options
 
     const controller = new AbortController()
@@ -137,7 +149,7 @@ class ApiClient {
     try {
       const response = await fetch(url, {
         ...fetchOptions,
-        signal: controller.signal
+        signal: controller.signal,
       })
       clearTimeout(timeoutId)
       return response
@@ -153,7 +165,10 @@ class ApiClient {
   /**
    * 通用请求方法
    */
-  async request<T = any>(endpoint: string, options: RequestOptions = {}): Promise<ApiResponse<T>> {
+  async request<T = any>(
+    endpoint: string,
+    options: RequestOptions = {}
+  ): Promise<ApiResponse<T>> {
     const url = `${this.config.baseURL}${endpoint}`
 
     // 合并headers，确保类型正确
@@ -186,7 +201,7 @@ class ApiClient {
     const requestOptions: RequestOptions = {
       credentials: 'include', // 包含cookie
       ...options,
-      headers: authHeaders
+      headers: authHeaders,
     }
 
     try {
@@ -223,40 +238,71 @@ class ApiClient {
   /**
    * GET请求
    */
-  async get<T = any>(endpoint: string, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<ApiResponse<T>> {
+  async get<T = any>(
+    endpoint: string,
+    options?: Omit<RequestOptions, 'method' | 'body'>
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { ...options, method: 'GET' })
   }
 
-  async download(endpoint: string, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<{ blob: Blob; fileName?: string; status: number; statusText: string; headers: Headers }> {
+  async download(
+    endpoint: string,
+    options?: Omit<RequestOptions, 'method' | 'body'>
+  ): Promise<{
+    blob: Blob
+    fileName?: string
+    status: number
+    statusText: string
+    headers: Headers
+  }> {
     const url = `${this.config.baseURL}${endpoint}`
     const headers: Record<string, string> = {}
-    Object.entries(this.config.headers).forEach(([key, value]) => { headers[key] = value })
+    Object.entries(this.config.headers).forEach(([key, value]) => {
+      headers[key] = value
+    })
     if (options?.headers) {
       if (options.headers instanceof Headers) {
-        options.headers.forEach((value, key) => { headers[key] = value })
+        options.headers.forEach((value, key) => {
+          headers[key] = value
+        })
       } else if (typeof options.headers === 'object') {
-        Object.entries(options.headers).forEach(([key, value]) => { if (typeof value === 'string') headers[key] = value })
+        Object.entries(options.headers).forEach(([key, value]) => {
+          if (typeof value === 'string') headers[key] = value
+        })
       }
     }
     const authHeaders = this.addAuthHeader(headers, options?.skipAuth)
-    const requestOptions: RequestOptions = { credentials: 'include', ...options, method: 'GET', headers: authHeaders }
+    const requestOptions: RequestOptions = {
+      credentials: 'include',
+      ...options,
+      method: 'GET',
+      headers: authHeaders,
+    }
     const response = await this.fetchWithTimeout(url, requestOptions)
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`
       try {
         const errorData = await response.clone().json()
         if (errorData && typeof errorData === 'object') {
-          if (typeof errorData.message === 'string' && errorData.message.length > 0) {
+          if (
+            typeof errorData.message === 'string' &&
+            errorData.message.length > 0
+          ) {
             errorMessage = errorData.message
-          } else if (typeof errorData.error === 'string' && errorData.error.length > 0) {
+          } else if (
+            typeof errorData.error === 'string' &&
+            errorData.error.length > 0
+          ) {
             errorMessage = errorData.error
           }
         }
       } catch {
         try {
           const text = await response.text()
-          if (text && text.length > 0) { errorMessage = text }
-        } catch { }
+          if (text && text.length > 0) {
+            errorMessage = text
+          }
+        } catch {}
       }
       throw new ApiError(errorMessage, response.status, response)
     }
@@ -267,46 +313,67 @@ class ApiClient {
     if (match) {
       fileName = decodeURIComponent(match[1] || match[2])
     }
-    return { blob, fileName, status: response.status, statusText: response.statusText, headers: response.headers }
+    return {
+      blob,
+      fileName,
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    }
   }
 
   /**
    * POST请求
    */
-  async post<T = any>(endpoint: string, data?: any, options?: Omit<RequestOptions, 'method'>): Promise<ApiResponse<T>> {
+  async post<T = any>(
+    endpoint: string,
+    data?: any,
+    options?: Omit<RequestOptions, 'method'>
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'POST',
-      body: data ? JSON.stringify(data) : undefined
+      body: data ? JSON.stringify(data) : undefined,
     })
   }
 
   /**
    * PUT请求
    */
-  async put<T = any>(endpoint: string, data?: any, options?: Omit<RequestOptions, 'method'>): Promise<ApiResponse<T>> {
+  async put<T = any>(
+    endpoint: string,
+    data?: any,
+    options?: Omit<RequestOptions, 'method'>
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined
+      body: data ? JSON.stringify(data) : undefined,
     })
   }
 
   /**
    * DELETE请求
    */
-  async delete<T = any>(endpoint: string, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<ApiResponse<T>> {
+  async delete<T = any>(
+    endpoint: string,
+    options?: Omit<RequestOptions, 'method' | 'body'>
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { ...options, method: 'DELETE' })
   }
 
   /**
    * PATCH请求
    */
-  async patch<T = any>(endpoint: string, data?: any, options?: Omit<RequestOptions, 'method'>): Promise<ApiResponse<T>> {
+  async patch<T = any>(
+    endpoint: string,
+    data?: any,
+    options?: Omit<RequestOptions, 'method'>
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PATCH',
-      body: data ? JSON.stringify(data) : undefined
+      body: data ? JSON.stringify(data) : undefined,
     })
   }
 
@@ -326,4 +393,9 @@ class ApiClient {
 export const apiClient = new ApiClient({ baseURL: env.API_URL })
 
 // 导出类和类型
-export { ApiClient, type ApiClientConfig, type RequestOptions, type ApiResponse }
+export {
+  ApiClient,
+  type ApiClientConfig,
+  type RequestOptions,
+  type ApiResponse,
+}

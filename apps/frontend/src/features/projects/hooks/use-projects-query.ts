@@ -1,13 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { projectsApi } from '../api/projects-api'
-import { type GetProjectsParams, type CreateProjectRequest, type UpdateProjectRequest } from '../data/api-schema'
 import { toast } from 'sonner'
+import { projectsApi } from '../api/projects-api'
+import {
+  type GetProjectsParams,
+  type CreateProjectRequest,
+  type UpdateProjectRequest,
+} from '../data/api-schema'
 
 // 查询键
 export const projectsQueryKeys = {
   all: ['projects'] as const,
   lists: () => [...projectsQueryKeys.all, 'list'] as const,
-  list: (params: GetProjectsParams) => [...projectsQueryKeys.lists(), params] as const,
+  list: (params: GetProjectsParams) =>
+    [...projectsQueryKeys.lists(), params] as const,
   details: () => [...projectsQueryKeys.all, 'detail'] as const,
   detail: (id: string) => [...projectsQueryKeys.details(), id] as const,
 }
@@ -66,7 +71,9 @@ export function useUpdateProjectMutation() {
     onSuccess: (_, variables) => {
       // 刷新项目列表和详情
       queryClient.invalidateQueries({ queryKey: projectsQueryKeys.lists() })
-      queryClient.invalidateQueries({ queryKey: projectsQueryKeys.detail(variables.id) })
+      queryClient.invalidateQueries({
+        queryKey: projectsQueryKeys.detail(variables.id),
+      })
       toast.success('项目更新成功')
     },
     onError: async (error: any) => {

@@ -3,8 +3,8 @@
 // ===== 用户模块示例 =====
 // 在创建用户时使用 Snowflake ID
 use crate::shared::generate_snowflake_id;
-use sea_orm::ActiveValue;
 use chrono::Utc;
+use sea_orm::ActiveValue;
 
 // 示例：用户创建函数
 pub async fn create_user_example(
@@ -14,7 +14,7 @@ pub async fn create_user_example(
 ) -> Result<String, Box<dyn std::error::Error>> {
     // 生成 Snowflake ID
     let id = generate_snowflake_id()?;
-    
+
     // 在 ActiveModel 中使用生成的 ID
     let user_data = users::ActiveModel {
         id: ActiveValue::Set(id),
@@ -22,7 +22,7 @@ pub async fn create_user_example(
         email: ActiveValue::Set(email),
         // ... 其他字段
     };
-    
+
     Ok(id)
 }
 

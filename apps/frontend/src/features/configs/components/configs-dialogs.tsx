@@ -1,10 +1,19 @@
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
-import { useConfigsProvider } from './configs-provider'
-import { useDeleteConfig } from '../hooks/use-configs-query'
 import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { useDeleteConfig } from '../hooks/use-configs-query'
+import { useConfigsProvider } from './configs-provider'
 
 export function ConfigsDialogs() {
-  const { isDeleteDialogOpen, setIsDeleteDialogOpen, selectedConfigId } = useConfigsProvider()
+  const { isDeleteDialogOpen, setIsDeleteDialogOpen, selectedConfigId } =
+    useConfigsProvider()
   const deleteMutation = useDeleteConfig()
   return (
     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -14,7 +23,17 @@ export function ConfigsDialogs() {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction onClick={async () => { if (selectedConfigId) { await deleteMutation.mutateAsync(selectedConfigId); toast.success('删除成功'); setIsDeleteDialogOpen(false) } }}>删除</AlertDialogAction>
+          <AlertDialogAction
+            onClick={async () => {
+              if (selectedConfigId) {
+                await deleteMutation.mutateAsync(selectedConfigId)
+                toast.success('删除成功')
+                setIsDeleteDialogOpen(false)
+              }
+            }}
+          >
+            删除
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

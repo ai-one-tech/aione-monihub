@@ -1,42 +1,43 @@
+use crate::auth::middleware::get_user_id_from_request;
+use crate::entities::instances::{ActiveModel, Entity as Instances};
 use crate::instances::models::{
-    InstanceListQuery, InstanceListResponse, InstanceMonitoringDataResponse,
-    InstanceResponse, Pagination, UpdateInstanceConfigRequest, InstanceConfig,
+    InstanceConfig, InstanceListQuery, InstanceListResponse, InstanceMonitoringDataResponse,
+    InstanceResponse, Pagination, UpdateInstanceConfigRequest,
 };
+use crate::permissions::handlers::get_user_permission_by_name;
+use crate::shared::enums::Status;
 use crate::shared::error::ApiError;
 use crate::shared::generate_snowflake_id;
-use crate::entities::instances::{Entity as Instances, ActiveModel};
-use crate::shared::enums::Status;
-use actix_web::{web, HttpResponse, Result, HttpRequest};
-use crate::auth::middleware::get_user_id_from_request;
-use crate::permissions::handlers::{get_user_permission_by_name};
+use actix_web::{web, HttpRequest, HttpResponse, Result};
 use chrono::Utc;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, 
-    PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, Set
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter,
+    QueryOrder, QuerySelect, Set,
 };
 use serde_json::json;
 
 pub async fn get_instances(
     db: web::Data<DatabaseConnection>,
-    query: web::Query<InstanceListQuery>
+    query: web::Query<InstanceListQuery>,
 ) -> Result<HttpResponse, ApiError> {
     let page = query.page.unwrap_or(1);
     let limit = query.limit.unwrap_or(10);
     let offset = (page - 1) * limit;
 
     // 构建查询条件
-    let mut select = Instances::find()
-        .filter(crate::entities::instances::Column::DeletedAt.is_null());
+    let mut select =
+        Instances::find().filter(crate::entities::instances::Column::DeletedAt.is_null());
 
     // 添加搜索过滤器
     if let Some(search) = &query.search {
         select = select.filter(
-            crate::entities::instances::Column::Hostname.contains(search)
+            crate::entities::instances::Column::Hostname
+                .contains(search)
                 .or(crate::entities::instances::Column::Id.contains(search))
                 .or(crate::entities::instances::Column::AgentInstanceId.contains(search))
                 .or(crate::entities::instances::Column::IpAddress.contains(search))
                 .or(crate::entities::instances::Column::PublicIp.contains(search))
-                .or(crate::entities::instances::Column::ApplicationId.contains(search))
+                .or(crate::entities::instances::Column::ApplicationId.contains(search)),
         );
     }
 
@@ -47,12 +48,14 @@ pub async fn get_instances(
 
     // 添加在线状态过滤器
     if let Some(online_status) = &query.online_status {
-        select = select.filter(crate::entities::instances::Column::OnlineStatus.eq(online_status.clone()));
+        select = select
+            .filter(crate::entities::instances::Column::OnlineStatus.eq(online_status.clone()));
     }
 
     // 添加应用ID过滤器
     if let Some(application_id) = &query.application_id {
-        select = select.filter(crate::entities::instances::Column::ApplicationId.eq(application_id));
+        select =
+            select.filter(crate::entities::instances::Column::ApplicationId.eq(application_id));
     }
 
     // 添加内网IP过滤器
@@ -72,7 +75,9 @@ pub async fn get_instances(
 
     // 添加Agent实例ID过滤器
     if let Some(agent_instance_id) = &query.agent_instance_id {
-        select = select.filter(crate::entities::instances::Column::AgentInstanceId.contains(agent_instance_id));
+        select = select.filter(
+            crate::entities::instances::Column::AgentInstanceId.contains(agent_instance_id),
+        );
     }
 
     // 获取总数
@@ -111,7 +116,7 @@ pub async fn get_instances(
 
 pub async fn get_instance(
     db: web::Data<DatabaseConnection>,
-    path: web::Path<String>
+    path: web::Path<String>,
 ) -> Result<HttpResponse, ApiError> {
     let instance_id = path.into_inner();
 
@@ -189,7 +194,7 @@ pub async fn update_instance(
 
 pub async fn delete_instance(
     db: web::Data<DatabaseConnection>,
-    path: web::Path<String>
+    path: web::Path<String>,
 ) -> Result<HttpResponse, ApiError> {
     let instance_id = path.into_inner();
 
@@ -238,7 +243,8 @@ pub async fn delete_instance(
         None,
         Some(before),
         None,
-    ).await;
+    )
+    .await;
 
     Ok(HttpResponse::Ok().json("实例删除成功"))
 }
@@ -280,7 +286,9 @@ pub async fn enable_instance(
     let instance_id = path.into_inner();
     let user_id = get_user_id_from_request(&req)?;
     // 权限检查：需要具有 instance_management.enable 权限
-    let permission = get_user_permission_by_name(&user_id.to_string(), "instance_management.enable", &db).await?;
+    let permission =
+        get_user_permission_by_name(&user_id.to_string(), "instance_management.enable", &db)
+            .await?;
     if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限启用实例".to_string()));
     }
@@ -288,7 +296,10 @@ pub async fn enable_instance(
         .filter(crate::entities::instances::Column::DeletedAt.is_null())
         .one(&**db)
         .await?;
-    let instance = match existing { Some(i) => i, None => return Err(ApiError::NotFound("实例不存在".to_string())) };
+    let instance = match existing {
+        Some(i) => i,
+        None => return Err(ApiError::NotFound("实例不存在".to_string())),
+    };
     let mut active: ActiveModel = instance.into();
     active.status = Set(Status::Active);
     active.updated_by = Set(user_id.to_string());
@@ -305,7 +316,8 @@ pub async fn enable_instance(
         &req,
         Some(before),
         Some(after),
-    ).await;
+    )
+    .await;
     Ok(HttpResponse::Ok().json(response))
 }
 
@@ -317,7 +329,9 @@ pub async fn disable_instance(
     let instance_id = path.into_inner();
     let user_id = get_user_id_from_request(&req)?;
     // 权限检查：需要具有 instance_management.disable 权限
-    let permission = get_user_permission_by_name(&user_id.to_string(), "instance_management.disable", &db).await?;
+    let permission =
+        get_user_permission_by_name(&user_id.to_string(), "instance_management.disable", &db)
+            .await?;
     if permission.is_none() {
         return Err(ApiError::Forbidden("没有权限禁用实例".to_string()));
     }
@@ -325,7 +339,10 @@ pub async fn disable_instance(
         .filter(crate::entities::instances::Column::DeletedAt.is_null())
         .one(&**db)
         .await?;
-    let instance = match existing { Some(i) => i, None => return Err(ApiError::NotFound("实例不存在".to_string())) };
+    let instance = match existing {
+        Some(i) => i,
+        None => return Err(ApiError::NotFound("实例不存在".to_string())),
+    };
     let mut active: ActiveModel = instance.into();
     active.status = Set(Status::Disabled);
     active.updated_by = Set(user_id.to_string());
@@ -342,7 +359,8 @@ pub async fn disable_instance(
         &req,
         Some(before),
         Some(after),
-    ).await;
+    )
+    .await;
     Ok(HttpResponse::Ok().json(response))
 }
 
@@ -368,8 +386,8 @@ pub async fn update_config(
     };
 
     // 将传入的 config 合并默认值（缺失字段使用默认值）
-    let merged: InstanceConfig = serde_json::from_value(req.config.clone())
-        .unwrap_or_else(|_| InstanceConfig::default());
+    let merged: InstanceConfig =
+        serde_json::from_value(req.config.clone()).unwrap_or_else(|_| InstanceConfig::default());
     let merged_value = serde_json::to_value(merged).unwrap_or(json!({}));
 
     let before_instance = instance.clone();
@@ -395,7 +413,8 @@ pub async fn update_config(
         &req_header,
         Some(before),
         Some(after),
-    ).await;
+    )
+    .await;
     Ok(HttpResponse::Ok().json(resp))
 }
 

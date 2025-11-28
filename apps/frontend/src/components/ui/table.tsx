@@ -30,7 +30,10 @@ function TableBody({ className, ...props }: React.ComponentProps<'tbody'>) {
   return (
     <tbody
       data-slot='table-body'
-      className={cn('h-full min-h-0 overflow-auto [&_tr:last-child]:border-0', className)}
+      className={cn(
+        'h-full min-h-0 overflow-auto [&_tr:last-child]:border-0',
+        className
+      )}
       {...props}
     />
   )

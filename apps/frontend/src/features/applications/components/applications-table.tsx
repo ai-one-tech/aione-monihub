@@ -10,9 +10,9 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import { cn } from '@/lib/utils'
 import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
-import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import {
   Table,
   TableBody,
@@ -22,8 +22,12 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import { type ApplicationResponse, APPLICATION_STATUS_OPTIONS } from '../data/api-schema'
+import {
+  type ApplicationResponse,
+  APPLICATION_STATUS_OPTIONS,
+} from '../data/api-schema'
 import { applicationsColumns as columns } from './applications-columns'
+
 const TECH_STACK_OPTIONS = [
   { label: 'java', value: 'java' },
   { label: 'springboot', value: 'springboot' },
@@ -56,7 +60,13 @@ type DataTableProps = {
   onRefresh?: () => void
 }
 
-export function ApplicationsTable({ data = [], totalPages, search, navigate, onRefresh }: DataTableProps) {
+export function ApplicationsTable({
+  data = [],
+  totalPages,
+  search,
+  navigate,
+  onRefresh,
+}: DataTableProps) {
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -72,7 +82,10 @@ export function ApplicationsTable({ data = [], totalPages, search, navigate, onR
   } = useTableUrlState({
     search,
     navigate,
-    pagination: { defaultPage: DEFAULT_PAGE, defaultPageSize: DEFAULT_PAGE_SIZE },
+    pagination: {
+      defaultPage: DEFAULT_PAGE,
+      defaultPageSize: DEFAULT_PAGE_SIZE,
+    },
     globalFilter: { enabled: false },
     columnFilters: [
       { columnId: 'name', searchKey: 'search', type: 'string' },
@@ -111,7 +124,7 @@ export function ApplicationsTable({ data = [], totalPages, search, navigate, onR
   }, [totalPages, ensurePageInRange])
 
   return (
-    <div className='flex flex-col h-full min-h-0 max-sm:has-[div[role="toolbar"]]:mb-16'>
+    <div className='flex h-full min-h-0 flex-col max-sm:has-[div[role="toolbar"]]:mb-16'>
       <DataTableToolbar
         table={table}
         searchPlaceholder='搜索应用...'
@@ -120,11 +133,10 @@ export function ApplicationsTable({ data = [], totalPages, search, navigate, onR
           {
             columnId: 'status',
             title: '状态',
-            options: APPLICATION_STATUS_OPTIONS
-              .map(option => ({
-                label: option.label,
-                value: option.value,
-              })),
+            options: APPLICATION_STATUS_OPTIONS.map((option) => ({
+              label: option.label,
+              value: option.value,
+            })),
             multiSelect: false, // 设置为单选模式
           },
           {
@@ -135,7 +147,7 @@ export function ApplicationsTable({ data = [], totalPages, search, navigate, onR
           },
         ]}
       />
-      <div className='flex-1 min-h-0 overflow-auto rounded-md border mt-4'>
+      <div className='mt-4 min-h-0 flex-1 overflow-auto rounded-md border'>
         <Table>
           <TableHeader className='sticky top-0 z-10'>
             {table.getHeaderGroups().map((headerGroup) => (

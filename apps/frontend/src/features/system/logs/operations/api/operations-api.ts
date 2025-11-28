@@ -1,8 +1,14 @@
 import { apiClient } from '@/lib/api-client'
-import { type AuditLogListResponse, type AuditLogDetail, type GetOperationLogsParams } from '../data/api-schema'
+import {
+  type AuditLogListResponse,
+  type AuditLogDetail,
+  type GetOperationLogsParams,
+} from '../data/api-schema'
 
 class OperationsLogsApi {
-  async getOperationLogs(params: GetOperationLogsParams = {}): Promise<AuditLogListResponse> {
+  async getOperationLogs(
+    params: GetOperationLogsParams = {}
+  ): Promise<AuditLogListResponse> {
     const sp = new URLSearchParams()
     if (params.page !== undefined) sp.append('page', String(params.page))
     if (params.limit !== undefined) sp.append('limit', String(params.limit))

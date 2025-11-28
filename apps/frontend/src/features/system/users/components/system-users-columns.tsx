@@ -40,7 +40,9 @@ export const systemUsersColumns: ColumnDef<ApiUserResponse>[] = [
       <DataTableColumnHeader column={column} title='用户ID' />
     ),
     cell: ({ row }) => (
-      <LongText className='max-w-24 ps-3 font-mono text-xs'>{row.getValue('id')}</LongText>
+      <LongText className='max-w-24 ps-3 font-mono text-xs'>
+        {row.getValue('id')}
+      </LongText>
     ),
     meta: {
       className: cn(
@@ -78,7 +80,7 @@ export const systemUsersColumns: ColumnDef<ApiUserResponse>[] = [
       return (
         <div className='w-fit'>
           <span
-            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
               status === 'active'
                 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                 : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
@@ -115,11 +117,13 @@ export const systemUsersColumns: ColumnDef<ApiUserResponse>[] = [
     filterFn: (row, id, value) => {
       const roles = row.getValue(id) as RoleInfo[] | undefined
       if (!roles || !Array.isArray(roles)) return false
-      
+
       // 处理单个值或数组值的情况
       const filterValues = Array.isArray(value) ? value : [value]
       // 检查用户的角色ID是否匹配筛选条件
-      return filterValues.some((roleId: string) => roles.some(role => role.id === roleId))
+      return filterValues.some((roleId: string) =>
+        roles.some((role) => role.id === roleId)
+      )
     },
     enableSorting: false,
     enableHiding: false,

@@ -1,6 +1,6 @@
 import z from 'zod'
-import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import { createFileRoute } from '@tanstack/react-router'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import { SystemLogs } from '@/features/system/logs'
 
 const systemLogsSearchSchema = z.object({
@@ -20,4 +20,3 @@ export const Route = createFileRoute('/_authenticated/logs/system')({
   validateSearch: systemLogsSearchSchema,
   component: SystemLogs,
 })
-

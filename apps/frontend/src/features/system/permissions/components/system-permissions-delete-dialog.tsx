@@ -7,11 +7,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { useSystemPermissions } from './system-permissions-provider'
 import { useDeletePermissionMutation } from '../hooks/use-permission-mutations'
+import { useSystemPermissions } from './system-permissions-provider'
 
 export function SystemPermissionsDeleteDialog() {
-  const { isDeleteDialogOpen, setIsDeleteDialogOpen, selectedPermissionId } = useSystemPermissions()
+  const { isDeleteDialogOpen, setIsDeleteDialogOpen, selectedPermissionId } =
+    useSystemPermissions()
   const deletePermissionMutation = useDeletePermissionMutation()
 
   const handleDelete = async () => {

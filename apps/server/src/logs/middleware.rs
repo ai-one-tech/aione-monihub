@@ -4,10 +4,10 @@ use crate::shared::enums;
 use crate::shared::snowflake::generate_snowflake_id;
 use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
 
-use actix_web::{web, Error};
+use crate::shared::request_context::TraceIdExt;
 use actix_web::http::header::{HeaderName, HeaderValue};
 use actix_web::HttpMessage;
-use crate::shared::request_context::{TraceIdExt};
+use actix_web::{web, Error};
 use chrono::Utc;
 use futures_util::future::ready;
 use futures_util::future::{LocalBoxFuture, Ready};
@@ -42,8 +42,6 @@ pub struct RequestLoggingService<S> {
     service: Rc<S>,
 }
 
- 
-
 impl<S, B> Service<ServiceRequest> for RequestLoggingService<S>
 where
     S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
@@ -76,7 +74,11 @@ where
                 .get("x-trace-id")
                 .and_then(|v| v.to_str().ok())
                 .unwrap_or("");
-            if h.is_empty() { generate_snowflake_id() } else { h.to_string() }
+            if h.is_empty() {
+                generate_snowflake_id()
+            } else {
+                h.to_string()
+            }
         };
         req.extensions_mut().insert(TraceIdExt(trace_id.clone()));
         let start = Instant::now();
@@ -134,14 +136,17 @@ where
                         .and_then(|v| v.to_str().ok())
                         .unwrap_or("")
                         .to_string();
-                    if response_content_type.starts_with("application/json") || response_content_type.starts_with("text/") {
-                        response_body_value = json!({ "skipped": true, "reason": "capturing_disabled" });
+                    if response_content_type.starts_with("application/json")
+                        || response_content_type.starts_with("text/")
+                    {
+                        response_body_value =
+                            json!({ "skipped": true, "reason": "capturing_disabled" });
                     } else {
                         response_body_value = json!({ "skipped": true, "reason": "binary" });
                     }
                     Ok(resp)
                 }
-                Err(e) => Err(e)
+                Err(e) => Err(e),
             };
 
             if let Some(db) = db_opt {

@@ -1,7 +1,7 @@
+use crate::shared::enums::{AgentType, TaskStatus, TaskType};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use utoipa::ToSchema;
-use crate::shared::enums::{TaskType, TaskStatus, AgentType};
 
 // ===================================================================
 // 任务类型枚举
@@ -159,11 +159,11 @@ pub struct TaskRecordListQuery {
     #[serde(rename = "page")]
     #[param(rename = "page")]
     pub page: Option<u32>,
-    
+
     #[serde(rename = "limit")]
     #[param(rename = "limit")]
     pub limit: Option<u32>,
-    
+
     #[serde(rename = "status")]
     #[param(rename = "status")]
     pub status: Option<String>,

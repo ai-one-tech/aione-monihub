@@ -1,8 +1,9 @@
-import { 
-  type GetApplicationsParams, 
-  type ApplicationListResponse, 
-  type ApplicationDetailResponse, 
-  type UpdateApplicationRequest, 
+import { apiClient } from '@/lib/api-client'
+import {
+  type GetApplicationsParams,
+  type ApplicationListResponse,
+  type ApplicationDetailResponse,
+  type UpdateApplicationRequest,
   type CreateApplicationRequest,
   type TaskCreateRequest,
   type TaskResponse,
@@ -10,15 +11,16 @@ import {
   type TaskRecordListResponse,
   type TaskInstanceWithResultResponse,
   type GetTasksParams,
-  type GetTaskRecordsParams
+  type GetTaskRecordsParams,
 } from '../data/api-schema'
-import { apiClient } from '@/lib/api-client'
 
 class ApplicationsApi {
   /**
    * 获取应用列表
    */
-  async getApplications(params: GetApplicationsParams = {}): Promise<ApplicationListResponse> {
+  async getApplications(
+    params: GetApplicationsParams = {}
+  ): Promise<ApplicationListResponse> {
     const searchParams = new URLSearchParams()
 
     if (params.page !== undefined) {
@@ -50,16 +52,27 @@ class ApplicationsApi {
   /**
    * 创建应用
    */
-  async createApplication(applicationData: CreateApplicationRequest): Promise<ApplicationDetailResponse> {
-    const response = await apiClient.post<ApplicationDetailResponse>('/api/applications', applicationData)
+  async createApplication(
+    applicationData: CreateApplicationRequest
+  ): Promise<ApplicationDetailResponse> {
+    const response = await apiClient.post<ApplicationDetailResponse>(
+      '/api/applications',
+      applicationData
+    )
     return response.data
   }
 
   /**
    * 更新应用
    */
-  async updateApplication(applicationId: string, applicationData: UpdateApplicationRequest): Promise<ApplicationDetailResponse> {
-    const response = await apiClient.put<ApplicationDetailResponse>(`/api/applications/${applicationId}`, applicationData)
+  async updateApplication(
+    applicationId: string,
+    applicationData: UpdateApplicationRequest
+  ): Promise<ApplicationDetailResponse> {
+    const response = await apiClient.put<ApplicationDetailResponse>(
+      `/api/applications/${applicationId}`,
+      applicationData
+    )
     return response.data
   }
 
@@ -67,15 +80,21 @@ class ApplicationsApi {
    * 删除应用
    */
   async deleteApplication(applicationId: string): Promise<any> {
-    const response = await apiClient.delete(`/api/applications/${applicationId}`)
+    const response = await apiClient.delete(
+      `/api/applications/${applicationId}`
+    )
     return response.data
   }
 
   /**
    * 获取应用详情
    */
-  async getApplicationById(applicationId: string): Promise<ApplicationDetailResponse> {
-    const response = await apiClient.get<ApplicationDetailResponse>(`/api/applications/${applicationId}`)
+  async getApplicationById(
+    applicationId: string
+  ): Promise<ApplicationDetailResponse> {
+    const response = await apiClient.get<ApplicationDetailResponse>(
+      `/api/applications/${applicationId}`
+    )
     return response.data
   }
 
@@ -83,7 +102,10 @@ class ApplicationsApi {
    * 创建任务
    */
   async createTask(taskData: TaskCreateRequest): Promise<TaskResponse> {
-    const response = await apiClient.post<TaskResponse>('/api/instances/tasks', taskData)
+    const response = await apiClient.post<TaskResponse>(
+      '/api/instances/tasks',
+      taskData
+    )
     return response.data
   }
 
@@ -127,7 +149,10 @@ class ApplicationsApi {
   /**
    * 获取任务执行记录
    */
-  async getTaskRecords(taskId: string, params: GetTaskRecordsParams = {}): Promise<TaskRecordListResponse> {
+  async getTaskRecords(
+    taskId: string,
+    params: GetTaskRecordsParams = {}
+  ): Promise<TaskRecordListResponse> {
     const searchParams = new URLSearchParams()
 
     if (params.page !== undefined) {
@@ -151,7 +176,10 @@ class ApplicationsApi {
    * 取消任务
    */
   async cancelTask(taskId: string): Promise<any> {
-    const response = await apiClient.post(`/api/instances/tasks/${taskId}/cancel`, {})
+    const response = await apiClient.post(
+      `/api/instances/tasks/${taskId}/cancel`,
+      {}
+    )
     return response.data
   }
 
@@ -159,7 +187,10 @@ class ApplicationsApi {
    * 重试任务记录
    */
   async retryTaskRecord(recordId: string): Promise<any> {
-    const response = await apiClient.post(`/api/instances/task-records/${recordId}/retry`, {})
+    const response = await apiClient.post(
+      `/api/instances/task-records/${recordId}/retry`,
+      {}
+    )
     return response.data
   }
 
@@ -167,15 +198,22 @@ class ApplicationsApi {
    * 将任务记录置为待执行
    */
   async setTaskRecordPending(recordId: string): Promise<any> {
-    const response = await apiClient.post(`/api/instances/task-records/${recordId}/set-pending`, {})
+    const response = await apiClient.post(
+      `/api/instances/task-records/${recordId}/set-pending`,
+      {}
+    )
     return response.data
   }
 
   /**
    * 获取任务关联的所有实例及其执行结果
    */
-  async getTaskInstancesWithResults(taskId: string): Promise<TaskInstanceWithResultResponse> {
-    const response = await apiClient.get<TaskInstanceWithResultResponse>(`/api/instances/tasks/${taskId}/instances-with-results`)
+  async getTaskInstancesWithResults(
+    taskId: string
+  ): Promise<TaskInstanceWithResultResponse> {
+    const response = await apiClient.get<TaskInstanceWithResultResponse>(
+      `/api/instances/tasks/${taskId}/instances-with-results`
+    )
     return response.data
   }
 }

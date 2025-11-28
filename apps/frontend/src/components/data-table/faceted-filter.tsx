@@ -41,7 +41,7 @@ export function DataTableFacetedFilter<TData, TValue>({
 }: DataTableFacetedFilterProps<TData, TValue>) {
   // 根据是否多选来确定 selectedValues 的类型和初始值
   const filterValue = column?.getFilterValue()
-  const selectedValues = multiSelect 
+  const selectedValues = multiSelect
     ? new Set(filterValue as string[])
     : new Set(filterValue ? [filterValue as string] : [])
 
@@ -77,7 +77,9 @@ export function DataTableFacetedFilter<TData, TValue>({
                         key={option.value}
                         className='rounded-sm px-1 font-normal'
                       >
-                        <span dangerouslySetInnerHTML={{ __html: option.label }} />
+                        <span
+                          dangerouslySetInnerHTML={{ __html: option.label }}
+                        />
                       </Badge>
                     ))
                 )}
@@ -86,7 +88,10 @@ export function DataTableFacetedFilter<TData, TValue>({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className={cn('p-0', contentClassName ?? 'w-[200px]')} align='start'>
+      <PopoverContent
+        className={cn('p-0', contentClassName ?? 'w-[200px]')}
+        align='start'
+      >
         <Command>
           <CommandInput placeholder={title} />
           <CommandList>
@@ -134,7 +139,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                     {option.icon && (
                       <option.icon className='text-muted-foreground size-4' />
                     )}
-                     <span dangerouslySetInnerHTML={{ __html: option.label }} />
+                    <span dangerouslySetInnerHTML={{ __html: option.label }} />
                   </CommandItem>
                 )
               })}

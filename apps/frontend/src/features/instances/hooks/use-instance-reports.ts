@@ -5,7 +5,10 @@ import { type GetInstanceReportsParams } from '../data/api-schema'
 /**
  * 实例上报记录查询 Hook
  */
-export function useInstanceReports(instanceId: string, params: GetInstanceReportsParams = {}) {
+export function useInstanceReports(
+  instanceId: string,
+  params: GetInstanceReportsParams = {}
+) {
   return useQuery({
     queryKey: ['instance-reports', instanceId, params],
     queryFn: () => instancesApi.getInstanceReports(instanceId, params),

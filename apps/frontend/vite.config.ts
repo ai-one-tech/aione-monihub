@@ -8,9 +8,9 @@ import { codeInspectorPlugin } from 'code-inspector-plugin'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-     codeInspectorPlugin({
+    codeInspectorPlugin({
       bundler: 'vite',
-      showSwitch:true
+      showSwitch: true,
     }),
     tanstackRouter({
       target: 'react',

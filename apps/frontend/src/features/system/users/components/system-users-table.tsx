@@ -9,9 +9,9 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import { cn } from '@/lib/utils'
 import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
-import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from '@/config/pagination'
 import {
   Table,
   TableBody,
@@ -21,10 +21,10 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import { type ApiUserResponse } from '../data/api-schema'
-import { SystemUsersDataTableBulkActions } from './system-users-data-table-bulk-actions'
-import { systemUsersColumns as columns } from './system-users-columns'
 import { useRolesQuery } from '@/features/system/roles/hooks/use-roles-query'
+import { type ApiUserResponse } from '../data/api-schema'
+import { systemUsersColumns as columns } from './system-users-columns'
+import { SystemUsersDataTableBulkActions } from './system-users-data-table-bulk-actions'
 
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -41,7 +41,13 @@ type DataTableProps = {
   onRefresh?: () => void
 }
 
-export function SystemUsersTable({ data = [], totalPages, search, navigate, onRefresh }: DataTableProps) {
+export function SystemUsersTable({
+  data = [],
+  totalPages,
+  search,
+  navigate,
+  onRefresh,
+}: DataTableProps) {
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -57,12 +63,20 @@ export function SystemUsersTable({ data = [], totalPages, search, navigate, onRe
   } = useTableUrlState({
     search,
     navigate,
-    pagination: { defaultPage: DEFAULT_PAGE, defaultPageSize: DEFAULT_PAGE_SIZE },
+    pagination: {
+      defaultPage: DEFAULT_PAGE,
+      defaultPageSize: DEFAULT_PAGE_SIZE,
+    },
     globalFilter: { enabled: false },
     columnFilters: [
       // username per-column text filter
       { columnId: 'username', searchKey: 'username', type: 'string' },
-      { columnId: 'roles', searchKey: 'roles', type: 'array', arraySerialization: 'string' }, // 统一使用逗号分隔格式
+      {
+        columnId: 'roles',
+        searchKey: 'roles',
+        type: 'array',
+        arraySerialization: 'string',
+      }, // 统一使用逗号分隔格式
       { columnId: 'status', searchKey: 'status', type: 'string' }, // 改为 string 类型以匹配单选模式
     ],
   })
@@ -99,9 +113,9 @@ export function SystemUsersTable({ data = [], totalPages, search, navigate, onRe
   // 动态加载角色列表用于筛选（统一使用角色名称）
   const { data: rolesData, isLoading: rolesLoading } = useRolesQuery({})
   console.log('rolesData', rolesLoading, rolesData)
-  
+
   return (
-    <div className='flex flex-col h-full min-h-0 max-sm:has-[div[role="toolbar"]]:mb-16'>
+    <div className='flex h-full min-h-0 flex-col max-sm:has-[div[role="toolbar"]]:mb-16'>
       <DataTableToolbar
         table={table}
         searchPlaceholder='搜索用户...'
@@ -129,7 +143,7 @@ export function SystemUsersTable({ data = [], totalPages, search, navigate, onRe
           },
         ]}
       />
-      <div className='flex-1 min-h-0 overflow-auto rounded-md border mt-4'>
+      <div className='mt-4 min-h-0 flex-1 overflow-auto rounded-md border'>
         <Table>
           <TableHeader className='sticky top-0 z-10'>
             {table.getHeaderGroups().map((headerGroup) => (

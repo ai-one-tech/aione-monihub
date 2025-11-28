@@ -22,7 +22,9 @@ export const applicationResponseSchema = z.object({
   code: z.string(),
   status: applicationStatusSchema,
   description: z.string(),
-  tech_stacks: z.array(z.object({ name: z.string(), version: z.string() })).default([]),
+  tech_stacks: z
+    .array(z.object({ name: z.string(), version: z.string() }))
+    .default([]),
   created_at: z.string(),
   updated_at: z.string(),
 })
@@ -37,11 +39,15 @@ export const applicationListResponseSchema = z.object({
   trace_id: z.string(),
 })
 
-export type ApplicationListResponse = z.infer<typeof applicationListResponseSchema>
+export type ApplicationListResponse = z.infer<
+  typeof applicationListResponseSchema
+>
 
 // 应用详情响应
 export const applicationDetailResponseSchema = applicationResponseSchema
-export type ApplicationDetailResponse = z.infer<typeof applicationDetailResponseSchema>
+export type ApplicationDetailResponse = z.infer<
+  typeof applicationDetailResponseSchema
+>
 
 // 创建应用请求
 export const createApplicationRequestSchema = z.object({
@@ -50,14 +56,20 @@ export const createApplicationRequestSchema = z.object({
   code: z.string().min(1, '应用代码不能为空'),
   description: z.string().min(1, '应用描述不能为空'),
   status: applicationStatusSchema,
-  tech_stacks: z.array(z.object({ name: z.string().min(1), version: z.string().min(1) })).optional(),
+  tech_stacks: z
+    .array(z.object({ name: z.string().min(1), version: z.string().min(1) }))
+    .optional(),
 })
 
-export type CreateApplicationRequest = z.infer<typeof createApplicationRequestSchema>
+export type CreateApplicationRequest = z.infer<
+  typeof createApplicationRequestSchema
+>
 
 // 更新应用请求
 export const updateApplicationRequestSchema = createApplicationRequestSchema
-export type UpdateApplicationRequest = z.infer<typeof updateApplicationRequestSchema>
+export type UpdateApplicationRequest = z.infer<
+  typeof updateApplicationRequestSchema
+>
 
 // 获取应用列表参数
 export const getApplicationsParamsSchema = z.object({
@@ -90,12 +102,12 @@ export const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, string> = {
 // 任务状态枚举
 export const taskStatusSchema = z.enum([
   'pending',
-  'dispatched', 
+  'dispatched',
   'running',
   'success',
   'failed',
   'timeout',
-  'cancelled'
+  'cancelled',
 ])
 export type TaskStatus = z.infer<typeof taskStatusSchema>
 
@@ -168,7 +180,9 @@ export const taskRecordListResponseSchema = z.object({
   trace_id: z.string(),
 })
 
-export type TaskRecordListResponse = z.infer<typeof taskRecordListResponseSchema>
+export type TaskRecordListResponse = z.infer<
+  typeof taskRecordListResponseSchema
+>
 
 // 获取任务列表参数
 export const getTasksParamsSchema = z.object({
@@ -216,7 +230,9 @@ export const taskInstanceWithResultSchema = z.object({
   execution_record: taskRecordResponseSchema,
 })
 
-export type TaskInstanceWithResult = z.infer<typeof taskInstanceWithResultSchema>
+export type TaskInstanceWithResult = z.infer<
+  typeof taskInstanceWithResultSchema
+>
 
 // 任务关联实例及执行结果响应
 export const taskInstanceWithResultResponseSchema = z.object({
@@ -226,7 +242,9 @@ export const taskInstanceWithResultResponseSchema = z.object({
   trace_id: z.string(),
 })
 
-export type TaskInstanceWithResultResponse = z.infer<typeof taskInstanceWithResultResponseSchema>
+export type TaskInstanceWithResultResponse = z.infer<
+  typeof taskInstanceWithResultResponseSchema
+>
 
 // 任务状态标签映射
 export const TASK_STATUS_LABELS: Record<string, string> = {

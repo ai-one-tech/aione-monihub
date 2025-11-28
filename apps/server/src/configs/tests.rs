@@ -1,6 +1,5 @@
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::configs::models::{ConfigCreateRequest, ConfigListQuery};
     use crate::entities::configs::{ActiveModel, Column, Entity as Configs, Model};
     use crate::shared::database::DatabaseManager;
@@ -11,8 +10,9 @@ mod tests {
 
     // 创建测试数据库连接
     async fn create_test_db() -> DatabaseManager {
-        let db_url = env::var("TEST_DATABASE_URL")
-            .unwrap_or_else(|_| "postgres://postgres:postgres@localhost:5432/aione_test".to_string());
+        let db_url = env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
+            "postgres://postgres:postgres@localhost:5432/aione_test".to_string()
+        });
         DatabaseManager::new(&db_url).await.unwrap()
     }
 
@@ -62,7 +62,7 @@ mod tests {
             environment: None,
             all_versions: None,
         });
-        
+
         let result = super::get_configs(query, db_data).await;
         assert!(result.is_ok());
     }
@@ -89,7 +89,7 @@ mod tests {
         };
 
         let json_data = web::Json(config_request);
-        
+
         let result = super::create_config(json_data, db_data).await;
         assert!(result.is_ok());
     }
@@ -109,7 +109,7 @@ mod tests {
             .to_request();
 
         let path = web::Path("search_config".to_string());
-        
+
         let result = super::get_config_by_code(path, db_data).await;
         assert!(result.is_ok());
     }
@@ -129,7 +129,7 @@ mod tests {
             .to_request();
 
         let path = web::Path(("env_config".to_string(), "staging".to_string()));
-        
+
         let result = super::get_config_by_code_and_environment(path, db_data).await;
         assert!(result.is_ok());
     }
@@ -149,7 +149,7 @@ mod tests {
             .to_request();
 
         let path = web::Path(("version_config".to_string(), "production".to_string(), 1u32));
-        
+
         let result = super::get_config_by_code_env_and_version(path, db_data).await;
         assert!(result.is_ok());
     }
@@ -169,7 +169,7 @@ mod tests {
             .to_request();
 
         let path = web::Path(config.id);
-        
+
         let result = super::delete_config(path, db_data).await;
         assert!(result.is_ok());
     }

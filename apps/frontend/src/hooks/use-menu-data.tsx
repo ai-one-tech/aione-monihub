@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
 import { type ElementType } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   LayoutDashboard,
   ListTodo,
@@ -16,9 +16,9 @@ import {
   UsersRound,
   Boxes,
 } from 'lucide-react'
-import { type NavGroup, type NavItem } from '@/components/layout/types'
 import { useAuthStore } from '@/stores/auth-store'
 import { apiClient } from '@/lib/api-client'
+import { type NavGroup, type NavItem } from '@/components/layout/types'
 
 // 菜单项响应接口
 interface MenuItemResponse {
@@ -39,20 +39,20 @@ interface MenuApiResponse {
 
 // 图标映射表
 const iconMap: Record<string, ElementType> = {
-  'LayoutDashboard': LayoutDashboard,
-  'ListTodo': ListTodo,
-  'Package': Package,
-  'MessagesSquare': MessagesSquare,
-  'Users': Users,
-  'Settings': Settings,
-  'HelpCircle': HelpCircle,
-  'Wrench': Wrench,
-  'Palette': Palette,
-  'Bell': Bell,
-  'Monitor': Monitor,
-  'UserCog': UserCog,
-  'UsersRound': UsersRound,
-  'Boxes': Boxes,
+  LayoutDashboard: LayoutDashboard,
+  ListTodo: ListTodo,
+  Package: Package,
+  MessagesSquare: MessagesSquare,
+  Users: Users,
+  Settings: Settings,
+  HelpCircle: HelpCircle,
+  Wrench: Wrench,
+  Palette: Palette,
+  Bell: Bell,
+  Monitor: Monitor,
+  UserCog: UserCog,
+  UsersRound: UsersRound,
+  Boxes: Boxes,
 }
 
 /**
@@ -84,29 +84,33 @@ function normalizeRoutePath(path: string): string {
  * 但保留原始数据以便权限判断时使用
  */
 function transformMenuToNavItems(menuItems: MenuItemResponse[]): NavItem[] {
-  return menuItems.filter(item => !item.is_hidden).map((item): NavItem => {
-    const icon = item.icon ? iconMap[item.icon] : undefined
-    
-    if (item.children && item.children.length > 0) {
-      // 有子菜单的情况
-      return {
-        title: item.title,
-        icon: icon,
-        items: item.children.filter(child => !child.is_hidden).map((child) => ({
-          title: child.title,
-          url: normalizeRoutePath(child.path),
-          icon: child.icon ? iconMap[child.icon] : undefined,
-        })),
+  return menuItems
+    .filter((item) => !item.is_hidden)
+    .map((item): NavItem => {
+      const icon = item.icon ? iconMap[item.icon] : undefined
+
+      if (item.children && item.children.length > 0) {
+        // 有子菜单的情况
+        return {
+          title: item.title,
+          icon: icon,
+          items: item.children
+            .filter((child) => !child.is_hidden)
+            .map((child) => ({
+              title: child.title,
+              url: normalizeRoutePath(child.path),
+              icon: child.icon ? iconMap[child.icon] : undefined,
+            })),
+        }
+      } else {
+        // 没有子菜单的情况
+        return {
+          title: item.title,
+          url: normalizeRoutePath(item.path),
+          icon: icon,
+        }
       }
-    } else {
-      // 没有子菜单的情况
-      return {
-        title: item.title,
-        url: normalizeRoutePath(item.path),
-        icon: icon,
-      }
-    }
-  })
+    })
 }
 
 /**
@@ -116,7 +120,7 @@ function organizeMenuIntoGroups(menuItems: MenuItemResponse[]): NavGroup[] {
   // 这里可以根据业务需求进行分组
   // 目前简单地将所有菜单放在 "General" 组下
   const navItems = transformMenuToNavItems(menuItems)
-  
+
   return [
     {
       title: 'General',
@@ -131,7 +135,7 @@ function organizeMenuIntoGroups(menuItems: MenuItemResponse[]): NavGroup[] {
 export function useMenuData() {
   const { auth } = useAuthStore()
   const { isAuthenticated } = auth
-  
+
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['userMenu'],
     queryFn: async () => {
@@ -148,7 +152,7 @@ export function useMenuData() {
 
   // 将API响应转换为前端菜单格式
   const navGroups = data?.data ? organizeMenuIntoGroups(data.data) : []
-  
+
   // 保存原始菜单数据用于权限判断（包含隐藏菜单）
   const rawMenuData = data?.data || []
 

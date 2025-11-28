@@ -1,35 +1,41 @@
 import { type ColumnDef } from '@tanstack/react-table'
+import { formatDate } from '@/lib/datetime'
 import { cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
-import { type ApplicationResponse, APPLICATION_STATUS_LABELS } from '../data/api-schema'
-import { ApplicationsDataTableRowActions } from './applications-data-table-row-actions'
+import {
+  type ApplicationResponse,
+  APPLICATION_STATUS_LABELS,
+} from '../data/api-schema'
 import { useApplicationInstances } from '../hooks/use-application-instances'
-import { Badge } from '@/components/ui/badge'
+import { ApplicationsDataTableRowActions } from './applications-data-table-row-actions'
 
 interface OnlineInstancesCellProps {
   applicationId: string
 }
 
 function OnlineInstancesCell({ applicationId }: OnlineInstancesCellProps) {
-  const { data: instancesData, isLoading } = useApplicationInstances(applicationId)
-  
+  const { data: instancesData, isLoading } =
+    useApplicationInstances(applicationId)
+
   if (isLoading) {
-    return <div className='text-xs text-muted-foreground'>加载中...</div>
+    return <div className='text-muted-foreground text-xs'>加载中...</div>
   }
-  
-  const onlineInstances = instancesData?.data?.filter(
-    instance => instance.online_status === 'online'
-  ) || []
-  
+
+  const onlineInstances =
+    instancesData?.data?.filter(
+      (instance) => instance.online_status === 'online'
+    ) || []
+
   return (
     <div className='w-fit'>
-      <Badge 
+      <Badge
         variant={onlineInstances.length > 0 ? 'default' : 'secondary'}
         className={`text-xs ${
-          onlineInstances.length > 0 
-            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+          onlineInstances.length > 0
+            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
             : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
         }`}
       >
@@ -73,7 +79,9 @@ export const applicationsColumns: ColumnDef<ApplicationResponse>[] = [
       <DataTableColumnHeader column={column} title='应用ID' />
     ),
     cell: ({ row }) => (
-      <LongText className='max-w-24 ps-3 font-mono text-xs'>{row.getValue('id')}</LongText>
+      <LongText className='max-w-24 ps-3 font-mono text-xs'>
+        {row.getValue('id')}
+      </LongText>
     ),
     meta: {
       className: cn(
@@ -89,7 +97,9 @@ export const applicationsColumns: ColumnDef<ApplicationResponse>[] = [
       <DataTableColumnHeader column={column} title='应用名称' />
     ),
     cell: ({ row }) => (
-      <LongText className='max-w-36 font-medium'>{row.getValue('name')}</LongText>
+      <LongText className='max-w-36 font-medium'>
+        {row.getValue('name')}
+      </LongText>
     ),
   },
   {
@@ -98,7 +108,9 @@ export const applicationsColumns: ColumnDef<ApplicationResponse>[] = [
       <DataTableColumnHeader column={column} title='应用代码' />
     ),
     cell: ({ row }) => (
-      <div className='w-fit text-nowrap font-mono text-sm'>{row.getValue('code')}</div>
+      <div className='w-fit font-mono text-sm text-nowrap'>
+        {row.getValue('code')}
+      </div>
     ),
   },
   {
@@ -107,7 +119,7 @@ export const applicationsColumns: ColumnDef<ApplicationResponse>[] = [
       <DataTableColumnHeader column={column} title='所属项目' />
     ),
     cell: ({ row }) => (
-      <LongText className='max-w-24 font-mono text-xs text-muted-foreground'>
+      <LongText className='text-muted-foreground max-w-24 font-mono text-xs'>
         {row.getValue('project_id')}
       </LongText>
     ),
@@ -120,7 +132,7 @@ export const applicationsColumns: ColumnDef<ApplicationResponse>[] = [
     cell: ({ row }) => {
       const description = row.getValue('description') as string
       return (
-        <LongText className='max-w-[200px] text-muted-foreground'>
+        <LongText className='text-muted-foreground max-w-[200px]'>
           {description || '暂无描述'}
         </LongText>
       )
@@ -132,12 +144,18 @@ export const applicationsColumns: ColumnDef<ApplicationResponse>[] = [
       <DataTableColumnHeader column={column} title='技术栈' />
     ),
     cell: ({ row }) => {
-      const stacks = (row.getValue('tech_stacks') as { name: string; version: string }[]) || []
+      const stacks =
+        (row.getValue('tech_stacks') as { name: string; version: string }[]) ||
+        []
       if (!stacks.length) return <div className='text-muted-foreground'>—</div>
       return (
         <div className='flex flex-wrap gap-1'>
           {stacks.map((s, i) => (
-            <Badge key={i} variant='secondary' className='text-xs'>{`${s.name}${s.version ? `@${s.version}` : ''}`}</Badge>
+            <Badge
+              key={i}
+              variant='secondary'
+              className='text-xs'
+            >{`${s.name}${s.version ? `@${s.version}` : ''}`}</Badge>
           ))}
         </div>
       )
@@ -153,13 +171,17 @@ export const applicationsColumns: ColumnDef<ApplicationResponse>[] = [
       return (
         <div className='w-fit'>
           <span
-            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
               status === 'active'
                 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                 : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
             }`}
           >
-            {APPLICATION_STATUS_LABELS[status as keyof typeof APPLICATION_STATUS_LABELS]}
+            {
+              APPLICATION_STATUS_LABELS[
+                status as keyof typeof APPLICATION_STATUS_LABELS
+              ]
+            }
           </span>
         </div>
       )
@@ -184,7 +206,7 @@ export const applicationsColumns: ColumnDef<ApplicationResponse>[] = [
       <DataTableColumnHeader column={column} title='创建时间' />
     ),
     cell: ({ row }) => (
-      <div className='w-fit text-nowrap text-sm text-muted-foreground'>
+      <div className='text-muted-foreground w-fit text-sm text-nowrap'>
         {formatDate(row.getValue('created_at'))}
       </div>
     ),
@@ -195,7 +217,7 @@ export const applicationsColumns: ColumnDef<ApplicationResponse>[] = [
       <DataTableColumnHeader column={column} title='更新时间' />
     ),
     cell: ({ row }) => (
-      <div className='w-fit text-nowrap text-sm text-muted-foreground'>
+      <div className='text-muted-foreground w-fit text-sm text-nowrap'>
         {formatDate(row.getValue('updated_at'))}
       </div>
     ),
@@ -205,4 +227,3 @@ export const applicationsColumns: ColumnDef<ApplicationResponse>[] = [
     cell: ApplicationsDataTableRowActions,
   },
 ]
-import { formatDate } from '@/lib/datetime'

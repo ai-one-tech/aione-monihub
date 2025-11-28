@@ -3,7 +3,11 @@ import { Button } from '@/components/ui/button'
 import { useSystemPermissions } from './system-permissions-provider'
 
 export function SystemPermissionsPrimaryButtons() {
-  const { setIsPermissionSheetOpen, setPermissionSheetMode, setSelectedPermissionId } = useSystemPermissions()
+  const {
+    setIsPermissionSheetOpen,
+    setPermissionSheetMode,
+    setSelectedPermissionId,
+  } = useSystemPermissions()
 
   const handleCreatePermission = () => {
     setPermissionSheetMode('create')

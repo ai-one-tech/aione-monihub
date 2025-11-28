@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { useDebounce } from '@/hooks/use-debounce'
 import { applicationsApi } from '../api/applications-api'
 import { type GetApplicationsParams } from '../data/api-schema'
-import { useDebounce } from '@/hooks/use-debounce'
-import { toast } from 'sonner'
 
 /**
  * 应用列表查询 Hook
@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 export function useApplicationsQuery(params: GetApplicationsParams = {}) {
   // 对搜索参数进行防抖处理
   const debouncedSearch = useDebounce(params.search)
-  
+
   const debouncedParams = {
     ...params,
     search: debouncedSearch,
@@ -74,11 +74,18 @@ export function useUpdateApplication() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ applicationId, data }: { applicationId: string; data: any }) =>
-      applicationsApi.updateApplication(applicationId, data),
+    mutationFn: ({
+      applicationId,
+      data,
+    }: {
+      applicationId: string
+      data: any
+    }) => applicationsApi.updateApplication(applicationId, data),
     onSuccess: (_, { applicationId }) => {
       queryClient.invalidateQueries({ queryKey: ['applications'] })
-      queryClient.invalidateQueries({ queryKey: ['application', applicationId] })
+      queryClient.invalidateQueries({
+        queryKey: ['application', applicationId],
+      })
     },
     onError: async (error: any) => {
       let message = '更新应用失败'

@@ -1,10 +1,14 @@
 import { type Row } from '@tanstack/react-table'
 import { Eye, Trash2, Power, PowerOff, FileText, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { type InstanceResponse } from '../data/api-schema'
 import { useInstancesProvider } from './instances-provider'
-
 
 interface InstancesDataTableRowActionsProps {
   row: Row<InstanceResponse>
@@ -26,7 +30,7 @@ export function InstancesDataTableRowActions({
     setReportInstance,
     setConfigDrawerOpen,
   } = useInstancesProvider()
-  
+
   const instance = row.original
 
   const handleView = () => {
@@ -138,11 +142,7 @@ export function InstancesDataTableRowActions({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant='ghost'
-                size='sm'
-                onClick={handleDisable}
-              >
+              <Button variant='ghost' size='sm' onClick={handleDisable}>
                 <PowerOff className='h-4 w-4' />
               </Button>
             </TooltipTrigger>
@@ -155,11 +155,7 @@ export function InstancesDataTableRowActions({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant='ghost'
-                size='sm'
-                onClick={handleEnable}
-              >
+              <Button variant='ghost' size='sm' onClick={handleEnable}>
                 <Power className='h-4 w-4' />
               </Button>
             </TooltipTrigger>

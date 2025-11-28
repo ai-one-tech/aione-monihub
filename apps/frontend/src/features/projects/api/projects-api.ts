@@ -1,11 +1,19 @@
-import { type GetProjectsParams, type ProjectListResponse, type ProjectDetailResponse, type UpdateProjectRequest, type CreateProjectRequest } from '../data/api-schema'
 import { apiClient } from '@/lib/api-client'
+import {
+  type GetProjectsParams,
+  type ProjectListResponse,
+  type ProjectDetailResponse,
+  type UpdateProjectRequest,
+  type CreateProjectRequest,
+} from '../data/api-schema'
 
 class ProjectsApi {
   /**
    * 获取项目列表
    */
-  async getProjects(params: GetProjectsParams = {}): Promise<ProjectListResponse> {
+  async getProjects(
+    params: GetProjectsParams = {}
+  ): Promise<ProjectListResponse> {
     const searchParams = new URLSearchParams()
 
     if (params.page !== undefined) {
@@ -31,16 +39,27 @@ class ProjectsApi {
   /**
    * 创建项目
    */
-  async createProject(projectData: CreateProjectRequest): Promise<ProjectDetailResponse> {
-    const response = await apiClient.post<ProjectDetailResponse>('/api/projects', projectData)
+  async createProject(
+    projectData: CreateProjectRequest
+  ): Promise<ProjectDetailResponse> {
+    const response = await apiClient.post<ProjectDetailResponse>(
+      '/api/projects',
+      projectData
+    )
     return response.data
   }
 
   /**
    * 更新项目
    */
-  async updateProject(projectId: string, projectData: UpdateProjectRequest): Promise<ProjectDetailResponse> {
-    const response = await apiClient.put<ProjectDetailResponse>(`/api/projects/${projectId}`, projectData)
+  async updateProject(
+    projectId: string,
+    projectData: UpdateProjectRequest
+  ): Promise<ProjectDetailResponse> {
+    const response = await apiClient.put<ProjectDetailResponse>(
+      `/api/projects/${projectId}`,
+      projectData
+    )
     return response.data
   }
 
@@ -56,7 +75,9 @@ class ProjectsApi {
    * 获取项目详情
    */
   async getProjectById(projectId: string): Promise<ProjectDetailResponse> {
-    const response = await apiClient.get<ProjectDetailResponse>(`/api/projects/${projectId}`)
+    const response = await apiClient.get<ProjectDetailResponse>(
+      `/api/projects/${projectId}`
+    )
     return response.data
   }
 }

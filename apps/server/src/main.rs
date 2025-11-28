@@ -175,6 +175,7 @@ impl Modify for SecurityAddon {
 
 // 导入所有模块的路由函数
 use aione_monihub_server::applications::routes::application_routes;
+use aione_monihub_server::audit::routes::audit_routes;
 use aione_monihub_server::auth::routes::auth_routes;
 use aione_monihub_server::configs::routes::config_routes;
 use aione_monihub_server::files::routes::file_routes;
@@ -187,7 +188,6 @@ use aione_monihub_server::instance_tasks::routes::{
 };
 use aione_monihub_server::instances::routes::instance_routes;
 use aione_monihub_server::logs::routes::log_routes;
-use aione_monihub_server::audit::routes::audit_routes;
 use aione_monihub_server::permissions::routes::permission_routes;
 use aione_monihub_server::projects::routes::project_routes;
 use aione_monihub_server::roles::routes::role_routes;
@@ -195,12 +195,11 @@ use aione_monihub_server::users::routes::user_routes;
 
 // 添加Actor trait导入以使用start方法
 use actix::Actor;
-use aione_monihub_server::websocket::routes::websocket_routes;
 use aione_monihub_server::maintenance::scheduler::start_all_scheduled_tasks;
+use aione_monihub_server::websocket::routes::websocket_routes;
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
-
     // Load .env file
     dotenv::dotenv().ok();
 
@@ -232,17 +231,15 @@ async fn main() -> io::Result<()> {
         App::new()
             .app_data(web::Data::new(db_connection.clone()))
             .app_data(web::Data::new(ws_server.clone()))
-            .app_data(
-                web::JsonConfig::default().error_handler(|err, req| {
-                    let msg = format!(
-                        "JSON 反序列化失败: {}; method={}; path={}",
-                        err,
-                        req.method(),
-                        req.path()
-                    );
-                    aione_monihub_server::shared::error::ApiError::ValidationError(msg).into()
-                }),
-            )
+            .app_data(web::JsonConfig::default().error_handler(|err, req| {
+                let msg = format!(
+                    "JSON 反序列化失败: {}; method={}; path={}",
+                    err,
+                    req.method(),
+                    req.path()
+                );
+                aione_monihub_server::shared::error::ApiError::ValidationError(msg).into()
+            }))
             // 配置CORS中间件
             .wrap(
                 Cors::default()

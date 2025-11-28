@@ -110,7 +110,7 @@ export const usersColumns: ColumnDef<User>[] = [
     ),
     cell: ({ row }) => {
       const { role } = row.original
-      
+
       if (!role) {
         return null
       }

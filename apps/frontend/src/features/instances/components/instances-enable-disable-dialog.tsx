@@ -9,8 +9,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  useEnableInstance,
+  useDisableInstance,
+  useInstanceQuery,
+} from '../hooks/use-instances-query'
 import { useInstancesProvider } from './instances-provider'
-import { useEnableInstance, useDisableInstance, useInstanceQuery } from '../hooks/use-instances-query'
 
 export function InstancesEnableDisableDialog() {
   const {
@@ -22,12 +26,16 @@ export function InstancesEnableDisableDialog() {
     setEnableDisableAction,
   } = useInstancesProvider()
 
-  const { data: enableDisableInstance } = useInstanceQuery(enableDisableInstanceId || '')
+  const { data: enableDisableInstance } = useInstanceQuery(
+    enableDisableInstanceId || ''
+  )
   const enableInstanceMutation = useEnableInstance()
   const disableInstanceMutation = useDisableInstance()
 
   const isEnable = enableDisableAction === 'enable'
-  const isPending = isEnable ? enableInstanceMutation.isPending : disableInstanceMutation.isPending
+  const isPending = isEnable
+    ? enableInstanceMutation.isPending
+    : disableInstanceMutation.isPending
 
   const handleConfirm = async () => {
     if (!enableDisableInstanceId || !enableDisableAction) return
@@ -53,7 +61,10 @@ export function InstancesEnableDisableDialog() {
   }
 
   return (
-    <AlertDialog open={isEnableDisableDialogOpen} onOpenChange={setIsEnableDisableDialogOpen}>
+    <AlertDialog
+      open={isEnableDisableDialogOpen}
+      onOpenChange={setIsEnableDisableDialogOpen}
+    >
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle className='flex items-center gap-2'>
@@ -70,29 +81,38 @@ export function InstancesEnableDisableDialog() {
             )}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            您确定要{isEnable ? '启用' : '禁用'}实例 &quot;{enableDisableInstance?.name}&quot; 吗？
+            您确定要{isEnable ? '启用' : '禁用'}实例 &quot;
+            {enableDisableInstance?.name}&quot; 吗？
             <br />
             {isEnable ? (
-              <span className='text-green-600 font-medium'>
+              <span className='font-medium text-green-600'>
                 启用后，实例将开始正常监控和上报数据。
               </span>
             ) : (
-              <span className='text-orange-600 font-medium'>
+              <span className='font-medium text-orange-600'>
                 禁用后，实例将停止监控和上报数据，但配置信息会保留。
               </span>
             )}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleCancel}>
-            取消
-          </AlertDialogCancel>
+          <AlertDialogCancel onClick={handleCancel}>取消</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
-            className={isEnable ? 'bg-green-600 hover:bg-green-700' : 'bg-orange-600 hover:bg-orange-700'}
+            className={
+              isEnable
+                ? 'bg-green-600 hover:bg-green-700'
+                : 'bg-orange-600 hover:bg-orange-700'
+            }
             disabled={isPending}
           >
-            {isPending ? (isEnable ? '启用中...' : '禁用中...') : (isEnable ? '确认启用' : '确认禁用')}
+            {isPending
+              ? isEnable
+                ? '启用中...'
+                : '禁用中...'
+              : isEnable
+                ? '确认启用'
+                : '确认禁用'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

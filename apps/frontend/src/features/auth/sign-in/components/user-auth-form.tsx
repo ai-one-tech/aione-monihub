@@ -7,8 +7,10 @@ import { Loader2, LogIn } from 'lucide-react'
 import { toast } from 'sonner'
 // 移除第三方登录图标导入
 import { useAuthStore } from '@/stores/auth-store'
-import { cn } from '@/lib/utils'
 import { authApi, type LoginRequest } from '@/lib/api'
+import { ApiError } from '@/lib/api-client'
+import { cn } from '@/lib/utils'
+import { useNetworkError } from '@/context/network-error-context'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -20,14 +22,10 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
-import { useNetworkError } from '@/context/network-error-context'
-import { ApiError } from '@/lib/api-client'
 
 const formSchema = z.object({
   username: z.string().min(1, '请输入用户名'),
-  password: z
-    .string()
-    .min(1, '请输入密码'),
+  password: z.string().min(1, '请输入密码'),
 })
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLFormElement> {
@@ -43,7 +41,7 @@ export function UserAuthForm({
   const navigate = useNavigate()
   const { auth } = useAuthStore()
   const { showError, isDialogOpen } = useNetworkError()
-  
+
   // 检查是否在弹窗中打开
   const isInPopup = window.opener !== null
 
@@ -72,7 +70,8 @@ export function UserAuthForm({
     }
 
     // 使用普通Promise处理而不是toast.promise，避免在网络错误时同时显示弹窗和toast
-    authApi.login(loginRequest)
+    authApi
+      .login(loginRequest)
       .then((response) => {
         setIsLoading(false)
         const { token, user } = response.data
@@ -84,9 +83,9 @@ export function UserAuthForm({
           role: user.roles,
           exp: Date.now() + 24 * 60 * 60 * 1000, // 24小时后过期
         }
-        
+
         auth.setLoginData(token, userData)
-        
+
         // 如果是在弹窗中，通知父窗口登录成功并关闭当前窗口
         if (isInPopup && window.opener) {
           try {
@@ -110,7 +109,7 @@ export function UserAuthForm({
       })
       .catch((error) => {
         setIsLoading(false)
-        
+
         // 仅在500错误时显示弹窗，其余错误使用toast
         if (error instanceof ApiError && error.status === 500) {
           showError(error as Error, async () => {
@@ -174,7 +173,7 @@ export function UserAuthForm({
           {/* 移除第三方登录选项 */}
         </form>
       </Form>
-      
+
       {/* 登录失败时仅在500错误使用全局弹窗，其他错误使用toast */}
     </>
   )

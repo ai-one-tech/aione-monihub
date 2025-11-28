@@ -68,7 +68,7 @@ pub async fn login(
             let exp = cur + (3600 * 24 * 30);
             let claims = Claims {
                 sub: user.id.to_string(), // Use actual user ID from database
-                exp,                 // Token expires in 30 days
+                exp,                      // Token expires in 30 days
             };
 
             let jwt_secret = get_jwt_secret();
@@ -140,7 +140,8 @@ pub async fn forgot_password(
                     // 模拟发送邮件（在实际应用中，这里应该调用邮件服务）
                     log::info!(
                         "为用户 {} 发送密码重置邮件，重置令牌: {}",
-                        forgot_req.email, token
+                        forgot_req.email,
+                        token
                     );
                     log::info!(
                         "重置链接: http://localhost:3000/reset-password?token={}",
@@ -160,7 +161,8 @@ pub async fn forgot_password(
                         &req,
                         None,
                         Some(after),
-                    ).await;
+                    )
+                    .await;
 
                     Ok(HttpResponse::Ok().json("密码重置邮件已发送"))
                 }
@@ -233,7 +235,8 @@ pub async fn reset_password(
                         &req,
                         Some(before),
                         None,
-                    ).await;
+                    )
+                    .await;
                     Ok(HttpResponse::Ok().json("密码重置成功"))
                 }
                 Err(err) => {

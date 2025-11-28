@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from '@tanstack/react-router'
-import { authApi, CurrentUserResponse } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
+import { authApi, CurrentUserResponse } from '@/lib/api'
+import { ApiError } from '@/lib/api-client'
 import { AuthUtils } from '@/lib/auth-utils'
 import { useNetworkError } from '@/context/network-error-context'
-import { ApiError } from '@/lib/api-client'
 
 interface UseAuthCheckResult {
   isAuthenticated: boolean
@@ -28,7 +28,7 @@ export function useAuthCheck(): UseAuthCheckResult {
   const [showLoginDialog, setShowLoginDialog] = useState(false)
   const [showNetworkError, setShowNetworkError] = useState(false)
   const [isPageRefresh, setIsPageRefresh] = useState(true)
-  
+
   const navigate = useNavigate()
   const location = useLocation()
   const authStore = useAuthStore()
@@ -37,16 +37,16 @@ export function useAuthCheck(): UseAuthCheckResult {
   const checkAuth = useCallback(async () => {
     setIsLoading(true)
     setError(null)
-    
+
     try {
       // 尝试恢复认证状态
       const isRestored = AuthUtils.checkAndRestoreAuth()
-      
+
       // 使用AuthUtils检查是否已登录
       if (!AuthUtils.isAuthenticated() || !isRestored) {
         setIsAuthenticated(false)
         setUser(null)
-        
+
         // 如果是页面刷新且没有登录，直接跳转到登录页面
         if (isPageRefresh) {
           const currentPath = location.href
@@ -57,13 +57,13 @@ export function useAuthCheck(): UseAuthCheckResult {
           })
           return
         }
-        
+
         return
       }
-      
+
       // 尝试刷新用户信息以验证token
       const isValid = await AuthUtils.refreshUserInfo()
-      
+
       if (isValid) {
         const currentUser = AuthUtils.getCurrentUser()
         if (currentUser) {
@@ -73,7 +73,7 @@ export function useAuthCheck(): UseAuthCheckResult {
             username: 'admin', // 这里需要从API获取
             email: currentUser.email,
             roles: currentUser.role,
-            exp: currentUser.exp
+            exp: currentUser.exp,
           })
           setShowLoginDialog(false)
         }
@@ -81,7 +81,7 @@ export function useAuthCheck(): UseAuthCheckResult {
         // token无效
         setIsAuthenticated(false)
         setUser(null)
-        
+
         // 如果是页面刷新且token无效，直接跳转到登录页面
         if (isPageRefresh) {
           const currentPath = location.href
@@ -97,7 +97,7 @@ export function useAuthCheck(): UseAuthCheckResult {
       if (!(err instanceof TypeError)) {
         console.error('身份验证检查失败:', err)
       }
-      
+
       if (err instanceof ApiError) {
         if (err.status === 401) {
           setIsAuthenticated(false)
@@ -163,10 +163,16 @@ export function useAuthCheck(): UseAuthCheckResult {
       }
     }
 
-    window.addEventListener('api-auth-error', handleApiAuthError as EventListener)
-    
+    window.addEventListener(
+      'api-auth-error',
+      handleApiAuthError as EventListener
+    )
+
     return () => {
-      window.removeEventListener('api-auth-error', handleApiAuthError as EventListener)
+      window.removeEventListener(
+        'api-auth-error',
+        handleApiAuthError as EventListener
+      )
     }
   }, [])
 
@@ -187,7 +193,7 @@ export function useAuthCheck(): UseAuthCheckResult {
           username: 'admin', // 这里需要从API获取
           email: currentUser.email,
           roles: currentUser.role,
-          exp: currentUser.exp
+          exp: currentUser.exp,
         })
       }
     }
@@ -204,6 +210,6 @@ export function useAuthCheck(): UseAuthCheckResult {
     setShowNetworkError,
     checkAuth,
     handleLoginSuccess,
-    retryNetwork
+    retryNetwork,
   }
 }

@@ -42,7 +42,9 @@ export const systemPermissionsColumns: ColumnDef<ApiPermissionResponse>[] = [
       <DataTableColumnHeader column={column} title='权限ID' />
     ),
     cell: ({ row }) => (
-      <LongText className='max-w-24 ps-3 font-mono text-xs'>{row.getValue('id')}</LongText>
+      <LongText className='max-w-24 ps-3 font-mono text-xs'>
+        {row.getValue('id')}
+      </LongText>
     ),
     meta: {
       className: cn(
@@ -57,9 +59,7 @@ export const systemPermissionsColumns: ColumnDef<ApiPermissionResponse>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='权限名称' />
     ),
-    cell: ({ row }) => (
-      <div>{row.getValue('name')}</div>
-    ),
+    cell: ({ row }) => <div>{row.getValue('name')}</div>,
   },
   {
     accessorKey: 'description',
@@ -69,7 +69,7 @@ export const systemPermissionsColumns: ColumnDef<ApiPermissionResponse>[] = [
     cell: ({ row }) => {
       const description = row.getValue('description') as string | null
       return (
-        <LongText className='max-w-48 text-muted-foreground'>
+        <LongText className='text-muted-foreground max-w-48'>
           {description || '暂无描述'}
         </LongText>
       )
@@ -83,7 +83,10 @@ export const systemPermissionsColumns: ColumnDef<ApiPermissionResponse>[] = [
     ),
     cell: ({ row }) => {
       const type = row.getValue('permission_type') as string
-      const typeInfo = PERMISSION_TYPE_MAP[type] || { label: type, variant: 'outline' as const }
+      const typeInfo = PERMISSION_TYPE_MAP[type] || {
+        label: type,
+        variant: 'outline' as const,
+      }
       return (
         <Badge variant={typeInfo.variant} className='text-xs'>
           {typeInfo.label}
@@ -105,14 +108,17 @@ export const systemPermissionsColumns: ColumnDef<ApiPermissionResponse>[] = [
       const action = row.getValue('action') as string | null
       if (!action) {
         return (
-          <Badge variant="secondary" className='text-xs'>
+          <Badge variant='secondary' className='text-xs'>
             --
           </Badge>
         )
       }
       // 兼容大小写（后端为 snake_case）
       const key = action.toLowerCase()
-      const actionInfo = ACTION_MAP[key] || { label: action, variant: 'outline' as const }
+      const actionInfo = ACTION_MAP[key] || {
+        label: action,
+        variant: 'outline' as const,
+      }
       return (
         <Badge variant={actionInfo.variant} className='text-xs'>
           {actionInfo.label}
@@ -138,7 +144,7 @@ export const systemPermissionsColumns: ColumnDef<ApiPermissionResponse>[] = [
     cell: ({ row }) => {
       const sortOrder = row.getValue('sort_order') as number | null
       return (
-        <div className='text-center text-sm text-muted-foreground'>
+        <div className='text-muted-foreground text-center text-sm'>
           {sortOrder ?? '-'}
         </div>
       )

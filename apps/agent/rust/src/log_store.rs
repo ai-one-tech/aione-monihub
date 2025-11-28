@@ -6,6 +6,7 @@ use chrono::Utc;
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
+
 #[derive(Clone)]
 pub struct AgentLogStore {
     inner: Arc<Mutex<Vec<AgentLogItem>>>,

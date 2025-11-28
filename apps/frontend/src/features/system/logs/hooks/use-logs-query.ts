@@ -10,4 +10,3 @@ export function useLogsQuery(params: GetLogsParams) {
     gcTime: 5 * 60 * 1000,
   })
 }
-

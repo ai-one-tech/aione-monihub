@@ -6,17 +6,17 @@ use crate::applications::ApplicationsModule;
 use crate::auth::middleware::get_user_id_from_request;
 use crate::entities::applications::Entity as Applications;
 use crate::permissions::handlers::get_user_permission_by_name;
+use crate::shared::enums::Status;
+use crate::shared::error::db_error_here_with_context;
 use crate::shared::error::ApiError;
 use crate::shared::snowflake::generate_snowflake_id;
-use crate::shared::enums::Status;
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::Utc;
+use sea_orm::prelude::Expr;
 use sea_orm::{
     ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait,
     QueryFilter, QueryOrder, QuerySelect,
 };
-use sea_orm::prelude::Expr;
-use crate::shared::error::db_error_here_with_context;
 
 #[utoipa::path(
     get,
@@ -78,8 +78,14 @@ pub async fn get_applications(
     // 排序
     select = select.order_by_desc(crate::entities::applications::Column::CreatedAt);
 
-    let filter_loc = if query.tech_stack.is_some() { Some(format!("{}:{}", file!(), line!())) } else { None };
-    let ctx = filter_loc.map(|l| format!("applications.get_applications tech_stack filter at {}", l)).unwrap_or_else(|| "applications.get_applications".to_string());
+    let filter_loc = if query.tech_stack.is_some() {
+        Some(format!("{}:{}", file!(), line!()))
+    } else {
+        None
+    };
+    let ctx = filter_loc
+        .map(|l| format!("applications.get_applications tech_stack filter at {}", l))
+        .unwrap_or_else(|| "applications.get_applications".to_string());
     let total = select
         .clone()
         .count(&**db)
@@ -96,10 +102,11 @@ pub async fn get_applications(
     let application_responses: Vec<ApplicationResponse> = applications
         .into_iter()
         .map(|app| {
-            let tech_stacks: Vec<crate::applications::models::TechStackKV> = match serde_json::from_value(app.tech_stacks.clone()) {
-                Ok(v) => v,
-                Err(_) => Vec::new(),
-            };
+            let tech_stacks: Vec<crate::applications::models::TechStackKV> =
+                match serde_json::from_value(app.tech_stacks.clone()) {
+                    Ok(v) => v,
+                    Err(_) => Vec::new(),
+                };
             ApplicationResponse {
                 id: app.id,
                 project_id: app.project_id,
@@ -188,10 +195,17 @@ pub async fn create_application(
         project_id: ActiveValue::Set(app.project_id.clone()),
         name: ActiveValue::Set(app.name.clone()),
         code: ActiveValue::Set(app.code.clone()),
-        status: ActiveValue::Set(match app.status.as_str() { "active" => Status::Active, "disabled" => Status::Disabled, _ => Status::Disabled }),
+        status: ActiveValue::Set(match app.status.as_str() {
+            "active" => Status::Active,
+            "disabled" => Status::Disabled,
+            _ => Status::Disabled,
+        }),
         description: ActiveValue::Set(Some(app.description.clone())),
         auth_config: ActiveValue::Set(serde_json::Value::Null),
-        tech_stacks: ActiveValue::Set(serde_json::to_value(app.tech_stacks.clone().unwrap_or_default()).unwrap_or(serde_json::Value::Null)),
+        tech_stacks: ActiveValue::Set(
+            serde_json::to_value(app.tech_stacks.clone().unwrap_or_default())
+                .unwrap_or(serde_json::Value::Null),
+        ),
         revision: ActiveValue::Set(1),
         deleted_at: ActiveValue::Set(None),
         created_by: ActiveValue::Set(user_id.to_string()),
@@ -234,7 +248,8 @@ pub async fn create_application(
         &req,
         None,
         Some(after),
-    ).await;
+    )
+    .await;
 
     Ok(HttpResponse::Ok().json(response))
 }
@@ -285,7 +300,8 @@ pub async fn get_application(
             code: application.code,
             status: application.status,
             description: application.description.unwrap_or_default(),
-            tech_stacks: serde_json::from_value(application.tech_stacks.clone()).unwrap_or_default(),
+            tech_stacks: serde_json::from_value(application.tech_stacks.clone())
+                .unwrap_or_default(),
             created_at: application.created_at.to_rfc3339(),
             updated_at: application.updated_at.to_rfc3339(),
         };
@@ -362,9 +378,16 @@ pub async fn update_application(
         active_app.name = ActiveValue::Set(app.name.clone());
         active_app.project_id = ActiveValue::Set(app.project_id.clone());
         active_app.code = ActiveValue::Set(app.code.clone());
-        active_app.status = ActiveValue::Set(match app.status.as_str() { "active" => Status::Active, "disabled" => Status::Disabled, _ => Status::Disabled });
+        active_app.status = ActiveValue::Set(match app.status.as_str() {
+            "active" => Status::Active,
+            "disabled" => Status::Disabled,
+            _ => Status::Disabled,
+        });
         active_app.description = ActiveValue::Set(Some(app.description.clone()));
-        active_app.tech_stacks = ActiveValue::Set(serde_json::to_value(app.tech_stacks.clone().unwrap_or_default()).unwrap_or(serde_json::Value::Null));
+        active_app.tech_stacks = ActiveValue::Set(
+            serde_json::to_value(app.tech_stacks.clone().unwrap_or_default())
+                .unwrap_or(serde_json::Value::Null),
+        );
         active_app.updated_by = ActiveValue::Set(user_id.to_string());
         active_app.updated_at = ActiveValue::Set(Utc::now().into());
 
@@ -379,7 +402,8 @@ pub async fn update_application(
             code: updated_app.code,
             status: updated_app.status,
             description: updated_app.description.unwrap_or_default(),
-            tech_stacks: serde_json::from_value(updated_app.tech_stacks.clone()).unwrap_or_default(),
+            tech_stacks: serde_json::from_value(updated_app.tech_stacks.clone())
+                .unwrap_or_default(),
             created_at: updated_app.created_at.to_rfc3339(),
             updated_at: updated_app.updated_at.to_rfc3339(),
         };
@@ -412,7 +436,8 @@ pub async fn update_application(
             &req,
             Some(before),
             Some(after),
-        ).await;
+        )
+        .await;
 
         Ok(HttpResponse::Ok().json(response))
     } else {
@@ -479,7 +504,8 @@ pub async fn delete_application(
             &req,
             Some(before),
             None,
-        ).await;
+        )
+        .await;
 
         Ok(HttpResponse::Ok().json("Application deleted successfully"))
     } else {
@@ -537,7 +563,8 @@ pub async fn enable_application(
             &req,
             Some(before),
             Some(after),
-        ).await;
+        )
+        .await;
         Ok(HttpResponse::Ok().json(response))
     } else {
         Err(ApiError::NotFound("Application not found".to_string()))
@@ -594,7 +621,8 @@ pub async fn disable_application(
             &req,
             Some(before),
             Some(after),
-        ).await;
+        )
+        .await;
         Ok(HttpResponse::Ok().json(response))
     } else {
         Err(ApiError::NotFound("Application not found".to_string()))

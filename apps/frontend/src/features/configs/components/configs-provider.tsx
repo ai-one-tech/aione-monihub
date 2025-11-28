@@ -18,11 +18,24 @@ const ConfigsContext = createContext<Ctx | null>(null)
 export function ConfigsProvider({ children }: { children: React.ReactNode }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [sheetMode, setSheetMode] = useState<SheetMode>('create')
-  const [selectedConfigId, setSelectedConfigId] = useState<string | undefined>(undefined)
+  const [selectedConfigId, setSelectedConfigId] = useState<string | undefined>(
+    undefined
+  )
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
   return (
-    <ConfigsContext.Provider value={{ isSheetOpen, setIsSheetOpen, sheetMode, setSheetMode, selectedConfigId, setSelectedConfigId, isDeleteDialogOpen, setIsDeleteDialogOpen }}>
+    <ConfigsContext.Provider
+      value={{
+        isSheetOpen,
+        setIsSheetOpen,
+        sheetMode,
+        setSheetMode,
+        selectedConfigId,
+        setSelectedConfigId,
+        isDeleteDialogOpen,
+        setIsDeleteDialogOpen,
+      }}
+    >
       {children}
     </ConfigsContext.Provider>
   )

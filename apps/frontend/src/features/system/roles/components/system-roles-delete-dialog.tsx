@@ -8,8 +8,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { useSystemRolesContext } from './system-roles-provider'
 import { useDeleteRoleMutation } from '../hooks/use-roles-query'
+import { useSystemRolesContext } from './system-roles-provider'
 
 export function SystemRolesDeleteDialog() {
   const { deleteRoleId, setDeleteRoleId } = useSystemRolesContext()
@@ -17,7 +17,7 @@ export function SystemRolesDeleteDialog() {
 
   const handleDelete = async () => {
     if (!deleteRoleId) return
-    
+
     try {
       await deleteRoleMutation.mutateAsync(deleteRoleId)
       setDeleteRoleId(null)
